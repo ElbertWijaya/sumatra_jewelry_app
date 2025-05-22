@@ -1,7 +1,7 @@
 // sumatra_jewelry_app/main.dart
 import 'package:flutter/material.dart';
 import 'package:sumatra_jewelry_app/screens/auth/login_screen.dart';
-import 'package:sumatra_jewelry_app/screens/designer/designer_dashboard_screen.dart'; // Tambahkan import ini
+// Tambahkan import ini
 
 void main() {
   runApp(const MyApp());
