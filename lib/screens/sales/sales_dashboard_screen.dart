@@ -4,7 +4,7 @@ import 'package:sumatra_jewelry_app/models/order.dart';
 import 'package:sumatra_jewelry_app/services/order_service.dart';
 import 'package:sumatra_jewelry_app/screens/sales/create_order_screen.dart';
 import 'package:sumatra_jewelry_app/screens/sales/order_detail_screen.dart';
-import 'package:sumatra_jewelry_app/screens/auth/login_screen.dart'; // Untuk logout
+import 'package:package:sumatra_jewelry_app/screens/auth/login_screen.dart';
 
 class SalesDashboardScreen extends StatefulWidget {
   const SalesDashboardScreen({super.key});
@@ -18,11 +18,9 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   List<Order> _orders = [];
   bool _isLoading = true;
   String _errorMessage = '';
-  // State untuk search dan filter
   String _searchQuery = '';
-  // Ubah tipe menjadi Object? agar bisa menampung OrderStatus atau String 'onProgress'
   Object? _selectedStatusFilter;
-  String? _selectedCategoryFilter; // Filter tambahan (Progress, Jenis, Harga)
+  String? _selectedCategoryFilter;
 
   @override
   void initState() {
@@ -52,28 +50,22 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     }
   }
 
-  // Metode untuk memfilter pesanan berdasarkan query pencarian dan filter status
   List<Order> get _filteredOrders {
     List<Order> filtered = _orders;
 
-    // Filter berdasarkan status
     if (_selectedStatusFilter == null) {
-      // 'Semua' filter: Tampilkan semua kecuali yang dibatalkan
       filtered = filtered.where((order) => order.status != OrderStatus.canceled).toList();
     } else if (_selectedStatusFilter is OrderStatus) {
-      // Filter status spesifik (Waiting/Pending, Submitted/Completed)
       filtered = filtered
           .where((order) => order.status == _selectedStatusFilter)
           .toList();
     } else if (_selectedStatusFilter == 'onProgress') {
-      // Filter 'On Progress': Semua yang bukan pending, completed, atau canceled
       filtered = filtered.where((order) =>
           order.status != OrderStatus.pending &&
           order.status != OrderStatus.completed &&
           order.status != OrderStatus.canceled).toList();
     }
 
-    // Filter berdasarkan search query
     if (_searchQuery.isNotEmpty) {
       filtered = filtered.where((order) {
         final query = _searchQuery.toLowerCase();
@@ -83,35 +75,29 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       }).toList();
     }
 
-    // TODO: Implementasi filter kategori tambahan (Progress, Jenis, Harga)
-    // if (_selectedCategoryFilter != null) {
-    //   // Logika filter sesuai _selectedCategoryFilter
-    // }
-
     return filtered;
   }
 
-  // Helper function untuk membangun status filter button dengan jumlah
   Widget _buildStatusFilterButton(
-      String label, Object? filterValue, Color color) { // filterValue bisa OrderStatus atau String 'onProgress'
+      String label, Object? filterValue, Color color) {
     int count;
-    if (filterValue == null) { // 'Semua'
+    if (filterValue == null) {
       count = _orders.where((order) => order.status != OrderStatus.canceled).length;
-    } else if (filterValue is OrderStatus) { // Jika satu status
+    } else if (filterValue is OrderStatus) {
       count = _orders.where((order) => order.status == filterValue).length;
-    } else if (filterValue == 'onProgress') { // Jika 'On Progress'
+    } else if (filterValue == 'onProgress') {
       count = _orders.where((order) =>
           order.status != OrderStatus.pending &&
           order.status != OrderStatus.completed &&
           order.status != OrderStatus.canceled).length;
     } else {
-      count = 0; // Kasus lain
+      count = 0;
     }
 
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4.0),
-        child: InkWell( // Menggunakan InkWell agar bisa diklik dan ada ripple effect
+        child: InkWell(
           onTap: () {
             setState(() {
               _selectedStatusFilter = filterValue;
@@ -120,7 +106,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
             decoration: BoxDecoration(
-              // Logika warna berdasarkan _selectedStatusFilter yang cocok dengan filterValue
               color: _selectedStatusFilter == filterValue ? color.withOpacity(0.8) : Colors.grey[200],
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
@@ -162,13 +147,14 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sales Dashboard'),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
           IconButton(
@@ -182,6 +168,8 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
           ),
         ],
       ),
+      extendBodyBehindAppBar: true,
+      resizeToAvoidBottomInset: false, // <--- INI PENTING! Agar Scaffold tidak resize saat keyboard muncul
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final result = await Navigator.push(
@@ -199,165 +187,212 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty
-              ? Center(
-                  child: Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.red, fontSize: 16),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _fetchOrders,
-                  child: Column(
-                    children: [
-                      // 1. Search Bar
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: TextField(
-                          onChanged: (value) {
-                            setState(() {
-                              _searchQuery = value;
-                            });
-                          },
-                          decoration: InputDecoration(
-                            labelText: 'Search',
-                            hintText: 'Cari nama pelanggan atau produk...',
-                            prefixIcon: const Icon(Icons.search),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey[100],
-                            contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                          ),
-                        ),
+      body: Stack(
+        children: [
+          // Latar Belakang Gambar (akan mengisi seluruh Stack dan tidak terpengaruh keyboard)
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/toko_sumatra.jpg', // Ganti dengan path gambar Anda
+              fit: BoxFit.cover,
+              colorBlendMode: BlendMode.darken,
+              color: Colors.black.withOpacity(0.3),
+            ),
+          ),
+          // Konten Dashboard (akan tetap scrollable di dalamnya jika diperlukan)
+          _isLoading
+              ? const Center(child: CircularProgressIndicator(color: Colors.white,))
+              : _errorMessage.isNotEmpty
+                  ? Center(
+                      child: Text(
+                        _errorMessage,
+                        style: const TextStyle(color: Colors.red, fontSize: 16),
                       ),
-                      // 2. Status Filter Tabs (Waiting, On Progress, Submitted)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _fetchOrders,
+                      // Bungkus konten yang bisa di-scroll dengan SingleChildScrollView
+                      // agar keyboard tidak menutupi TextField jika konten terlalu panjang
+                      child: SingleChildScrollView( // <--- Tambahkan ini
+                        physics: const AlwaysScrollableScrollPhysics(), // Pastikan bisa di-scroll bahkan jika kontennya tidak penuh
+                        child: Column(
                           children: [
-                            _buildStatusFilterButton('Semua', null, Colors.deepPurple), // Custom 'All' filter
-                            _buildStatusFilterButton('Waiting', OrderStatus.pending, Colors.orange),
-                            _buildStatusFilterButton('On Progress', 'onProgress', Colors.blue), // <--- INI PERBAIKANNYA
-                            _buildStatusFilterButton('Submitted', OrderStatus.completed, Colors.green),
-                          ],
-                        ),
-                      ),
-                      // 3. Categories Filter (Progress, Jenis, Harga)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Filter Kategori:',
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                            Row(
-                              children: [
-                                TextButton(onPressed: () {
-                                  // TODO: Implementasi filter Progress
+                            // 1. Spasi di bawah AppBar untuk menghindari tumpang tindih dengan gambar
+                            SizedBox(height: AppBar().preferredSize.height + MediaQuery.of(context).padding.top + 20), // Tambahkan sedikit spasi di atas search bar
+
+                            // 2. Search Bar
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                              child: TextField(
+                                onChanged: (value) {
                                   setState(() {
-                                    _selectedCategoryFilter = 'Progress';
+                                    _searchQuery = value;
                                   });
-                                }, child: Text('Progress', style: TextStyle(color: _selectedCategoryFilter == 'Progress' ? Theme.of(context).primaryColor : Colors.black))),
-                                TextButton(onPressed: () {
-                                  // TODO: Implementasi filter Jenis
-                                  setState(() {
-                                    _selectedCategoryFilter = 'Jenis';
-                                  });
-                                }, child: Text('Jenis', style: TextStyle(color: _selectedCategoryFilter == 'Jenis' ? Theme.of(context).primaryColor : Colors.black))),
-                                TextButton(onPressed: () {
-                                  // TODO: Implementasi filter Harga
-                                  setState(() {
-                                    _selectedCategoryFilter = 'Harga';
-                                  });
-                                }, child: Text('Harga', style: TextStyle(color: _selectedCategoryFilter == 'Harga' ? Theme.of(context).primaryColor : Colors.black))),
-                                IconButton(
-                                  icon: const Icon(Icons.filter_list),
-                                  onPressed: () {
-                                    // TODO: Tampilkan dialog/bottom sheet untuk filter lebih lanjut
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Filter lebih lanjut akan ditambahkan!'))
-                                    );
-                                  },
+                                },
+                                decoration: InputDecoration(
+                                  labelText: 'Search',
+                                  hintText: 'Cari nama pelanggan atau produk...',
+                                  prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.white.withOpacity(0.2),
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                  labelStyle: const TextStyle(color: Colors.white70),
+                                  hintStyle: const TextStyle(color: Colors.white54),
+                                  floatingLabelStyle: const TextStyle(color: Colors.white),
                                 ),
-                              ],
+                                style: const TextStyle(color: Colors.white),
+                              ),
                             ),
-                          ],
-                        ),
-                      ),
-                      // 4. Product List (Scrollable)
-                      Expanded(
-                        child: _filteredOrders.isEmpty
-                            ? Center(
-                                child: Text(
-                                  _searchQuery.isNotEmpty
-                                      ? 'Tidak ada pesanan cocok dengan pencarian Anda.'
-                                      : 'Tidak ada pesanan aktif.',
-                                ),
-                              )
-                            : ListView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                itemCount: _filteredOrders.length,
-                                itemBuilder: (context, index) {
-                                  final order = _filteredOrders[index];
-                                  return Card(
-                                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                                    elevation: 2,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    child: ListTile(
-                                      leading: const CircleAvatar( // Placeholder Gambar
-                                        backgroundColor: Colors.blueGrey,
-                                        child: Icon(Icons.image, color: Colors.white),
+
+                            // 3. INI SIZEDBOX YANG MENGONTROL JARAK ANTARA SEARCH BAR DAN FILTER STATUS
+                            const SizedBox(height: 100.0), // Tetap 100.0 atau sesuaikan lagi
+
+                            // 4. Status Filter Tabs (Semua, Waiting, On Progress, Submitted)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                  _buildStatusFilterButton('Semua', null, Colors.deepPurple),
+                                  _buildStatusFilterButton('Waiting', OrderStatus.pending, Colors.orange),
+                                  _buildStatusFilterButton('On Progress', 'onProgress', Colors.blue),
+                                  _buildStatusFilterButton('Submitted', OrderStatus.completed, Colors.green),
+                                ],
+                              ),
+                            ),
+
+                            // 5. Categories Filter (Progress, Jenis, Harga)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      TextButton(onPressed: () {
+                                        setState(() {
+                                          _selectedCategoryFilter = 'Progress';
+                                        });
+                                      }, child: Text('Progress', style: TextStyle(color: _selectedCategoryFilter == 'Progress' ? Colors.white : Colors.white70))),
+                                      TextButton(onPressed: () {
+                                        setState(() {
+                                          _selectedCategoryFilter = 'Jenis';
+                                        });
+                                      }, child: Text('Jenis', style: TextStyle(color: _selectedCategoryFilter == 'Jenis' ? Colors.white : Colors.white70))),
+                                      TextButton(onPressed: () {
+                                        setState(() {
+                                          _selectedCategoryFilter = 'Harga';
+                                        });
+                                      }, child: Text('Harga', style: TextStyle(color: _selectedCategoryFilter == 'Harga' ? Colors.white : Colors.white70))),
+                                      IconButton(
+                                        icon: const Icon(Icons.filter_list, color: Colors.white70),
+                                        onPressed: () {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Filter lebih lanjut akan ditambahkan!'))
+                                          );
+                                        },
                                       ),
-                                      title: Text(
-                                        order.customerName, // Nama Penerima
-                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // 6. Product List (Scrollable - sekarang di dalam SingleChildScrollView)
+                            // Karena Expanded tidak bisa di dalam SingleChildScrollView secara langsung
+                            // Kita perlu memberikan tinggi eksplisit atau menggunakan ConstrainedBox
+                            // Namun, jika list_view sudah cukup panjang untuk di-scroll, biarkan saja
+                            // Atau bisa juga membuat ListView menjadi Flexible.
+                            // Untuk kasus ini, kita biarkan ListView.builder mengelola scroll-nya sendiri.
+                            // Kita hanya perlu memastikan Column memiliki tinggi yang cukup.
+
+                            // Ganti Expanded menjadi Flexible (jika perlu) atau berikan tinggi eksplisit jika SingleChildScrollView tidak bekerja dengan baik dengan Expanded ListView
+                            // Untuk saat ini, kita akan membungkus ListView.builder dalam ConstrainedBox
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxHeight: MediaQuery.of(context).size.height - // Tinggi total layar
+                                            AppBar().preferredSize.height -      // Tinggi AppBar
+                                            MediaQuery.of(context).padding.top - // Padding atas
+                                            (10.0 + 12.0*2 + 16.0*2) -           // Padding & content search bar
+                                            100.0 -                              // Tinggi SizedBox
+                                            (8.0*2 + 20.0 + 16.0*2) -            // Padding & content filter status
+                                            (8.0*2 + 20.0 + 16.0*2) -            // Padding & content filter kategori
+                                            MediaQuery.of(context).viewInsets.bottom - // Mengurangi tinggi keyboard
+                                            80, // Offset tambahan jika perlu
+                              ),
+                              child: _filteredOrders.isEmpty
+                                  ? Center(
+                                      child: Text(
+                                        _searchQuery.isNotEmpty
+                                            ? 'Tidak ada pesanan cocok dengan pencarian Anda.'
+                                            : 'Tidak ada pesanan aktif.',
+                                        style: const TextStyle(color: Colors.white70),
                                       ),
-                                      subtitle: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text('Produk: ${order.productName}'), // Nama Produk
-                                          Text(
-                                            'Status: ${order.status.toDisplayString()}',
-                                            style: TextStyle(
-                                              color: order.status == OrderStatus.pending ? Colors.orange
-                                                   : order.status == OrderStatus.completed ? Colors.green
-                                                   : order.status == OrderStatus.canceled ? Colors.red
-                                                   : Colors.blue, // Warna default untuk status 'in progress' lainnya
+                                    )
+                                  : ListView.builder(
+                                      // Remove padding here if it's already in the parent ConstrainedBox
+                                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                      itemCount: _filteredOrders.length,
+                                      itemBuilder: (context, index) {
+                                        final order = _filteredOrders[index];
+                                        return Card(
+                                          margin: const EdgeInsets.symmetric(vertical: 8.0),
+                                          elevation: 4,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          color: Colors.white.withOpacity(0.9),
+                                          child: ListTile(
+                                            leading: const CircleAvatar(
+                                              backgroundColor: Colors.blueGrey,
+                                              child: Icon(Icons.image, color: Colors.white),
                                             ),
-                                          ), // Status
-                                        ],
-                                      ),
-                                      trailing: const Icon(Icons.arrow_forward_ios),
-                                      onTap: () async {
-                                        final result = await Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => OrderDetailScreen(
-                                              order: order,
-                                              userRole: 'sales',
+                                            title: Text(
+                                              order.customerName,
+                                              style: const TextStyle(fontWeight: FontWeight.bold),
                                             ),
+                                            subtitle: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text('Produk: ${order.productName}'),
+                                                Text(
+                                                  'Status: ${order.status.toDisplayString()}',
+                                                  style: TextStyle(
+                                                    color: order.status == OrderStatus.pending ? Colors.orange
+                                                         : order.status == OrderStatus.completed ? Colors.green
+                                                         : order.status == OrderStatus.canceled ? Colors.red
+                                                         : Colors.blue,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey),
+                                            onTap: () async {
+                                              final result = await Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => OrderDetailScreen(
+                                                    order: order,
+                                                    userRole: 'sales',
+                                                  ),
+                                                ),
+                                              );
+                                              if (result == true) {
+                                                _fetchOrders();
+                                              }
+                                            },
                                           ),
                                         );
-                                        if (result == true) {
-                                          _fetchOrders();
-                                        }
                                       },
                                     ),
-                                  );
-                                },
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
+                            ), // End of ConstrainedBox
+                          ],
+                        ),
+                      ), // End of SingleChildScrollView
+                    ),
+        ],
+      ),
     );
   }
 }
