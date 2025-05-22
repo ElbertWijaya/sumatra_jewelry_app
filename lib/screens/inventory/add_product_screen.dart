@@ -1,5 +1,6 @@
 // sumatra_jewelry_app/lib/screens/inventory/add_product_screen.dart
 import 'package:flutter/material.dart';
+import 'package:sumatra_jewelry_app/services/product_service.dart'; // <--- TAMBAHKAN INI
 
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({super.key});
@@ -14,6 +15,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final TextEditingController _quantityController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
 
+  final ProductService _productService = ProductService(); // <--- TAMBAHKAN INI
+
   @override
   void dispose() {
     _productNameController.dispose();
@@ -22,22 +25,27 @@ class _AddProductScreenState extends State<AddProductScreen> {
     super.dispose();
   }
 
-  void _submitProduct() {
+  Future<void> _submitProduct() async { // Ubah jadi Future<void> karena ada await
     if (_formKey.currentState!.validate()) {
-      // Logika untuk menyimpan produk baru
       final productName = _productNameController.text;
       final quantity = int.parse(_quantityController.text);
       final price = double.parse(_priceController.text);
 
-      // TODO: Panggil ProductService untuk menyimpan data produk
-      // ProductService().addProduct(productName, quantity, price);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Produk "$productName" ditambahkan (simulasi).'),
-        ),
-      );
-      Navigator.pop(context); // Kembali ke dashboard sebelumnya
+      try {
+        await _productService.addProduct(productName, quantity, price); // <--- GUNAKAN DI SINI
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Produk "$productName" berhasil ditambahkan (simulasi).'),
+          ),
+        );
+        Navigator.pop(context); // Kembali ke dashboard sebelumnya
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menambahkan produk: ${e.toString()}'),
+          ),
+        );
+      }
     }
   }
 
