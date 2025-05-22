@@ -1,6 +1,3 @@
-// sumatra_jewelry_app/lib/models/order.dart
-import 'package:flutter/material.dart'; // Untuk extension string, opsional
-
 // Enum untuk mendefinisikan semua status pesanan yang mungkin
 enum OrderStatus {
   pending,

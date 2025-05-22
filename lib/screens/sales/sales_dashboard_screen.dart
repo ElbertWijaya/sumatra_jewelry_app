@@ -1,10 +1,9 @@
-// sumatra_jewelry_app/lib/screens/sales/sales_dashboard_screen.dart
 import 'package:flutter/material.dart';
 import 'package:sumatra_jewelry_app/models/order.dart';
 import 'package:sumatra_jewelry_app/services/order_service.dart';
 import 'package:sumatra_jewelry_app/screens/sales/create_order_screen.dart';
 import 'package:sumatra_jewelry_app/screens/sales/order_detail_screen.dart';
-import 'package:package:sumatra_jewelry_app/screens/auth/login_screen.dart';
+import 'package:sumatra_jewelry_app/screens/auth/login_screen.dart';
 
 class SalesDashboardScreen extends StatefulWidget {
   const SalesDashboardScreen({super.key});
@@ -21,6 +20,9 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   String _searchQuery = '';
   Object? _selectedStatusFilter;
   String? _selectedCategoryFilter;
+  bool _filterActive = false;
+
+  final List<String> _categories = ['Progress', 'Jenis', 'Harga'];
 
   @override
   void initState() {
@@ -169,7 +171,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
         ],
       ),
       extendBodyBehindAppBar: true,
-      resizeToAvoidBottomInset: false, // <--- INI PENTING! Agar Scaffold tidak resize saat keyboard muncul
+      resizeToAvoidBottomInset: false,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final result = await Navigator.push(
@@ -189,16 +191,14 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       ),
       body: Stack(
         children: [
-          // Latar Belakang Gambar (akan mengisi seluruh Stack dan tidak terpengaruh keyboard)
           Positioned.fill(
             child: Image.asset(
-              'assets/images/toko_sumatra.jpg', // Ganti dengan path gambar Anda
+              'assets/images/toko_sumatra.jpg',
               fit: BoxFit.cover,
               colorBlendMode: BlendMode.darken,
               color: Colors.black.withOpacity(0.3),
             ),
           ),
-          // Konten Dashboard (akan tetap scrollable di dalamnya jika diperlukan)
           _isLoading
               ? const Center(child: CircularProgressIndicator(color: Colors.white,))
               : _errorMessage.isNotEmpty
@@ -210,15 +210,11 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                     )
                   : RefreshIndicator(
                       onRefresh: _fetchOrders,
-                      // Bungkus konten yang bisa di-scroll dengan SingleChildScrollView
-                      // agar keyboard tidak menutupi TextField jika konten terlalu panjang
-                      child: SingleChildScrollView( // <--- Tambahkan ini
-                        physics: const AlwaysScrollableScrollPhysics(), // Pastikan bisa di-scroll bahkan jika kontennya tidak penuh
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
                         child: Column(
                           children: [
-                            // 1. Spasi di bawah AppBar untuk menghindari tumpang tindih dengan gambar
-                            SizedBox(height: AppBar().preferredSize.height + MediaQuery.of(context).padding.top + 20), // Tambahkan sedikit spasi di atas search bar
-
+                            SizedBox(height: AppBar().preferredSize.height + MediaQuery.of(context).padding.top + 20),
                             // 2. Search Bar
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
@@ -247,8 +243,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                               ),
                             ),
 
-                            // 3. INI SIZEDBOX YANG MENGONTROL JARAK ANTARA SEARCH BAR DAN FILTER STATUS
-                            const SizedBox(height: 100.0), // Tetap 100.0 atau sesuaikan lagi
+                            const SizedBox(height: 100.0),
 
                             // 4. Status Filter Tabs (Semua, Waiting, On Progress, Submitted)
                             Padding(
@@ -264,64 +259,81 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                               ),
                             ),
 
-                            // 5. Categories Filter (Progress, Jenis, Harga)
+                            // 5. Categories Filter (Progress, Jenis, Harga) + Filter Icon
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
-                                    children: [
-                                      TextButton(onPressed: () {
-                                        setState(() {
-                                          _selectedCategoryFilter = 'Progress';
-                                        });
-                                      }, child: Text('Progress', style: TextStyle(color: _selectedCategoryFilter == 'Progress' ? Colors.white : Colors.white70))),
-                                      TextButton(onPressed: () {
-                                        setState(() {
-                                          _selectedCategoryFilter = 'Jenis';
-                                        });
-                                      }, child: Text('Jenis', style: TextStyle(color: _selectedCategoryFilter == 'Jenis' ? Colors.white : Colors.white70))),
-                                      TextButton(onPressed: () {
-                                        setState(() {
-                                          _selectedCategoryFilter = 'Harga';
-                                        });
-                                      }, child: Text('Harga', style: TextStyle(color: _selectedCategoryFilter == 'Harga' ? Colors.white : Colors.white70))),
-                                      IconButton(
-                                        icon: const Icon(Icons.filter_list, color: Colors.white70),
-                                        onPressed: () {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('Filter lebih lanjut akan ditambahkan!'))
+                                  // Horizontally scrollable category filters
+                                  Expanded(
+                                    child: SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Row(
+                                        children: _categories.map((category) {
+                                          final isSelected = _selectedCategoryFilter == category;
+                                          return Padding(
+                                            padding: const EdgeInsets.only(right: 8.0),
+                                            child: TextButton(
+                                              onPressed: () {
+                                                setState(() {
+                                                  _selectedCategoryFilter = category;
+                                                });
+                                              },
+                                              style: TextButton.styleFrom(
+                                                backgroundColor: isSelected ? Colors.white : Colors.transparent,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                              child: Text(
+                                                category,
+                                                style: TextStyle(
+                                                  color: isSelected ? Colors.deepPurple : Colors.white70,
+                                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                                ),
+                                              ),
+                                            ),
                                           );
-                                        },
+                                        }).toList(),
                                       ),
-                                    ],
+                                    ),
+                                  ),
+                                  // Filter icon in a square box, always on the right
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    margin: const EdgeInsets.only(left: 8.0),
+                                    decoration: BoxDecoration(
+                                      color: _filterActive ? Colors.deepPurple : Colors.white24,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: IconButton(
+                                      icon: Icon(Icons.filter_list, color: _filterActive ? Colors.white : Colors.deepPurple),
+                                      onPressed: () {
+                                        setState(() {
+                                          _filterActive = !_filterActive;
+                                          // TODO: Show filter modal/sheet if needed
+                                        });
+                                      },
+                                      splashRadius: 22,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
 
-                            // 6. Product List (Scrollable - sekarang di dalam SingleChildScrollView)
-                            // Karena Expanded tidak bisa di dalam SingleChildScrollView secara langsung
-                            // Kita perlu memberikan tinggi eksplisit atau menggunakan ConstrainedBox
-                            // Namun, jika list_view sudah cukup panjang untuk di-scroll, biarkan saja
-                            // Atau bisa juga membuat ListView menjadi Flexible.
-                            // Untuk kasus ini, kita biarkan ListView.builder mengelola scroll-nya sendiri.
-                            // Kita hanya perlu memastikan Column memiliki tinggi yang cukup.
-
-                            // Ganti Expanded menjadi Flexible (jika perlu) atau berikan tinggi eksplisit jika SingleChildScrollView tidak bekerja dengan baik dengan Expanded ListView
-                            // Untuk saat ini, kita akan membungkus ListView.builder dalam ConstrainedBox
+                            // 6. Product List
                             ConstrainedBox(
                               constraints: BoxConstraints(
-                                maxHeight: MediaQuery.of(context).size.height - // Tinggi total layar
-                                            AppBar().preferredSize.height -      // Tinggi AppBar
-                                            MediaQuery.of(context).padding.top - // Padding atas
-                                            (10.0 + 12.0*2 + 16.0*2) -           // Padding & content search bar
-                                            100.0 -                              // Tinggi SizedBox
-                                            (8.0*2 + 20.0 + 16.0*2) -            // Padding & content filter status
-                                            (8.0*2 + 20.0 + 16.0*2) -            // Padding & content filter kategori
-                                            MediaQuery.of(context).viewInsets.bottom - // Mengurangi tinggi keyboard
-                                            80, // Offset tambahan jika perlu
+                                maxHeight: MediaQuery.of(context).size.height -
+                                            AppBar().preferredSize.height -
+                                            MediaQuery.of(context).padding.top -
+                                            (10.0 + 12.0*2 + 16.0*2) -
+                                            100.0 -
+                                            (8.0*2 + 20.0 + 16.0*2) -
+                                            (8.0*2 + 20.0 + 16.0*2) -
+                                            MediaQuery.of(context).viewInsets.bottom -
+                                            80,
                               ),
                               child: _filteredOrders.isEmpty
                                   ? Center(
@@ -333,7 +345,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                       ),
                                     )
                                   : ListView.builder(
-                                      // Remove padding here if it's already in the parent ConstrainedBox
                                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                                       itemCount: _filteredOrders.length,
                                       itemBuilder: (context, index) {
@@ -386,10 +397,10 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                         );
                                       },
                                     ),
-                            ), // End of ConstrainedBox
+                            ),
                           ],
                         ),
-                      ), // End of SingleChildScrollView
+                      ),
                     ),
         ],
       ),
