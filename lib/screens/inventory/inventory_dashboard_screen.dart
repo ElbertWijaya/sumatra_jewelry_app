@@ -1,15 +1,18 @@
-// sumatra_jewelry_app/screens/inventory/inventory_dashboard_screen.dart
+// sumatra_jewelry_app/lib/screens/inventory/inventory_dashboard_screen.dart
 import 'package:flutter/material.dart';
-import 'package:sumatra_jewelry_app/models/order.dart';
-import 'package:sumatra_jewelry_app/services/order_service.dart';
+import 'package:sumatra_jewelry_app/models/order.dart'; // Import Order model
+import 'package:sumatra_jewelry_app/services/order_service.dart'; // Import OrderService
 import 'package:sumatra_jewelry_app/screens/sales/order_detail_screen.dart'; // Untuk melihat detail pesanan
+import 'package:sumatra_jewelry_app/screens/inventory/add_product_screen.dart'; // Import AddProductScreen
 import 'package:sumatra_jewelry_app/screens/auth/login_screen.dart'; // Untuk logout
+
 
 class InventoryDashboardScreen extends StatefulWidget {
   const InventoryDashboardScreen({super.key});
 
   @override
-  State<InventoryDashboardScreen> createState() => _InventoryDashboardScreenState();
+  State<InventoryDashboardScreen> createState() =>
+      _InventoryDashboardScreenState();
 }
 
 class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
@@ -36,7 +39,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Gagal memuat pesanan: $e';
+        _errorMessage =
+            'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
       });
     } finally {
       setState(() {
@@ -45,7 +49,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     }
   }
 
-  Widget _buildOrderSummaryCard(String title, int count, Color color) {
+  Widget _buildSummaryCard(String title, int count, Color color) {
     return Expanded(
       child: Card(
         color: color,
@@ -81,34 +85,34 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
-    // Logika perhitungan untuk ringkasan pesanan Inventory
-    final readyForPickupOrders = _orders.where((order) => order.status == 'ready_for_pickup').length;
-    final completedOrders = _orders.where((order) => order.status == 'completed').length;
-    
-    // Daftar status yang dianggap "sedang diproses" di seluruh alur kerja
-    const inProgressStatuses = [
-      'pending', 'assigned_to_designer', 'designing', 'ready_for_cor',
-      'cor_in_progress', 'ready_for_carving', 'carving_in_progress',
-      'ready_for_diamond_setting', 'diamond_setting_in_progress',
-      'ready_for_finishing', 'finishing_in_progress', 'ready_for_pickup',
-      'pending_repair', 'repair_in_progress',
-    ];
-    final totalInProgressOrders = _orders.where((order) => inProgressStatuses.contains(order.status)).length;
+    // Inventory mungkin tertarik pada semua pesanan untuk melihat bahan baku atau produk yang dibutuhkan
+    // Atau hanya pesanan yang statusnya membutuhkan intervensi inventory (misal: 'pending' untuk verifikasi stok)
+    final pendingOrders =
+        _orders.where((order) => order.status == OrderStatus.pending).length;
+    final inProgressOrders = _orders
+        .where((order) =>
+            order.status != OrderStatus.pending &&
+            order.status != OrderStatus.completed &&
+            order.status != OrderStatus.canceled &&
+            order.status != OrderStatus.readyForPickup)
+        .length;
+    final completedOrders =
+        _orders.where((order) => order.status == OrderStatus.completed).length;
+
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Inventory Dashboard'),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchOrders,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
+              // Contoh logout, sesuaikan dengan AuthService Anda
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -136,18 +140,60 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Ringkasan Pesanan Inventory',
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                              'Ringkasan Inventori Pesanan',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 10),
                             Row(
                               children: [
-                                _buildOrderSummaryCard('Siap Diambil', readyForPickupOrders, Colors.blueGrey),
+                                _buildSummaryCard(
+                                  'Pesanan Menunggu',
+                                  pendingOrders,
+                                  Colors.orange,
+                                ),
                                 const SizedBox(width: 10),
-                                _buildOrderSummaryCard('Pesanan Selesai', completedOrders, Colors.teal),
+                                _buildSummaryCard(
+                                  'Dalam Proses',
+                                  inProgressOrders,
+                                  Colors.blue,
+                                ),
                                 const SizedBox(width: 10),
-                                _buildOrderSummaryCard('Total Diproses', totalInProgressOrders, Colors.purple), // Contoh penggunaan
+                                _buildSummaryCard(
+                                  'Selesai',
+                                  completedOrders,
+                                  Colors.green,
+                                ),
                               ],
+                            ),
+                            const SizedBox(height: 10),
+                            // Tombol untuk menambah produk baru
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const AddProductScreen(),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.add_shopping_cart),
+                                label: const Text('Tambah Produk Baru'),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 12),
+                                  backgroundColor: Colors.deepPurple,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -155,39 +201,46 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                       Expanded(
                         child: _orders.isEmpty
                             ? const Center(
-                                child: Text('Tidak ada pesanan yang tersedia.'),
+                                child: Text(
+                                  'Tidak ada pesanan yang tersedia untuk inventori.',
+                                ),
                               )
                             : ListView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0),
                                 itemCount: _orders.length,
                                 itemBuilder: (context, index) {
                                   final order = _orders[index];
-                                  // Inventory mungkin melihat semua pesanan atau yang spesifik ke mereka,
-                                  // misalnya hanya yang siap diambil atau yang perlu verifikasi stok.
-                                  // Untuk contoh ini, saya tampilkan semua pesanan agar bisa dimonitor.
+                                  // Inventory mungkin perlu melihat semua pesanan atau yang spesifik
+                                  // Untuk contoh ini, kita tampilkan semua pesanan
                                   return Card(
-                                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                                    margin: const EdgeInsets.symmetric(
+                                        vertical: 8.0),
                                     elevation: 2,
                                     child: ListTile(
-                                      title: Text('Pesanan #${order.id} - ${order.customerName}'),
+                                      title: Text(
+                                        'Pesanan #${order.id} - ${order.customerName}',
+                                      ),
                                       subtitle: Text(
                                         'Produk: ${order.productName}\n'
-                                        'Status: ${order.status.replaceAll('_', ' ').toUpperCase()}\n'
-                                        'Penanggung Jawab: ${order.currentWorkerRole ?? 'N/A'}',
+                                        'Status: ${order.status.toDisplayString()}',
                                       ),
-                                      trailing: const Icon(Icons.arrow_forward_ios),
+                                      trailing: const Icon(
+                                        Icons.arrow_forward_ios,
+                                      ),
                                       onTap: () async {
                                         final result = await Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) => OrderDetailScreen(
+                                            builder: (context) =>
+                                                OrderDetailScreen(
                                               order: order,
-                                              userRole: 'inventory', // Teruskan peran
+                                              userRole: 'inventory',
                                             ),
                                           ),
                                         );
                                         if (result == true) {
-                                          _fetchOrders();
+                                          _fetchOrders(); // Refresh jika ada perubahan
                                         }
                                       },
                                     ),

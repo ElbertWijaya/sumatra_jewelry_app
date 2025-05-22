@@ -1,6 +1,6 @@
 // sumatra_jewelry_app/screens/finisher/finisher_dashboard_screen.dart
 import 'package:flutter/material.dart';
-import 'package:sumatra_jewelry_app/models/order.dart';
+import 'package:sumatra_jewelry_app/models/order.dart'; // Pastikan ini diimpor
 import 'package:sumatra_jewelry_app/services/order_service.dart';
 import 'package:sumatra_jewelry_app/screens/sales/order_detail_screen.dart'; // Untuk melihat detail pesanan
 import 'package:sumatra_jewelry_app/screens/auth/login_screen.dart'; // Untuk logout
@@ -37,7 +37,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Gagal memuat pesanan: $e';
+        _errorMessage = 'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
       });
     } finally {
       setState(() {
@@ -84,36 +84,20 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Logika perhitungan untuk ringkasan pesanan
-    final readyForFinishingOrders =
-        _orders.where((order) => order.status == 'ready_for_finishing').length;
-    final finishingInProgressOrders =
-        _orders
-            .where((order) => order.status == 'finishing_in_progress')
-            .length;
-    final readyForPickupOrders =
-        _orders.where((order) => order.status == 'ready_for_pickup').length;
+    // Logika perhitungan untuk ringkasan pesanan menggunakan enum
+    final readyForFinishingOrders = _orders
+        .where((order) => order.status == OrderStatus.readyForFinishing)
+        .length;
+    final finishingInProgressOrders = _orders
+        .where((order) => order.status == OrderStatus.finishingInProgress)
+        .length;
+    final readyForPickupOrders = _orders
+        .where((order) => order.status == OrderStatus.readyForPickup)
+        .length;
 
-    // --- PERBAIKAN BUG INI ---
-    const inProgressStatuses = [
-      'pending',
-      'assigned_to_designer',
-      'designing',
-      'ready_for_cor',
-      'cor_in_progress',
-      'ready_for_carving',
-      'carving_in_progress',
-      'ready_for_diamond_setting',
-      'diamond_setting_in_progress',
-      'ready_for_finishing',
-      'finishing_in_progress',
-      'ready_for_pickup',
-    ];
-    final processingOrders =
-        _orders
-            .where((order) => inProgressStatuses.contains(order.status))
-            .length;
-    // --- AKHIR PERBAIKAN BUG ---
+    // Hapus variabel processingOrders yang tidak digunakan
+    // const inProgressStatuses = [...];
+    // final processingOrders = _orders.where((order) => inProgressStatuses.contains(order.status)).length;
 
     return Scaffold(
       appBar: AppBar(
@@ -124,6 +108,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
+              // Contoh logout, sesuaikan dengan AuthService Anda
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -132,95 +117,85 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
           ),
         ],
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _errorMessage.isNotEmpty
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage.isNotEmpty
               ? Center(
-                child: Text(
-                  _errorMessage,
-                  style: const TextStyle(color: Colors.red, fontSize: 16),
-                ),
-              )
+                  child: Text(
+                    _errorMessage,
+                    style: const TextStyle(color: Colors.red, fontSize: 16),
+                  ),
+                )
               : RefreshIndicator(
-                onRefresh: _fetchOrders,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Ringkasan Pesanan Finisher',
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              _buildOrderSummaryCard(
-                                'Siap Finishing',
-                                readyForFinishingOrders,
-                                Colors.orange,
-                              ),
-                              const SizedBox(width: 10),
-                              _buildOrderSummaryCard(
-                                'Sedang Finishing',
-                                finishingInProgressOrders,
-                                Colors.blue,
-                              ),
-                              const SizedBox(width: 10),
-                              _buildOrderSummaryCard(
-                                'Siap Diambil',
-                                readyForPickupOrders,
-                                Colors.green,
-                              ),
-                              // _buildOrderSummaryCard('Sedang Diproses', processingOrders, Colors.purple), // Contoh penggunaan
-                              const SizedBox(width: 10), // Tambahkan SizedBox ini
-                              _buildOrderSummaryCard(
-                                'Sedang Diproses', // Atau 'Total Proses'
-                                processingOrders,
-                                Colors.brown, // Warna lain yang sesuai
-                              ),                              
-                            ],
-                          ),
-                        ],
+                  onRefresh: _fetchOrders,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Ringkasan Pesanan Finisher',
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                _buildOrderSummaryCard(
+                                  'Siap Finishing',
+                                  readyForFinishingOrders,
+                                  Colors.orange,
+                                ),
+                                const SizedBox(width: 10),
+                                _buildOrderSummaryCard(
+                                  'Sedang Finishing',
+                                  finishingInProgressOrders,
+                                  Colors.blue,
+                                ),
+                                const SizedBox(width: 10),
+                                _buildOrderSummaryCard(
+                                  'Siap Diambil',
+                                  readyForPickupOrders,
+                                  Colors.green,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child:
-                          _orders.isEmpty
-                              ? const Center(
+                      Expanded(
+                        child: _orders.isEmpty
+                            ? const Center(
                                 child: Text(
                                   'Tidak ada pesanan yang tersedia untuk Anda.',
                                 ),
                               )
-                              : ListView.builder(
+                            : ListView.builder(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                ),
+                                    horizontal: 16.0),
                                 itemCount: _orders.length,
                                 itemBuilder: (context, index) {
                                   final order = _orders[index];
                                   // Hanya tampilkan pesanan yang relevan untuk Finisher
                                   if ([
-                                    'ready_for_finishing',
-                                    'finishing_in_progress',
-                                    'ready_for_pickup',
+                                    OrderStatus.readyForFinishing,
+                                    OrderStatus.finishingInProgress,
+                                    OrderStatus.readyForPickup,
                                   ].contains(order.status)) {
                                     return Card(
                                       margin: const EdgeInsets.symmetric(
-                                        vertical: 8.0,
-                                      ),
+                                          vertical: 8.0),
                                       elevation: 2,
                                       child: ListTile(
                                         title: Text(
                                           'Pesanan #${order.id} - ${order.customerName}',
                                         ),
+                                        // Gunakan extension untuk menampilkan status
                                         subtitle: Text(
                                           'Produk: ${order.productName}\n'
-                                          'Status: ${order.status.replaceAll('_', ' ').toUpperCase()}',
+                                          'Status: ${order.status.toDisplayString()}',
                                         ),
                                         trailing: const Icon(
                                           Icons.arrow_forward_ios,
@@ -229,18 +204,15 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                           final result = await Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder:
-                                                  (
-                                                    context,
-                                                  ) => OrderDetailScreen(
-                                                    order: order,
-                                                    userRole:
-                                                        'finisher', // Teruskan peran
-                                                  ),
+                                              builder: (context) =>
+                                                  OrderDetailScreen(
+                                                order: order,
+                                                userRole: 'finisher',
+                                              ),
                                             ),
                                           );
                                           if (result == true) {
-                                            _fetchOrders();
+                                            _fetchOrders(); // Refresh jika ada perubahan
                                           }
                                         },
                                       ),
@@ -249,10 +221,10 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                   return const SizedBox.shrink();
                                 },
                               ),
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
     );
   }
 }

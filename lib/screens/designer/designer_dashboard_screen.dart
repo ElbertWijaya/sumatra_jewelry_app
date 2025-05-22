@@ -1,8 +1,8 @@
-// sumatra_jewelry_app/screens/designer/designer_dashboard_screen.dart
+// sumatra_jewelry_app/lib/screens/designer/designer_dashboard_screen.dart
 import 'package:flutter/material.dart';
-import 'package:sumatra_jewelry_app/models/order.dart';
-import 'package:sumatra_jewelry_app/services/order_service.dart';
-import 'package:sumatra_jewelry_app/screens/sales/order_detail_screen.dart'; // Pastikan ini diimpor untuk navigasi ke detail
+import 'package:sumatra_jewelry_app/models/order.dart'; // Import Order model
+import 'package:sumatra_jewelry_app/services/order_service.dart'; // Import OrderService
+import 'package:sumatra_jewelry_app/screens/sales/order_detail_screen.dart'; // Untuk melihat detail pesanan
 import 'package:sumatra_jewelry_app/screens/auth/login_screen.dart'; // Untuk logout
 
 class DesignerDashboardScreen extends StatefulWidget {
@@ -33,11 +33,12 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
     try {
       final fetchedOrders = await _orderService.getOrders();
       setState(() {
-        _orders = fetchedOrders; // Ambil semua order, filter di UI
+        _orders = fetchedOrders;
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Gagal memuat pesanan: $e';
+        _errorMessage =
+            'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
       });
     } finally {
       setState(() {
@@ -84,40 +85,13 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Logika perhitungan untuk ringkasan pesanan
-    final pendingOrders =
-        _orders
-            .where(
-              (order) =>
-                  order.status == 'pending' ||
-                  order.status == 'assigned_to_designer',
-            )
-            .length;
-    final designingOrders =
-        _orders.where((order) => order.status == 'designing').length;
-    final readyForCorOrders =
-        _orders.where((order) => order.status == 'ready_for_cor').length;
-
-    // --- PERBAIKAN BUG INI ---
-    // Daftar status yang dianggap "sedang diproses" di seluruh alur kerja
-    const inProgressStatuses = [
-      'pending',
-      'assigned_to_designer',
-      'designing',
-      'ready_for_cor',
-      'cor_in_progress',
-      'ready_for_carving',
-      'carving_in_progress',
-      'ready_for_diamond_setting',
-      'diamond_setting_in_progress',
-      'ready_for_finishing',
-      'finishing_in_progress',
-      'ready_for_pickup',
-    ];
-    final processingOrders =
-        _orders
-            .where((order) => inProgressStatuses.contains(order.status)).length;
-    // --- AKHIR PERBAIKAN BUG ---
+    // Logika perhitungan untuk ringkasan pesanan menggunakan enum
+    final assignedToDesignerOrders = _orders
+        .where((order) => order.status == OrderStatus.assignedToDesigner)
+        .length;
+    final designingInProgressOrders = _orders
+        .where((order) => order.status == OrderStatus.designing)
+        .length;
 
     return Scaffold(
       appBar: AppBar(
@@ -128,6 +102,7 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
+              // Contoh logout, sesuaikan dengan AuthService Anda
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -136,98 +111,69 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
           ),
         ],
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _errorMessage.isNotEmpty
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage.isNotEmpty
               ? Center(
-                child: Text(
-                  _errorMessage,
-                  style: const TextStyle(color: Colors.red, fontSize: 16),
-                ),
-              )
+                  child: Text(
+                    _errorMessage,
+                    style: const TextStyle(color: Colors.red, fontSize: 16),
+                  ),
+                )
               : RefreshIndicator(
-                onRefresh: _fetchOrders,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Ringkasan Pesanan Designer',
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              _buildOrderSummaryCard(
-                                'Menunggu Desain',
-                                pendingOrders,
-                                Colors.orange,
-                              ),
-                              const SizedBox(width: 10),
-                              _buildOrderSummaryCard(
-                                'Sedang Dikerjakan',
-                                designingOrders,
-                                Colors.blue,
-                              ),
-                              const SizedBox(width: 10),
-                              _buildOrderSummaryCard(
-                                'Siap ke Cor',
-                                readyForCorOrders,
-                                Colors.purple,
-                              ),
-
-                              const SizedBox(width: 10), // Tambahkan SizedBox ini
-                              _buildOrderSummaryCard(
-                                'Sedang Diproses', // Atau 'Total Proses'
-                                processingOrders,
-                                Colors.brown, // Warna lain yang sesuai
-                              ),
-                                
-                              // _buildOrderSummaryCard('Total Diproses', processingOrders, Colors.brown),
-                            ],
-                          ),
-                        ],
+                  onRefresh: _fetchOrders,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Ringkasan Pesanan Designer',
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                _buildOrderSummaryCard(
+                                  'Siap Desain',
+                                  assignedToDesignerOrders,
+                                  Colors.teal,
+                                ),
+                                const SizedBox(width: 10),
+                                _buildOrderSummaryCard(
+                                  'Sedang Desain',
+                                  designingInProgressOrders,
+                                  Colors.blue,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child:
-                          _orders.isEmpty
-                              ? const Center(
+                      Expanded(
+                        child: _orders.isEmpty
+                            ? const Center(
                                 child: Text(
                                   'Tidak ada pesanan yang tersedia untuk Anda.',
                                 ),
                               )
-                              : ListView.builder(
+                            : ListView.builder(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                ),
+                                    horizontal: 16.0),
                                 itemCount: _orders.length,
                                 itemBuilder: (context, index) {
                                   final order = _orders[index];
-                                  // Hanya tampilkan pesanan yang relevan untuk designer
+                                  // Hanya tampilkan pesanan yang relevan untuk Designer
                                   if ([
-                                      'pending',
-                                      'assigned_to_designer',
-                                      'designing',
-                                      'ready_for_cor',
-                                      'cor_in_progress',
-                                      'ready_for_carving',
-                                      'carving_in_progress',
-                                      'ready_for_diamond_setting',
-                                      'diamond_setting_in_progress',
-                                      'ready_for_finishing',
-                                      'finishing_in_progress',
-                                      'ready_for_pickup',
+                                    OrderStatus.assignedToDesigner,
+                                    OrderStatus.designing,
                                   ].contains(order.status)) {
                                     return Card(
                                       margin: const EdgeInsets.symmetric(
-                                        vertical: 8.0,
-                                      ),
+                                          vertical: 8.0),
                                       elevation: 2,
                                       child: ListTile(
                                         title: Text(
@@ -235,7 +181,7 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                         ),
                                         subtitle: Text(
                                           'Produk: ${order.productName}\n'
-                                          'Status: ${order.status.replaceAll('_', ' ').toUpperCase()}',
+                                          'Status: ${order.status.toDisplayString()}',
                                         ),
                                         trailing: const Icon(
                                           Icons.arrow_forward_ios,
@@ -244,30 +190,27 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                           final result = await Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder:
-                                                  (
-                                                    context,
-                                                  ) => OrderDetailScreen(
-                                                    order: order,
-                                                    userRole:
-                                                        'designer', // Teruskan peran 'designer'
-                                                  ),
+                                              builder: (context) =>
+                                                  OrderDetailScreen(
+                                                order: order,
+                                                userRole: 'designer',
+                                              ),
                                             ),
                                           );
                                           if (result == true) {
-                                            _fetchOrders(); // Refresh data jika ada perubahan
+                                            _fetchOrders(); // Refresh jika ada perubahan
                                           }
                                         },
                                       ),
                                     );
                                   }
-                                  return const SizedBox.shrink(); // Sembunyikan jika tidak relevan
+                                  return const SizedBox.shrink(); // Sembunyikan yang tidak relevan
                                 },
                               ),
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
     );
   }
 }

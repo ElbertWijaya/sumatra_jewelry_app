@@ -1,7 +1,7 @@
-// sumatra_jewelry_app/screens/boss/boss_dashboard_screen.dart
+// sumatra_jewelry_app/lib/screens/boss/boss_dashboard_screen.dart
 import 'package:flutter/material.dart';
-import 'package:sumatra_jewelry_app/models/order.dart';
-import 'package:sumatra_jewelry_app/services/order_service.dart';
+import 'package:sumatra_jewelry_app/models/order.dart'; // Import Order model
+import 'package:sumatra_jewelry_app/services/order_service.dart'; // Import OrderService
 import 'package:sumatra_jewelry_app/screens/sales/order_detail_screen.dart'; // Untuk melihat detail pesanan
 import 'package:sumatra_jewelry_app/screens/auth/login_screen.dart'; // Untuk logout
 
@@ -36,7 +36,8 @@ class _BossDashboardScreenState extends State<BossDashboardScreen> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Gagal memuat pesanan: $e';
+        _errorMessage =
+            'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
       });
     } finally {
       setState(() {
@@ -45,7 +46,7 @@ class _BossDashboardScreenState extends State<BossDashboardScreen> {
     }
   }
 
-  Widget _buildOrderSummaryCard(String title, int count, Color color) {
+  Widget _buildSummaryCard(String title, int count, Color color) {
     return Expanded(
       child: Card(
         color: color,
@@ -83,32 +84,22 @@ class _BossDashboardScreenState extends State<BossDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Logika perhitungan untuk ringkasan pesanan
+    // Menghitung jumlah pesanan berdasarkan status menggunakan OrderStatus enum
     final totalOrders = _orders.length;
+    final pendingOrders =
+        _orders.where((order) => order.status == OrderStatus.pending).length;
+    final inProgressOrders = _orders
+        .where((order) =>
+            order.status != OrderStatus.pending &&
+            order.status != OrderStatus.completed &&
+            order.status != OrderStatus.canceled &&
+            order.status != OrderStatus.readyForPickup) // Sesuaikan jika ada status "selesai sebagian"
+        .length;
     final completedOrders =
-        _orders.where((order) => order.status == 'completed').length;
+        _orders.where((order) => order.status == OrderStatus.completed).length;
+    final canceledOrders =
+        _orders.where((order) => order.status == OrderStatus.canceled).length;
 
-    // --- PERBAIKAN BUG INI ---
-    // Daftar status yang dianggap "sedang diproses" di seluruh alur kerja
-    const inProgressStatuses = [
-      'pending',
-      'assigned_to_designer',
-      'designing',
-      'ready_for_cor',
-      'cor_in_progress',
-      'ready_for_carving',
-      'carving_in_progress',
-      'ready_for_diamond_setting',
-      'diamond_setting_in_progress',
-      'ready_for_finishing',
-      'finishing_in_progress',
-      'ready_for_pickup',
-    ];
-    final processingOrders =
-        _orders
-            .where((order) => inProgressStatuses.contains(order.status))
-            .length;
-    // --- AKHIR PERBAIKAN BUG ---
 
     return Scaffold(
       appBar: AppBar(
@@ -119,6 +110,7 @@ class _BossDashboardScreenState extends State<BossDashboardScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
+              // Contoh logout, sesuaikan dengan AuthService Anda
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -127,110 +119,123 @@ class _BossDashboardScreenState extends State<BossDashboardScreen> {
           ),
         ],
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _errorMessage.isNotEmpty
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage.isNotEmpty
               ? Center(
-                child: Text(
-                  _errorMessage,
-                  style: const TextStyle(color: Colors.red, fontSize: 16),
-                ),
-              )
+                  child: Text(
+                    _errorMessage,
+                    style: const TextStyle(color: Colors.red, fontSize: 16),
+                  ),
+                )
               : RefreshIndicator(
-                onRefresh: _fetchOrders,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Ringkasan Pesanan Global',
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              _buildOrderSummaryCard(
-                                'Total Pesanan',
-                                totalOrders,
-                                Colors.deepPurple,
-                              ),
-                              const SizedBox(width: 10),
-                              _buildOrderSummaryCard(
-                                'Pesanan Selesai',
-                                completedOrders,
-                                Colors.green,
-                              ),
-                              const SizedBox(width: 10),
-                              // Menggunakan `processingOrders` yang sudah diperbaiki
-                              _buildOrderSummaryCard(
-                                'Sedang Diproses',
-                                processingOrders,
-                                Colors.orange,
-                              ),
-                            ],
-                          ),
-                        ],
+                  onRefresh: _fetchOrders,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Ringkasan Pesanan Global',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                _buildSummaryCard(
+                                  'Total Pesanan',
+                                  totalOrders,
+                                  Colors.deepPurple,
+                                ),
+                                const SizedBox(width: 10),
+                                _buildSummaryCard(
+                                  'Menunggu',
+                                  pendingOrders,
+                                  Colors.orange,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                _buildSummaryCard(
+                                  'Dalam Proses',
+                                  inProgressOrders,
+                                  Colors.blue,
+                                ),
+                                const SizedBox(width: 10),
+                                _buildSummaryCard(
+                                  'Selesai',
+                                  completedOrders,
+                                  Colors.green,
+                                ),
+                                const SizedBox(width: 10),
+                                _buildSummaryCard(
+                                  'Dibatalkan',
+                                  canceledOrders,
+                                  Colors.red,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child:
-                          _orders.isEmpty
-                              ? const Center(
+                      Expanded(
+                        child: _orders.isEmpty
+                            ? const Center(
                                 child: Text('Tidak ada pesanan yang tersedia.'),
                               )
-                              : ListView.builder(
+                            : ListView.builder(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                ),
+                                    horizontal: 16.0),
                                 itemCount: _orders.length,
                                 itemBuilder: (context, index) {
                                   final order = _orders[index];
                                   return Card(
                                     margin: const EdgeInsets.symmetric(
-                                      vertical: 8.0,
-                                    ),
+                                        vertical: 8.0),
                                     elevation: 2,
                                     child: ListTile(
                                       title: Text(
                                         'Pesanan #${order.id} - ${order.customerName}',
                                       ),
+                                      // Gunakan extension untuk menampilkan status
                                       subtitle: Text(
                                         'Produk: ${order.productName}\n'
-                                        'Status: ${order.status.replaceAll('_', ' ').toUpperCase()}\n'
-                                        'Penanggung Jawab: ${order.currentWorkerRole ?? 'N/A'}',
+                                        'Status: ${order.status.toDisplayString()}',
                                       ),
                                       trailing: const Icon(
                                         Icons.arrow_forward_ios,
                                       ),
                                       onTap: () async {
+                                        // Boss bisa melihat detail, peran bisa 'boss'
                                         final result = await Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder:
-                                                (context) => OrderDetailScreen(
-                                                  order: order,
-                                                  userRole:
-                                                      'boss', // Teruskan peran 'boss'
-                                                ),
+                                            builder: (context) =>
+                                                OrderDetailScreen(
+                                              order: order,
+                                              userRole: 'boss',
+                                            ),
                                           ),
                                         );
                                         if (result == true) {
-                                          _fetchOrders(); // Refresh data jika ada perubahan
+                                          _fetchOrders(); // Refresh jika ada perubahan
                                         }
                                       },
                                     ),
                                   );
                                 },
                               ),
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
     );
   }
 }

@@ -1,8 +1,9 @@
+// sumatra_jewelry_app/lib/screens/sales/order_list_screen.dart
 import 'package:flutter/material.dart';
-import 'package:sumatra_jewelry_app/models/order.dart';
-import 'package:sumatra_jewelry_app/services/order_service.dart';
-import 'package:sumatra_jewelry_app/screens/sales/order_detail_screen.dart';
-import 'package:sumatra_jewelry_app/screens/sales/create_order_screen.dart'; // Pastikan import ini ada
+import 'package:sumatra_jewelry_app/models/order.dart'; // Pastikan Order model diimpor
+import 'package:sumatra_jewelry_app/services/order_service.dart'; // Pastikan OrderService diimpor
+import 'package:sumatra_jewelry_app/screens/sales/order_detail_screen.dart'; // Untuk melihat detail pesanan
+import 'package:sumatra_jewelry_app/screens/sales/create_order_screen.dart'; // Untuk membuat pesanan baru
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({super.key});
@@ -13,97 +14,121 @@ class OrderListScreen extends StatefulWidget {
 
 class _OrderListScreenState extends State<OrderListScreen> {
   final OrderService _orderService = OrderService();
-  late Future<List<Order>> _ordersFuture;
+  List<Order> _orders = [];
+  bool _isLoading = true;
+  String _errorMessage = '';
 
   @override
   void initState() {
     super.initState();
-    _ordersFuture = _orderService.getOrders();
+    _fetchOrders();
   }
 
-  void _refreshOrders() {
+  Future<void> _fetchOrders() async {
     setState(() {
-      _ordersFuture = _orderService.getOrders();
+      _isLoading = true;
+      _errorMessage = '';
     });
+    try {
+      final fetchedOrders = await _orderService.getOrders();
+      setState(() {
+        // Tampilkan pesanan yang belum selesai atau yang masih perlu perhatian
+        // Misalnya, semua kecuali yang COMPLETED atau CANCELED
+        _orders = fetchedOrders
+            .where((order) =>
+                order.status != OrderStatus.completed &&
+                order.status != OrderStatus.canceled)
+            .toList();
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage =
+            'Gagal memuat daftar pesanan: ${e.toString().replaceAll('Exception: ', '')}';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daftar Pesanan'),
-      ),
-      body: FutureBuilder<List<Order>>(
-        future: _ordersFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            print('Error loading orders: ${snapshot.error}'); // Debugging: print error
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Belum ada pesanan.'));
-          } else {
-            return ListView.builder(
-              padding: const EdgeInsets.all(8.0),
-              itemCount: snapshot.data!.length,
-              itemBuilder: (context, index) {
-                final order = snapshot.data![index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8.0),
-                  elevation: 4.0,
-                  child: InkWell(
-                    onTap: () async {
-                      print('Tapped on order: ${order.productName}'); // Debugging: print tapped order
-                      final bool? result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => OrderDetailScreen(order: order),
-                        ),
-                      );
-                      if (result == true) {
-                        _refreshOrders();
-                      }
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            order.productName,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8.0),
-                          Text('Pelanggan: ${order.customerName}'),
-                          Text('Status: ${order.status}'),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
-          }
-        },
+        title: const Text('Daftar Pesanan Aktif'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _fetchOrders,
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final bool? result = await Navigator.push(
+          final result = await Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => CreateOrderScreen(), // Tidak perlu 'const' di sini
-            ),
+            MaterialPageRoute(builder: (context) => const CreateOrderScreen()),
           );
           if (result == true) {
-            _refreshOrders();
+            _fetchOrders(); // Refresh daftar setelah pesanan baru dibuat
           }
         },
         child: const Icon(Icons.add),
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage.isNotEmpty
+              ? Center(
+                  child: Text(
+                    _errorMessage,
+                    style: const TextStyle(color: Colors.red, fontSize: 16),
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _fetchOrders,
+                  child: _orders.isEmpty
+                      ? const Center(
+                          child: Text('Tidak ada pesanan aktif.'),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16.0),
+                          itemCount: _orders.length,
+                          itemBuilder: (context, index) {
+                            final order = _orders[index];
+                            return Card(
+                              margin: const EdgeInsets.symmetric(vertical: 8.0),
+                              elevation: 2,
+                              child: ListTile(
+                                title: Text(
+                                  'Pesanan #${order.id} - ${order.customerName}',
+                                ),
+                                subtitle: Text(
+                                  'Produk: ${order.productName}\n'
+                                  'Status: ${order.status.toDisplayString()}', // Menggunakan extension toDisplayString()
+                                ),
+                                trailing: const Icon(Icons.arrow_forward_ios),
+                                onTap: () async {
+                                  // Asumsikan userRole untuk list ini adalah 'sales'
+                                  final result = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => OrderDetailScreen(
+                                        order: order,
+                                        userRole: 'sales',
+                                      ),
+                                    ),
+                                  );
+                                  if (result == true) {
+                                    _fetchOrders(); // Refresh jika detail diubah
+                                  }
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                ),
     );
   }
 }

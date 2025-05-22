@@ -1,224 +1,113 @@
-import 'dart:convert'; // Tetap diperlukan jika Anda menggunakan JSON encoding/decoding
+// sumatra_jewelry_app/lib/models/order.dart
+// Untuk extension string, opsional
+
+// Enum untuk mendefinisikan semua status pesanan yang mungkin
+enum OrderStatus {
+  pending,
+  assignedToDesigner,
+  designing,
+  readyForCor,
+  corInProgress,
+  readyForCarving,
+  carvingInProgress,
+  readyForDiamondSetting,
+  diamondSettingInProgress,
+  readyForFinishing,
+  finishingInProgress,
+  readyForPickup,
+  completed, // Status akhir setelah diambil
+  canceled, // Jika pesanan dibatalkan
+}
+
+// Extension untuk mengubah enum menjadi string yang lebih mudah dibaca di UI
+extension OrderStatusExtension on OrderStatus {
+  String toDisplayString() {
+    return name.replaceAllMapped(
+      RegExp(r'(?<=[a-z])[A-Z]'),
+      (match) => '_${match.group(0)!}',
+    ).toUpperCase();
+  }
+}
 
 class Order {
-  final int id;
+  final String id;
   final String customerName;
-  final String phoneNumber;
-  final String address;
   final String productName;
-  final String productDescription;
-  final double estimatedPrice;
-  final String status;
+  final double totalPrice;
+  final OrderStatus status; // Gunakan enum OrderStatus
   final DateTime orderDate;
-  // final DateTime? completionDate; // Dihapus/diabaikan jika menggunakan completionDate per tahap yang spesifik
-  DateTime? designCompletionDate;
-  DateTime? corCompletionDate;
-  DateTime? carvingCompletionDate;
-  DateTime? diamondSettingCompletionDate;
-  DateTime? finishingCompletionDate;
-  final String? currentWorkerRole;
-  final String? diamondSize;
-  final String? ringSize;
-  final DateTime? estimatedCompletionDate;
-  final DateTime? pickupDate;
-  final double? goldPricePerGram;
-  final double? finalProductPrice;
-  final String? goldType;
-  final List<String>? referenceImagePaths;
-  final DateTime? lastUpdate;
+  final String? notes; // Catatan tambahan, bisa null
+  final String? imageUrl; // URL gambar produk, bisa null
+  final String? assignedTo; // ID/Nama karyawan yang ditugaskan
 
   Order({
     required this.id,
     required this.customerName,
-    required this.phoneNumber,
-    required this.address,
     required this.productName,
-    required this.productDescription,
-    required this.estimatedPrice,
+    required this.totalPrice,
     required this.status,
     required this.orderDate,
-    // this.completionDate, // Hapus dari konstruktor jika tidak digunakan
-    this.designCompletionDate,
-    this.corCompletionDate,
-    this.carvingCompletionDate,
-    this.diamondSettingCompletionDate,
-    this.finishingCompletionDate,
-    this.currentWorkerRole,
-    this.diamondSize,
-    this.ringSize,
-    this.estimatedCompletionDate,
-    this.pickupDate,
-    this.goldPricePerGram,
-    this.finalProductPrice,
-    this.goldType,
-    this.referenceImagePaths,
-    this.lastUpdate,
+    this.notes,
+    this.imageUrl,
+    this.assignedTo,
   });
 
-  factory Order.fromMap(Map<String, dynamic> map) {
+  // Factory constructor untuk membuat objek Order dari JSON
+  factory Order.fromJson(Map<String, dynamic> json) {
     return Order(
-      id: map['id'] as int, // Pastikan ini di-cast ke int
-      customerName: map['customerName'] as String,
-      phoneNumber: map['phoneNumber'] as String,
-      address: map['address'] as String,
-      productName: map['productName'] as String,
-      productDescription: map['productDescription'] as String,
-      estimatedPrice:
-          (map['estimatedPrice'] is int
-                  ? (map['estimatedPrice'] as int).toDouble()
-                  : map['estimatedPrice'])
-              as double,
-      status: map['status'] as String,
-      orderDate: DateTime.parse(map['orderDate'] as String),
-      // completionDate: // Hapus dari fromMap jika tidak digunakan
-      //     map['completionDate'] != null
-      //         ? DateTime.parse(map['completionDate'] as String)
-      //         : null,
-      // Penanganan completionDate per tahap
-      designCompletionDate:
-          map['designCompletionDate'] != null
-              ? DateTime.parse(map['designCompletionDate'] as String)
-              : null,
-      corCompletionDate:
-          map['corCompletionDate'] != null
-              ? DateTime.parse(map['corCompletionDate'] as String)
-              : null,
-      carvingCompletionDate:
-          map['carvingCompletionDate'] != null
-              ? DateTime.parse(map['carvingCompletionDate'] as String)
-              : null,
-      diamondSettingCompletionDate:
-          map['diamondSettingCompletionDate'] != null
-              ? DateTime.parse(map['diamondSettingCompletionDate'] as String)
-              : null,
-      finishingCompletionDate:
-          map['finishingCompletionDate'] != null
-              ? DateTime.parse(map['finishingCompletionDate'] as String)
-              : null,
-
-      currentWorkerRole: map['currentWorkerRole'] as String?,
-      diamondSize: map['diamondSize'] as String?,
-      ringSize: map['ringSize'] as String?,
-      estimatedCompletionDate:
-          map['estimatedCompletionDate'] != null
-              ? DateTime.parse(map['estimatedCompletionDate'] as String)
-              : null,
-      pickupDate:
-          map['pickupDate'] != null
-              ? DateTime.parse(map['pickupDate'] as String)
-              : null,
-      goldPricePerGram:
-          (map['goldPricePerGram'] is int
-                  ? (map['goldPricePerGram'] as int).toDouble()
-                  : map['goldPricePerGram'])
-              as double?,
-      finalProductPrice:
-          (map['finalProductPrice'] is int
-                  ? (map['finalProductPrice'] as int).toDouble()
-                  : map['finalProductPrice'])
-              as double?,
-      goldType: map['goldType'] as String?,
-      // Perhatikan penanganan List<String> dari String yang dipisahkan koma
-      referenceImagePaths: (map['referenceImagePaths'] as String?)?.split(','),
-      lastUpdate:
-          map['lastUpdate'] != null
-              ? DateTime.parse(map['lastUpdate'] as String)
-              : null,
+      id: json['id'] as String,
+      customerName: json['customerName'] as String,
+      productName: json['productName'] as String,
+      totalPrice: (json['totalPrice'] as num).toDouble(),
+      // Konversi string status dari JSON ke enum
+      status: OrderStatus.values.firstWhere(
+        (e) => e.name == json['status'],
+        orElse: () => OrderStatus.pending, // Default jika status tidak dikenali
+      ),
+      orderDate: DateTime.parse(json['orderDate'] as String),
+      notes: json['notes'] as String?,
+      imageUrl: json['imageUrl'] as String?,
+      assignedTo: json['assignedTo'] as String?,
     );
   }
 
-  Map<String, dynamic> toMap() {
+  // Metode untuk mengubah objek Order menjadi JSON
+  Map<String, dynamic> toJson() {
     return {
       'id': id,
       'customerName': customerName,
-      'phoneNumber': phoneNumber,
-      'address': address,
       'productName': productName,
-      'productDescription': productDescription,
-      'estimatedPrice': estimatedPrice,
-      'status': status,
+      'totalPrice': totalPrice,
+      'status': status.name, // Ubah enum kembali ke string untuk JSON
       'orderDate': orderDate.toIso8601String(),
-      // 'completionDate': completionDate?.toIso8601String(), // Hapus dari toMap jika tidak digunakan
-      // Penanganan completionDate per tahap
-      'designCompletionDate': designCompletionDate?.toIso8601String(),
-      'corCompletionDate': corCompletionDate?.toIso8601String(),
-      'carvingCompletionDate': carvingCompletionDate?.toIso8601String(),
-      'diamondSettingCompletionDate':
-          diamondSettingCompletionDate?.toIso8601String(),
-      'finishingCompletionDate': finishingCompletionDate?.toIso8601String(),
-
-      'currentWorkerRole': currentWorkerRole,
-      'diamondSize': diamondSize,
-      'ringSize': ringSize,
-      'estimatedCompletionDate': estimatedCompletionDate?.toIso8601String(),
-      'pickupDate': pickupDate?.toIso8601String(),
-      'goldPricePerGram': goldPricePerGram,
-      'finalProductPrice': finalProductPrice,
-      'goldType': goldType,
-      // Perhatikan penanganan List<String> ke String yang dipisahkan koma
-      'referenceImagePaths': referenceImagePaths?.join(','),
-      'lastUpdate': lastUpdate?.toIso8601String(),
+      'notes': notes,
+      'imageUrl': imageUrl,
+      'assignedTo': assignedTo,
     };
   }
 
-  /// Metode copyWith ini memungkinkan Anda membuat salinan objek Order dengan
-  /// nilai properti yang diubah tanpa mengubah objek asli.
+  // Metode copyWith untuk membuat salinan objek dengan perubahan tertentu
   Order copyWith({
-    int? id,
+    String? id,
     String? customerName,
-    String? phoneNumber,
-    String? address,
     String? productName,
-    String? productDescription,
-    double? estimatedPrice,
-    String? status,
+    double? totalPrice,
+    OrderStatus? status,
     DateTime? orderDate,
-    String? currentWorkerRole,
-    DateTime? designCompletionDate, // Ditambahkan
-    DateTime? corCompletionDate, // Ditambahkan
-    DateTime? carvingCompletionDate, // Ditambahkan
-    DateTime? diamondSettingCompletionDate, // Ditambahkan
-    DateTime? finishingCompletionDate, // Ditambahkan
-    String? diamondSize,
-    String? ringSize,
-    DateTime? estimatedCompletionDate,
-    DateTime? pickupDate,
-    double? goldPricePerGram,
-    double? finalProductPrice,
-    String? goldType,
-    List<String>? referenceImagePaths,
-    DateTime? lastUpdate,
+    String? notes,
+    String? imageUrl,
+    String? assignedTo,
   }) {
     return Order(
       id: id ?? this.id,
       customerName: customerName ?? this.customerName,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
-      address: address ?? this.address,
       productName: productName ?? this.productName,
-      productDescription: productDescription ?? this.productDescription,
-      estimatedPrice: estimatedPrice ?? this.estimatedPrice,
+      totalPrice: totalPrice ?? this.totalPrice,
       status: status ?? this.status,
       orderDate: orderDate ?? this.orderDate,
-      currentWorkerRole: currentWorkerRole ?? this.currentWorkerRole,
-      diamondSize: diamondSize ?? this.diamondSize,
-      ringSize: ringSize ?? this.ringSize,
-      estimatedCompletionDate:
-          estimatedCompletionDate ?? this.estimatedCompletionDate,
-      pickupDate: pickupDate ?? this.pickupDate,
-      goldPricePerGram: goldPricePerGram ?? this.goldPricePerGram,
-      finalProductPrice: finalProductPrice ?? this.finalProductPrice,
-      goldType: goldType ?? this.goldType,
-      referenceImagePaths: referenceImagePaths ?? this.referenceImagePaths,
-      lastUpdate: lastUpdate ?? this.lastUpdate,
-      // Tambahkan completionDate per tahap
-      designCompletionDate: designCompletionDate ?? this.designCompletionDate,
-      corCompletionDate: corCompletionDate ?? this.corCompletionDate,
-      carvingCompletionDate:
-          carvingCompletionDate ?? this.carvingCompletionDate,
-      diamondSettingCompletionDate:
-          diamondSettingCompletionDate ?? this.diamondSettingCompletionDate,
-      finishingCompletionDate:
-          finishingCompletionDate ?? this.finishingCompletionDate,
+      notes: notes ?? this.notes,
+      imageUrl: imageUrl ?? this.imageUrl,
+      assignedTo: assignedTo ?? this.assignedTo,
     );
   }
 }

@@ -1,15 +1,12 @@
+// sumatra_jewelry_app/lib/screens/sales/sales_dashboard_screen.dart
 import 'package:flutter/material.dart';
-import 'package:sumatra_jewelry_app/models/order.dart';
-import 'package:sumatra_jewelry_app/services/order_service.dart';
-import 'package:sumatra_jewelry_app/screens/sales/create_order_screen.dart'; // Untuk membuat pesanan baru
+import 'package:sumatra_jewelry_app/models/order.dart'; // Import Order model
+import 'package:sumatra_jewelry_app/services/order_service.dart'; // Import OrderService
+import 'package:sumatra_jewelry_app/screens/sales/create_order_screen.dart'; // Import CreateOrderScreen
 import 'package:sumatra_jewelry_app/screens/sales/order_detail_screen.dart'; // Untuk melihat detail pesanan
-import 'package:sumatra_jewelry_app/screens/sales/order_history_screen.dart';
 import 'package:sumatra_jewelry_app/screens/auth/login_screen.dart'; // Untuk logout
 
 class SalesDashboardScreen extends StatefulWidget {
-  // Sales Dashboard tidak menerima userRole secara eksplisit seperti Designer,
-  // karena perannya sudah jelas "sales". Namun, jika di masa depan Sales perlu userRole
-  // untuk filter pesanan spesifik sales tertentu, bisa ditambahkan.
   const SalesDashboardScreen({super.key});
 
   @override
@@ -18,30 +15,9 @@ class SalesDashboardScreen extends StatefulWidget {
 
 class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   final OrderService _orderService = OrderService();
-  List<Order> _allOrders = []; // Menyimpan semua pesanan dari service
+  List<Order> _orders = [];
   bool _isLoading = true;
   String _errorMessage = '';
-
-  // Daftar status yang dianggap "sedang diproses" di seluruh alur kerja untuk monitoring Sales
-  static const List<String> _inProgressStatuses = [
-    'pending',
-    'assigned_to_designer',
-    'designing',
-    'design_completed',
-    'ready_for_cor',
-    'cor_in_progress',
-    'cor_completed',
-    'ready_for_carving',
-    'carving_in_progress',
-    'carving_completed',
-    'ready_for_diamond_setting',
-    'diamond_setting_in_progress',
-    'diamond_setting_completed',
-    'ready_for_finishing',
-    'finishing_in_progress',
-    'finishing_completed',
-    'ready_for_pickup',
-  ];
 
   @override
   void initState() {
@@ -57,11 +33,12 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     try {
       final fetchedOrders = await _orderService.getOrders();
       setState(() {
-        _allOrders = fetchedOrders;
+        _orders = fetchedOrders;
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Gagal memuat pesanan: $e';
+        _errorMessage =
+            'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
       });
     } finally {
       setState(() {
@@ -70,28 +47,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     }
   }
 
-  // Fungsi untuk memfilter pesanan yang merupakan "Tugas Aktif" Sales
-  // Sales secara default melihat semua pesanan yang 'pending' atau yang dia tangani
-  List<Order> _getMySalesTasks() {
-    return _allOrders.where((order) {
-      // Jika Anda punya properti 'salesAssignedTo' di Order model, bisa gunakan itu
-      // return order.status == 'pending' || order.salesAssignedTo == 'nama_sales_saat_ini';
-      // Untuk demo, kita asumsikan Sales melihat semua 'pending' dan 'ready_for_pickup'
-      // Serta mungkin pesanan yang statusnya 'completed' untuk laporan.
-      return order.status == 'pending' ||
-          order.status == 'ready_for_pickup' ||
-          order.status == 'completed';
-    }).toList();
-  }
-
-  // Fungsi untuk memfilter pesanan yang "Dimonitor" oleh Sales (semua yang sedang dalam proses)
-  List<Order> _getMonitoredOrders() {
-    return _allOrders
-        .where((order) => _inProgressStatuses.contains(order.status))
-        .toList();
-  }
-
-  // Widget helper untuk kartu ringkasan
   Widget _buildOrderSummaryCard(String title, int count, Color color) {
     return Expanded(
       child: Card(
@@ -130,261 +85,167 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Logika perhitungan untuk ringkasan pesanan Sales
-    final newOrders =
-        _allOrders.where((order) => order.status == 'pending').length;
+    // Logika perhitungan untuk ringkasan pesanan menggunakan enum
+    final pendingOrders =
+        _orders.where((order) => order.status == OrderStatus.pending).length;
+    final readyForPickupOrders = _orders
+        .where((order) => order.status == OrderStatus.readyForPickup)
+        .length;
     final completedOrders =
-        _allOrders.where((order) => order.status == 'completed').length;
-    final processingOrders =
-        _getMonitoredOrders().length; // Menggunakan fungsi monitoring
+        _orders.where((order) => order.status == OrderStatus.completed).length;
 
-    return DefaultTabController(
-      length: 2, // Dua tab: "Tugas Saya" dan "Monitoring"
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Sales Dashboard'),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.history), // Icon yang sesuai
-              tooltip:
-                  'Daftar Transaksi Selesai', // Muncul saat tombol ditekan lama
-              onPressed: () {
-                // Ini adalah kode navigasi ke OrderHistoryScreen
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const OrderHistoryScreen(),
-                  ),
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _fetchOrders,
-            ),
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                );
-              },
-            ),
-          ],
-          bottom: const TabBar(
-            tabs: [Tab(text: 'Tugas Saya'), Tab(text: 'Monitoring')],
+    // Filter pesanan yang relevan untuk sales: semua kecuali yang dibatalkan
+    final salesRelevantOrders = _orders
+        .where((order) => order.status != OrderStatus.canceled)
+        .toList();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Sales Dashboard'),
+        centerTitle: true,
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              // Contoh logout, sesuaikan dengan AuthService Anda
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
           ),
-        ),
-        body:
-            _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _errorMessage.isNotEmpty
-                ? Center(
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage.isNotEmpty
+              ? Center(
                   child: Text(
                     _errorMessage,
                     style: const TextStyle(color: Colors.red, fontSize: 16),
                   ),
                 )
-                : RefreshIndicator(
+              : RefreshIndicator(
                   onRefresh: _fetchOrders,
-                  child: TabBarView(
+                  child: Column(
                     children: [
-                      // TAB 1: Tampilan "Tugas Saya" untuk Sales
-                      Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Ringkasan Pesanan Sales',
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
                               children: [
-                                Text(
-                                  'Ringkasan Pesanan Sales',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineSmall
-                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                _buildOrderSummaryCard(
+                                  'Pesanan Baru/Pending',
+                                  pendingOrders,
+                                  Colors.orange,
                                 ),
-                                const SizedBox(height: 10),
-                                Row(
-                                  children: [
-                                    _buildOrderSummaryCard(
-                                      'Pesanan Baru',
-                                      newOrders,
-                                      Colors.blueAccent,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    _buildOrderSummaryCard(
-                                      'Sedang Diproses',
-                                      processingOrders,
-                                      Colors.orange,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    _buildOrderSummaryCard(
-                                      'Pesanan Selesai',
-                                      completedOrders,
-                                      Colors.green,
-                                    ),
-                                  ],
+                                const SizedBox(width: 10),
+                                _buildOrderSummaryCard(
+                                  'Siap Diambil',
+                                  readyForPickupOrders,
+                                  Colors.lightGreen,
+                                ),
+                                const SizedBox(width: 10),
+                                _buildOrderSummaryCard(
+                                  'Selesai',
+                                  completedOrders,
+                                  Colors.green,
                                 ),
                               ],
                             ),
-                          ),
-                          const Divider(),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 8.0,
-                            ),
-                            child: Text(
-                              'Pesanan untuk Saya (${_getMySalesTasks().length})',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                          ),
-                          Expanded(
-                            child:
-                                _getMySalesTasks().isEmpty
-                                    ? const Center(
-                                      child: Text(
-                                        'Tidak ada pesanan yang perlu Anda tangani saat ini.',
-                                      ),
-                                    )
-                                    : ListView.builder(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16.0,
-                                      ),
-                                      itemCount: _getMySalesTasks().length,
-                                      itemBuilder: (context, index) {
-                                        final order = _getMySalesTasks()[index];
-                                        return Card(
-                                          margin: const EdgeInsets.symmetric(
-                                            vertical: 8.0,
-                                          ),
-                                          elevation: 2,
-                                          child: ListTile(
-                                            title: Text(
-                                              'Pesanan #${order.id} - ${order.customerName}',
-                                            ),
-                                            subtitle: Text(
-                                              'Produk: ${order.productName}\n'
-                                              'Status: ${order.status.replaceAll('_', ' ').toUpperCase()}',
-                                            ),
-                                            trailing: const Icon(
-                                              Icons.arrow_forward_ios,
-                                            ),
-                                            onTap: () async {
-                                              final result = await Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder:
-                                                      (
-                                                        context,
-                                                      ) => OrderDetailScreen(
-                                                        order: order,
-                                                        userRole:
-                                                            'sales', // Tetap teruskan 'sales'
-                                                      ),
-                                                ),
-                                              );
-                                              if (result == true) {
-                                                _fetchOrders();
-                                              }
-                                            },
-                                          ),
-                                        );
-                                      },
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  // Navigasi ke CreateOrderScreen
+                                  final result = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const CreateOrderScreen(),
                                     ),
-                          ),
-                        ],
+                                  );
+                                  if (result == true) {
+                                    _fetchOrders(); // Refresh daftar pesanan setelah pesanan baru dibuat
+                                  }
+                                },
+                                icon: const Icon(Icons.add_shopping_cart),
+                                label: const Text('Buat Pesanan Baru'),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 12),
+                                  backgroundColor: Colors.blueAccent,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-
-                      // TAB 2: Tampilan "Monitoring" untuk Sales
-                      Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text(
-                              'Semua Pesanan yang Diproses (${_getMonitoredOrders().length} dari ${_allOrders.length} Total)',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                          ),
-                          Expanded(
-                            child:
-                                _getMonitoredOrders().isEmpty
-                                    ? const Center(
-                                      child: Text(
-                                        'Tidak ada pesanan yang sedang dalam proses produksi.',
+                      Expanded(
+                        child: salesRelevantOrders.isEmpty
+                            ? const Center(
+                                child: Text(
+                                  'Tidak ada pesanan yang tersedia untuk Anda.',
+                                ),
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0),
+                                itemCount: salesRelevantOrders.length,
+                                itemBuilder: (context, index) {
+                                  final order = salesRelevantOrders[index];
+                                  return Card(
+                                    margin: const EdgeInsets.symmetric(
+                                        vertical: 8.0),
+                                    elevation: 2,
+                                    child: ListTile(
+                                      title: Text(
+                                        'Pesanan #${order.id} - ${order.customerName}',
                                       ),
-                                    )
-                                    : ListView.builder(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16.0,
+                                      subtitle: Text(
+                                        'Produk: ${order.productName}\n'
+                                        'Status: ${order.status.toDisplayString()}',
                                       ),
-                                      itemCount: _getMonitoredOrders().length,
-                                      itemBuilder: (context, index) {
-                                        final order =
-                                            _getMonitoredOrders()[index];
-                                        return Card(
-                                          margin: const EdgeInsets.symmetric(
-                                            vertical: 8.0,
-                                          ),
-                                          elevation: 2,
-                                          child: ListTile(
-                                            title: Text(
-                                              'Pesanan #${order.id} - ${order.customerName}',
+                                      trailing: const Icon(
+                                        Icons.arrow_forward_ios,
+                                      ),
+                                      onTap: () async {
+                                        final result = await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                OrderDetailScreen(
+                                              order: order,
+                                              userRole: 'sales', // Lewatkan peran 'sales'
                                             ),
-                                            subtitle: Text(
-                                              'Produk: ${order.productName}\n'
-                                              'Status: ${order.status.replaceAll('_', ' ').toUpperCase()}\n'
-                                              'Penanggung Jawab: ${order.currentWorkerRole ?? 'N/A'}',
-                                            ),
-                                            trailing: const Icon(
-                                              Icons.arrow_forward_ios,
-                                            ),
-                                            onTap: () async {
-                                              final result = await Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder:
-                                                      (
-                                                        context,
-                                                      ) => OrderDetailScreen(
-                                                        order: order,
-                                                        userRole:
-                                                            'monitor', // Tetap teruskan 'sales'
-                                                      ),
-                                                ),
-                                              );
-                                              if (result == true) {
-                                                _fetchOrders();
-                                              }
-                                            },
                                           ),
                                         );
+                                        if (result == true) {
+                                          _fetchOrders(); // Refresh jika ada perubahan
+                                        }
                                       },
                                     ),
-                          ),
-                        ],
+                                  );
+                                },
+                              ),
                       ),
                     ],
                   ),
                 ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const CreateOrderScreen(),
-              ),
-            );
-            if (result == true) {
-              _fetchOrders(); // Refresh daftar pesanan setelah pesanan baru dibuat
-            }
-          },
-          child: const Icon(Icons.add),
-        ),
-      ),
     );
   }
 }
