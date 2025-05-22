@@ -1,0 +1,28 @@
+# Generic ignores
+.DS_Store
+.env
+.env.*
+.idea/
+.vscode/
+.cxx/
+.gradle/
+.symlinks/
+coverage/
+# Specific Flutter/Dart ignores
+.dart_tool/
+.flutter-plugins-dependencies
+.packages
+build/
+*.iml
+*.ipr
+*.iws
+# Platform-specific build files
+android/
+ios/
+web/
+windows/
+linux/
+macos/
+# Generated files for code generation (e.g., Freezed, JsonSerializable)
+*.g.dart
+*.freezed.dart
