@@ -1,5 +1,5 @@
 // sumatra_jewelry_app/lib/models/order.dart
-// Untuk extension string, opsional
+import 'package:flutter/material.dart'; // Untuk extension string, opsional
 
 // Enum untuk mendefinisikan semua status pesanan yang mungkin
 enum OrderStatus {
@@ -36,7 +36,6 @@ class Order {
   final double totalPrice;
   final OrderStatus status; // Gunakan enum OrderStatus
   final DateTime orderDate;
-  late final DateTime lastUpdated;
   final String? notes; // Catatan tambahan, bisa null
   final String? imageUrl; // URL gambar produk, bisa null
   final String? assignedTo; // ID/Nama karyawan yang ditugaskan

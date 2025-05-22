@@ -131,7 +131,7 @@ class _EmployeePerformanceScreenState extends State<EmployeePerformanceScreen> {
                                   // },
                                 ),
                               );
-                            }),
+                            }).toList(),
                           ],
                         ),
                 ),

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sumatra_jewelry_app/models/order.dart'; // Import Order model
 import 'package:sumatra_jewelry_app/services/order_service.dart'; // Import OrderService
 import 'package:sumatra_jewelry_app/screens/sales/order_detail_screen.dart'; // Untuk melihat detail pesanan
-import 'package:sumatra_jewelry_app/screens/inventory/add_product_screen.dart'; // Import AddProductScreen
+import 'package:sumatra_jewelry_app/screens/inventory/add_product_screen.dart'; // <--- TAMBAHKAN ATAU PASTIKAN BARIS INI ADA
 import 'package:sumatra_jewelry_app/screens/auth/login_screen.dart'; // Untuk logout
 
 
@@ -178,7 +178,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) =>
-                                          const AddProductScreen(),
+                                          const AddProductScreen(), // Line ini
                                     ),
                                   );
                                 },

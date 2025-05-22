@@ -8,10 +8,10 @@ class OrderDetailScreen extends StatefulWidget {
   final String userRole; // Menerima peran pengguna
 
   const OrderDetailScreen({
-    super.key,
+    Key? key,
     required this.order,
     required this.userRole,
-  });
+  }) : super(key: key);
 
   @override
   State<OrderDetailScreen> createState() => _OrderDetailScreenState();

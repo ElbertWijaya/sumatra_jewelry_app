@@ -11,7 +11,7 @@ class OrderService {
   static const String _updateUrl = 'https://api.example.com/orders/'; // Ganti dengan URL API update Anda
 
   // Dummy data untuk simulasi (akan dihapus saat terhubung ke backend sungguhan)
-  final List<Order> _dummyOrders = [
+  List<Order> _dummyOrders = [
     Order(
       id: 'ORD001',
       customerName: 'Budi Santoso',
