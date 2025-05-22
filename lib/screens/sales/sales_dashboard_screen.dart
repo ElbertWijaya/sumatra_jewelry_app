@@ -169,6 +169,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
         ],
       ),
       extendBodyBehindAppBar: true, // Memungkinkan body untuk meluas di belakang AppBar
+      resizeToAvoidBottomInset: false, // Menghindari perubahan ukuran saat keyboard muncul
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final result = await Navigator.push(
@@ -241,7 +242,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                             ),
                           ),
                           // --- Penambahan SizedBox untuk spasi ---
-                          const SizedBox(height: 20.0), // Jarak antara search bar dan filter status
+                          const SizedBox(height: 150.0), // Jarak antara search bar dan filter status
                           // 2. Status Filter Tabs (Semua, Waiting, On Progress, Submitted)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
