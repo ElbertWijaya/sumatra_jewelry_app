@@ -52,28 +52,27 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         title: const Text('Riwayat Pesanan'),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchOrders,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _errorMessage.isNotEmpty
               ? Center(
-                  child: Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.red, fontSize: 16),
-                  ),
-                )
+                child: Text(
+                  _errorMessage,
+                  style: const TextStyle(color: Colors.red, fontSize: 16),
+                ),
+              )
               : RefreshIndicator(
-                  onRefresh: _fetchOrders,
-                  child: _orders.isEmpty
-                      ? const Center(
+                onRefresh: _fetchOrders,
+                child:
+                    _orders.isEmpty
+                        ? const Center(
                           child: Text('Tidak ada riwayat pesanan.'),
                         )
-                      : ListView.builder(
+                        : ListView.builder(
                           padding: const EdgeInsets.all(16.0),
                           itemCount: _orders.length,
                           itemBuilder: (context, index) {
@@ -98,10 +97,11 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                                   final result = await Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => OrderDetailScreen(
-                                        order: order,
-                                        userRole: 'sales', // Atau 'boss'
-                                      ),
+                                      builder:
+                                          (context) => OrderDetailScreen(
+                                            order: order,
+                                            userRole: 'sales', // Atau 'boss'
+                                          ),
                                     ),
                                   );
                                   if (result == true) {
@@ -112,7 +112,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                             );
                           },
                         ),
-                ),
+              ),
     );
   }
 }

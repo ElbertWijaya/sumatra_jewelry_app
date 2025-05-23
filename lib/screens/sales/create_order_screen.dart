@@ -17,7 +17,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   final TextEditingController _totalPriceController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
 
-  final OrderService _orderService = OrderService(); // Inisialisasi OrderService
+  final OrderService _orderService =
+      OrderService(); // Inisialisasi OrderService
 
   @override
   void dispose() {
@@ -42,7 +43,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           totalPrice: double.parse(_totalPriceController.text.trim()),
           status: OrderStatus.pending, // Status awal saat dibuat oleh sales
           orderDate: DateTime.now(),
-          notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+          notes:
+              _notesController.text.trim().isEmpty
+                  ? null
+                  : _notesController.text.trim(),
           imageUrl: null, // Atur jika ada fitur upload gambar
           assignedTo: null, // Awalnya belum ditugaskan
         );
@@ -54,7 +58,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         Navigator.pop(context, true); // Kembali ke dashboard sales dan refresh
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal membuat pesanan: ${e.toString().replaceAll('Exception: ', '')}')),
+          SnackBar(
+            content: Text(
+              'Gagal membuat pesanan: ${e.toString().replaceAll('Exception: ', '')}',
+            ),
+          ),
         );
       } finally {
         setState(() {
@@ -67,10 +75,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Buat Pesanan Baru'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Buat Pesanan Baru'), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(

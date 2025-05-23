@@ -125,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
           // Latar Belakang Gambar
           Positioned.fill(
             child: Image.asset(
-              'assets/images/background.jpg', // Path gambar background
+              'assets/images/toko_sumatra.jpg', // Path gambar background
               fit: BoxFit.cover,
               colorBlendMode: BlendMode.darken,
               color: Colors.black.withOpacity(0.4), // Sedikit lebih gelap agar teks lebih jelas
@@ -143,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     // Logo
                     Image.asset(
-                      'assets/images/logo.png', // Ganti dengan path logo Anda
+                      'assets/images/logo_sumatra_jewelry.png', // Ganti dengan path logo Anda
                       height: 150, // Sesuaikan ukuran logo
                       // color: Colors.white.withOpacity(0.9), // Opsional: Beri warna jika logo monokrom
                     ),
@@ -271,11 +271,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 50),
 
-                    // "Made by <creator>"
+                    // "Made by Elbert Wijaya"
                     Align(
                       alignment: Alignment.bottomCenter,
                       child: Text(
-                        'Made by <creator>', // Ganti dengan nama Anda/creator
+                        'Made by Elbert Wijaya', // Ganti dengan nama Anda/creator
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.7),
                           fontSize: 14,

@@ -1,14 +1,17 @@
 // sumatra_jewelry_app/lib/services/order_service.dart
 import 'dart:convert'; // Untuk json.decode
-import 'package:http/http.dart' as http; // Pastikan Anda memiliki package http di pubspec.yaml
+import 'package:http/http.dart'
+    as http; // Pastikan Anda memiliki package http di pubspec.yaml
 import 'package:sumatra_jewelry_app/models/order.dart'; // Import model Order yang sudah diperbarui
 
 class OrderService {
   // Ganti dengan URL API backend Anda yang sebenarnya
   // Contoh: const String _baseUrl = 'http://localhost:3000/api/orders';
   // Untuk simulasi:
-  static const String _baseUrl = 'https://mocki.io/v1/a570c918-a400-4b2a-8b8a-3e5f2998a4e3'; // URL dummy untuk GET orders
-  static const String _updateUrl = 'https://api.example.com/orders/'; // Ganti dengan URL API update Anda
+  static const String _baseUrl =
+      'https://mocki.io/v1/a570c918-a400-4b2a-8b8a-3e5f2998a4e3'; // URL dummy untuk GET orders
+  static const String _updateUrl =
+      'https://api.example.com/orders/'; // Ganti dengan URL API update Anda
 
   // Dummy data untuk simulasi (akan dihapus saat terhubung ke backend sungguhan)
   List<Order> _dummyOrders = [
@@ -78,7 +81,7 @@ class OrderService {
       imageUrl: 'assets/placeholder_jewelry_2.jpg',
       assignedTo: 'COR Y',
     ),
-     Order(
+    Order(
       id: 'ORD007',
       customerName: 'Rina Wijaya',
       productName: 'Gelang Berlian',
@@ -124,7 +127,6 @@ class OrderService {
     ),
   ];
 
-
   Future<List<Order>> getOrders() async {
     // Simulasi penundaan jaringan
     await Future.delayed(const Duration(seconds: 1));
@@ -158,7 +160,9 @@ class OrderService {
       if (index != -1) {
         // Buat salinan pesanan dengan status baru
         _dummyOrders[index] = _dummyOrders[index].copyWith(status: newStatus);
-        print('Pesanan $orderId berhasil diupdate menjadi ${newStatus.toDisplayString()}');
+        print(
+          'Pesanan $orderId berhasil diupdate menjadi ${newStatus.toDisplayString()}',
+        );
       } else {
         throw Exception('Pesanan dengan ID $orderId tidak ditemukan.');
       }
@@ -215,7 +219,9 @@ class OrderService {
       final initialLength = _dummyOrders.length;
       _dummyOrders.removeWhere((order) => order.id == orderId);
       if (_dummyOrders.length == initialLength) {
-        throw Exception('Pesanan dengan ID $orderId tidak ditemukan untuk dihapus.');
+        throw Exception(
+          'Pesanan dengan ID $orderId tidak ditemukan untuk dihapus.',
+        );
       }
       print('Pesanan $orderId berhasil dihapus.');
 

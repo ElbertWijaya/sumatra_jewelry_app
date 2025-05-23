@@ -19,10 +19,12 @@ enum OrderStatus {
 // Extension untuk mengubah enum menjadi string yang lebih mudah dibaca di UI
 extension OrderStatusExtension on OrderStatus {
   String toDisplayString() {
-    return name.replaceAllMapped(
-      RegExp(r'(?<=[a-z])[A-Z]'),
-      (match) => '_${match.group(0)!}',
-    ).toUpperCase();
+    return name
+        .replaceAllMapped(
+          RegExp(r'(?<=[a-z])[A-Z]'),
+          (match) => '_${match.group(0)!}',
+        )
+        .toUpperCase();
   }
 }
 

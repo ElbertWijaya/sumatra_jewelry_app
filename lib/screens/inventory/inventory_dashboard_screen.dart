@@ -6,7 +6,6 @@ import 'package:sumatra_jewelry_app/screens/sales/order_detail_screen.dart'; // 
 import 'package:sumatra_jewelry_app/screens/inventory/add_product_screen.dart'; // <--- TAMBAHKAN ATAU PASTIKAN BARIS INI ADA
 import 'package:sumatra_jewelry_app/screens/auth/login_screen.dart'; // Untuk logout
 
-
 class InventoryDashboardScreen extends StatefulWidget {
   const InventoryDashboardScreen({super.key});
 
@@ -85,23 +84,24 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     // Inventory mungkin tertarik pada semua pesanan untuk melihat bahan baku atau produk yang dibutuhkan
     // Atau hanya pesanan yang statusnya membutuhkan intervensi inventory (misal: 'pending' untuk verifikasi stok)
     final pendingOrders =
         _orders.where((order) => order.status == OrderStatus.pending).length;
-    final inProgressOrders = _orders
-        .where((order) =>
-            order.status != OrderStatus.pending &&
-            order.status != OrderStatus.completed &&
-            order.status != OrderStatus.canceled &&
-            order.status != OrderStatus.readyForPickup)
-        .length;
+    final inProgressOrders =
+        _orders
+            .where(
+              (order) =>
+                  order.status != OrderStatus.pending &&
+                  order.status != OrderStatus.completed &&
+                  order.status != OrderStatus.canceled &&
+                  order.status != OrderStatus.readyForPickup,
+            )
+            .length;
     final completedOrders =
         _orders.where((order) => order.status == OrderStatus.completed).length;
-
 
     return Scaffold(
       appBar: AppBar(
@@ -121,93 +121,96 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _errorMessage.isNotEmpty
               ? Center(
-                  child: Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.red, fontSize: 16),
-                  ),
-                )
+                child: Text(
+                  _errorMessage,
+                  style: const TextStyle(color: Colors.red, fontSize: 16),
+                ),
+              )
               : RefreshIndicator(
-                  onRefresh: _fetchOrders,
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Ringkasan Inventori Pesanan',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                _buildSummaryCard(
-                                  'Pesanan Menunggu',
-                                  pendingOrders,
-                                  Colors.orange,
-                                ),
-                                const SizedBox(width: 10),
-                                _buildSummaryCard(
-                                  'Dalam Proses',
-                                  inProgressOrders,
-                                  Colors.blue,
-                                ),
-                                const SizedBox(width: 10),
-                                _buildSummaryCard(
-                                  'Selesai',
-                                  completedOrders,
-                                  Colors.green,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            // Tombol untuk menambah produk baru
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const AddProductScreen(), // Line ini
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.add_shopping_cart),
-                                label: const Text('Tambah Produk Baru'),
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 12),
-                                  backgroundColor: Colors.deepPurple,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                onRefresh: _fetchOrders,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ringkasan Inventori Pesanan',
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              _buildSummaryCard(
+                                'Pesanan Menunggu',
+                                pendingOrders,
+                                Colors.orange,
+                              ),
+                              const SizedBox(width: 10),
+                              _buildSummaryCard(
+                                'Dalam Proses',
+                                inProgressOrders,
+                                Colors.blue,
+                              ),
+                              const SizedBox(width: 10),
+                              _buildSummaryCard(
+                                'Selesai',
+                                completedOrders,
+                                Colors.green,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          // Tombol untuk menambah produk baru
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const AddProductScreen(), // Line ini
                                   ),
+                                );
+                              },
+                              icon: const Icon(Icons.add_shopping_cart),
+                              label: const Text('Tambah Produk Baru'),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                backgroundColor: Colors.deepPurple,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      Expanded(
-                        child: _orders.isEmpty
-                            ? const Center(
+                    ),
+                    Expanded(
+                      child:
+                          _orders.isEmpty
+                              ? const Center(
                                 child: Text(
                                   'Tidak ada pesanan yang tersedia untuk inventori.',
                                 ),
                               )
-                            : ListView.builder(
+                              : ListView.builder(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 16.0),
+                                  horizontal: 16.0,
+                                ),
                                 itemCount: _orders.length,
                                 itemBuilder: (context, index) {
                                   final order = _orders[index];
@@ -215,7 +218,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                   // Untuk contoh ini, kita tampilkan semua pesanan
                                   return Card(
                                     margin: const EdgeInsets.symmetric(
-                                        vertical: 8.0),
+                                      vertical: 8.0,
+                                    ),
                                     elevation: 2,
                                     child: ListTile(
                                       title: Text(
@@ -232,11 +236,11 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                         final result = await Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) =>
-                                                OrderDetailScreen(
-                                              order: order,
-                                              userRole: 'inventory',
-                                            ),
+                                            builder:
+                                                (context) => OrderDetailScreen(
+                                                  order: order,
+                                                  userRole: 'inventory',
+                                                ),
                                           ),
                                         );
                                         if (result == true) {
@@ -247,10 +251,10 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                   );
                                 },
                               ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+              ),
     );
   }
 }

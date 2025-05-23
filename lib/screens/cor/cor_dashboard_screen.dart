@@ -85,12 +85,14 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     // Logika perhitungan untuk ringkasan pesanan menggunakan enum
-    final readyForCorOrders = _orders
-        .where((order) => order.status == OrderStatus.readyForCor)
-        .length;
-    final corInProgressOrders = _orders
-        .where((order) => order.status == OrderStatus.corInProgress)
-        .length;
+    final readyForCorOrders =
+        _orders
+            .where((order) => order.status == OrderStatus.readyForCor)
+            .length;
+    final corInProgressOrders =
+        _orders
+            .where((order) => order.status == OrderStatus.corInProgress)
+            .length;
 
     return Scaffold(
       appBar: AppBar(
@@ -110,58 +112,61 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _errorMessage.isNotEmpty
               ? Center(
-                  child: Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.red, fontSize: 16),
-                  ),
-                )
+                child: Text(
+                  _errorMessage,
+                  style: const TextStyle(color: Colors.red, fontSize: 16),
+                ),
+              )
               : RefreshIndicator(
-                  onRefresh: _fetchOrders,
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Ringkasan Pesanan COR',
-                              style: Theme.of(context).textTheme.headlineSmall
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                _buildOrderSummaryCard(
-                                  'Siap COR',
-                                  readyForCorOrders,
-                                  Colors.purple,
-                                ),
-                                const SizedBox(width: 10),
-                                _buildOrderSummaryCard(
-                                  'Sedang COR',
-                                  corInProgressOrders,
-                                  Colors.blue,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                onRefresh: _fetchOrders,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ringkasan Pesanan COR',
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              _buildOrderSummaryCard(
+                                'Siap COR',
+                                readyForCorOrders,
+                                Colors.purple,
+                              ),
+                              const SizedBox(width: 10),
+                              _buildOrderSummaryCard(
+                                'Sedang COR',
+                                corInProgressOrders,
+                                Colors.blue,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      Expanded(
-                        child: _orders.isEmpty
-                            ? const Center(
+                    ),
+                    Expanded(
+                      child:
+                          _orders.isEmpty
+                              ? const Center(
                                 child: Text(
                                   'Tidak ada pesanan yang tersedia untuk Anda.',
                                 ),
                               )
-                            : ListView.builder(
+                              : ListView.builder(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 16.0),
+                                  horizontal: 16.0,
+                                ),
                                 itemCount: _orders.length,
                                 itemBuilder: (context, index) {
                                   final order = _orders[index];
@@ -172,7 +177,8 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
                                   ].contains(order.status)) {
                                     return Card(
                                       margin: const EdgeInsets.symmetric(
-                                          vertical: 8.0),
+                                        vertical: 8.0,
+                                      ),
                                       elevation: 2,
                                       child: ListTile(
                                         title: Text(
@@ -189,11 +195,12 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
                                           final result = await Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) =>
-                                                  OrderDetailScreen(
-                                                order: order,
-                                                userRole: 'cor',
-                                              ),
+                                              builder:
+                                                  (context) =>
+                                                      OrderDetailScreen(
+                                                        order: order,
+                                                        userRole: 'cor',
+                                                      ),
                                             ),
                                           );
                                           if (result == true) {
@@ -206,10 +213,10 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
                                   return const SizedBox.shrink(); // Sembunyikan yang tidak relevan
                                 },
                               ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+              ),
     );
   }
 }

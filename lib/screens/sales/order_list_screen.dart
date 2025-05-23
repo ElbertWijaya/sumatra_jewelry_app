@@ -34,11 +34,14 @@ class _OrderListScreenState extends State<OrderListScreen> {
       setState(() {
         // Tampilkan pesanan yang belum selesai atau yang masih perlu perhatian
         // Misalnya, semua kecuali yang COMPLETED atau CANCELED
-        _orders = fetchedOrders
-            .where((order) =>
-                order.status != OrderStatus.completed &&
-                order.status != OrderStatus.canceled)
-            .toList();
+        _orders =
+            fetchedOrders
+                .where(
+                  (order) =>
+                      order.status != OrderStatus.completed &&
+                      order.status != OrderStatus.canceled,
+                )
+                .toList();
       });
     } catch (e) {
       setState(() {
@@ -59,10 +62,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
         title: const Text('Daftar Pesanan Aktif'),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchOrders,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -77,22 +77,22 @@ class _OrderListScreenState extends State<OrderListScreen> {
         },
         child: const Icon(Icons.add),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _errorMessage.isNotEmpty
               ? Center(
-                  child: Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.red, fontSize: 16),
-                  ),
-                )
+                child: Text(
+                  _errorMessage,
+                  style: const TextStyle(color: Colors.red, fontSize: 16),
+                ),
+              )
               : RefreshIndicator(
-                  onRefresh: _fetchOrders,
-                  child: _orders.isEmpty
-                      ? const Center(
-                          child: Text('Tidak ada pesanan aktif.'),
-                        )
-                      : ListView.builder(
+                onRefresh: _fetchOrders,
+                child:
+                    _orders.isEmpty
+                        ? const Center(child: Text('Tidak ada pesanan aktif.'))
+                        : ListView.builder(
                           padding: const EdgeInsets.all(16.0),
                           itemCount: _orders.length,
                           itemBuilder: (context, index) {
@@ -114,10 +114,11 @@ class _OrderListScreenState extends State<OrderListScreen> {
                                   final result = await Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => OrderDetailScreen(
-                                        order: order,
-                                        userRole: 'sales',
-                                      ),
+                                      builder:
+                                          (context) => OrderDetailScreen(
+                                            order: order,
+                                            userRole: 'sales',
+                                          ),
                                     ),
                                   );
                                   if (result == true) {
@@ -128,7 +129,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                             );
                           },
                         ),
-                ),
+              ),
     );
   }
 }

@@ -86,7 +86,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         if (_currentOrder.status == OrderStatus.readyForDiamondSetting) {
           allowedStatuses.add(OrderStatus.readyForDiamondSetting);
           allowedStatuses.add(OrderStatus.diamondSettingInProgress);
-        } else if (_currentOrder.status == OrderStatus.diamondSettingInProgress) {
+        } else if (_currentOrder.status ==
+            OrderStatus.diamondSettingInProgress) {
           allowedStatuses.add(OrderStatus.diamondSettingInProgress);
           allowedStatuses.add(OrderStatus.readyForFinishing);
         } else {
@@ -107,7 +108,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       case 'repairer':
         // Repairer mungkin memiliki alur yang berbeda, misalnya dari completed ke repair_in_progress, lalu kembali ke ready_for_pickup/completed
         // Ini contoh saja, sesuaikan dengan alur repair Anda
-        if (_currentOrder.status == OrderStatus.completed) { // Misal pesanan completed bisa di repair
+        if (_currentOrder.status == OrderStatus.completed) {
+          // Misal pesanan completed bisa di repair
           allowedStatuses.add(OrderStatus.completed);
           // Tambahkan status 'repair_in_progress' jika ada di enum Anda
         } else {
@@ -116,21 +118,26 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         break;
       case 'boss':
         // Boss bisa melihat semua status, mungkin tidak bisa mengubah langsung
-        allowedStatuses = OrderStatus.values.toList(); // Boss bisa melihat semua
+        allowedStatuses =
+            OrderStatus.values.toList(); // Boss bisa melihat semua
         break;
       case 'inventory':
         // Inventory mungkin tidak mengubah status pesanan secara langsung
         allowedStatuses.add(_currentOrder.status);
         break;
       default:
-        allowedStatuses.add(_currentOrder.status); // Default: hanya status saat ini
+        allowedStatuses.add(
+          _currentOrder.status,
+        ); // Default: hanya status saat ini
         break;
     }
 
     // Filter agar hanya menampilkan status saat ini + status transisi yang valid
     // dan hindari duplikasi jika status saat ini juga ada di allowedStatuses
-    final uniqueStatuses = allowedStatuses.toSet().toList()
-      ..sort((a, b) => a.index.compareTo(b.index)); // Urutkan berdasarkan index enum
+    final uniqueStatuses =
+        allowedStatuses.toSet().toList()..sort(
+          (a, b) => a.index.compareTo(b.index),
+        ); // Urutkan berdasarkan index enum
 
     return uniqueStatuses.map((status) {
       return DropdownMenuItem<OrderStatus>(
@@ -144,9 +151,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   Future<void> _updateOrderStatus(OrderStatus newStatus) async {
     if (newStatus == _currentOrder.status) {
       // Tidak perlu update jika status tidak berubah
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Status tidak berubah.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Status tidak berubah.')));
       return;
     }
 
@@ -169,7 +176,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       Navigator.pop(context, true);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memperbarui status: ${e.toString().replaceAll('Exception: ', '')}')),
+        SnackBar(
+          content: Text(
+            'Gagal memperbarui status: ${e.toString().replaceAll('Exception: ', '')}',
+          ),
+        ),
       );
     } finally {
       setState(() {
@@ -181,10 +192,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detail Pesanan'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Detail Pesanan'), centerTitle: true),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -227,20 +235,20 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   _isUpdatingStatus
                       ? const CircularProgressIndicator()
                       : DropdownButton<OrderStatus>(
-                          value: _currentOrder.status,
-                          items: _getValidStatusOptions(),
-                          onChanged: (OrderStatus? newValue) {
-                            if (newValue != null) {
-                              _updateOrderStatus(newValue);
-                            }
-                          },
-                          // Menonaktifkan dropdown jika bukan peran yang relevan atau sedang update
-                          // Ini hanya contoh, sesuaikan dengan aturan bisnis Anda.
-                          // Misal, hanya sales/finisher/designer yang bisa mengubah status tertentu
-                          // Anda bisa lebih spesifik di _getValidStatusOptions
-                          // isEnabled: _getValidStatusOptions().isNotEmpty &&
-                          //     (widget.userRole == 'finisher' || widget.userRole == 'sales'),
-                        ),
+                        value: _currentOrder.status,
+                        items: _getValidStatusOptions(),
+                        onChanged: (OrderStatus? newValue) {
+                          if (newValue != null) {
+                            _updateOrderStatus(newValue);
+                          }
+                        },
+                        // Menonaktifkan dropdown jika bukan peran yang relevan atau sedang update
+                        // Ini hanya contoh, sesuaikan dengan aturan bisnis Anda.
+                        // Misal, hanya sales/finisher/designer yang bisa mengubah status tertentu
+                        // Anda bisa lebih spesifik di _getValidStatusOptions
+                        // isEnabled: _getValidStatusOptions().isNotEmpty &&
+                        //     (widget.userRole == 'finisher' || widget.userRole == 'sales'),
+                      ),
                 ],
               ),
               const SizedBox(height: 15),
@@ -251,10 +259,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               const SizedBox(height: 15),
               _currentOrder.imageUrl != null
                   ? Image.asset(
-                      _currentOrder.imageUrl!,
-                      height: 200,
-                      fit: BoxFit.cover,
-                    )
+                    _currentOrder.imageUrl!,
+                    height: 200,
+                    fit: BoxFit.cover,
+                  )
                   : const Text('Tidak ada gambar produk'),
               // Tambahan informasi lain yang mungkin relevan
               // Misalnya, riwayat perubahan status, detail item, dll.

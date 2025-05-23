@@ -88,18 +88,20 @@ class _BossDashboardScreenState extends State<BossDashboardScreen> {
     final totalOrders = _orders.length;
     final pendingOrders =
         _orders.where((order) => order.status == OrderStatus.pending).length;
-    final inProgressOrders = _orders
-        .where((order) =>
-            order.status != OrderStatus.pending &&
-            order.status != OrderStatus.completed &&
-            order.status != OrderStatus.canceled &&
-            order.status != OrderStatus.readyForPickup) // Sesuaikan jika ada status "selesai sebagian"
-        .length;
+    final inProgressOrders =
+        _orders
+            .where(
+              (order) =>
+                  order.status != OrderStatus.pending &&
+                  order.status != OrderStatus.completed &&
+                  order.status != OrderStatus.canceled &&
+                  order.status != OrderStatus.readyForPickup,
+            ) // Sesuaikan jika ada status "selesai sebagian"
+            .length;
     final completedOrders =
         _orders.where((order) => order.status == OrderStatus.completed).length;
     final canceledOrders =
         _orders.where((order) => order.status == OrderStatus.canceled).length;
-
 
     return Scaffold(
       appBar: AppBar(
@@ -119,86 +121,88 @@ class _BossDashboardScreenState extends State<BossDashboardScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _errorMessage.isNotEmpty
               ? Center(
-                  child: Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.red, fontSize: 16),
-                  ),
-                )
+                child: Text(
+                  _errorMessage,
+                  style: const TextStyle(color: Colors.red, fontSize: 16),
+                ),
+              )
               : RefreshIndicator(
-                  onRefresh: _fetchOrders,
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Ringkasan Pesanan Global',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                _buildSummaryCard(
-                                  'Total Pesanan',
-                                  totalOrders,
-                                  Colors.deepPurple,
-                                ),
-                                const SizedBox(width: 10),
-                                _buildSummaryCard(
-                                  'Menunggu',
-                                  pendingOrders,
-                                  Colors.orange,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                _buildSummaryCard(
-                                  'Dalam Proses',
-                                  inProgressOrders,
-                                  Colors.blue,
-                                ),
-                                const SizedBox(width: 10),
-                                _buildSummaryCard(
-                                  'Selesai',
-                                  completedOrders,
-                                  Colors.green,
-                                ),
-                                const SizedBox(width: 10),
-                                _buildSummaryCard(
-                                  'Dibatalkan',
-                                  canceledOrders,
-                                  Colors.red,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                onRefresh: _fetchOrders,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ringkasan Pesanan Global',
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              _buildSummaryCard(
+                                'Total Pesanan',
+                                totalOrders,
+                                Colors.deepPurple,
+                              ),
+                              const SizedBox(width: 10),
+                              _buildSummaryCard(
+                                'Menunggu',
+                                pendingOrders,
+                                Colors.orange,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              _buildSummaryCard(
+                                'Dalam Proses',
+                                inProgressOrders,
+                                Colors.blue,
+                              ),
+                              const SizedBox(width: 10),
+                              _buildSummaryCard(
+                                'Selesai',
+                                completedOrders,
+                                Colors.green,
+                              ),
+                              const SizedBox(width: 10),
+                              _buildSummaryCard(
+                                'Dibatalkan',
+                                canceledOrders,
+                                Colors.red,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      Expanded(
-                        child: _orders.isEmpty
-                            ? const Center(
+                    ),
+                    Expanded(
+                      child:
+                          _orders.isEmpty
+                              ? const Center(
                                 child: Text('Tidak ada pesanan yang tersedia.'),
                               )
-                            : ListView.builder(
+                              : ListView.builder(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 16.0),
+                                  horizontal: 16.0,
+                                ),
                                 itemCount: _orders.length,
                                 itemBuilder: (context, index) {
                                   final order = _orders[index];
                                   return Card(
                                     margin: const EdgeInsets.symmetric(
-                                        vertical: 8.0),
+                                      vertical: 8.0,
+                                    ),
                                     elevation: 2,
                                     child: ListTile(
                                       title: Text(
@@ -217,11 +221,11 @@ class _BossDashboardScreenState extends State<BossDashboardScreen> {
                                         final result = await Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) =>
-                                                OrderDetailScreen(
-                                              order: order,
-                                              userRole: 'boss',
-                                            ),
+                                            builder:
+                                                (context) => OrderDetailScreen(
+                                                  order: order,
+                                                  userRole: 'boss',
+                                                ),
                                           ),
                                         );
                                         if (result == true) {
@@ -232,10 +236,10 @@ class _BossDashboardScreenState extends State<BossDashboardScreen> {
                                   );
                                 },
                               ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+              ),
     );
   }
 }

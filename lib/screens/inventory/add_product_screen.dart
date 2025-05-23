@@ -25,25 +25,30 @@ class _AddProductScreenState extends State<AddProductScreen> {
     super.dispose();
   }
 
-  Future<void> _submitProduct() async { // Ubah jadi Future<void> karena ada await
+  Future<void> _submitProduct() async {
+    // Ubah jadi Future<void> karena ada await
     if (_formKey.currentState!.validate()) {
       final productName = _productNameController.text;
       final quantity = int.parse(_quantityController.text);
       final price = double.parse(_priceController.text);
 
       try {
-        await _productService.addProduct(productName, quantity, price); // <--- GUNAKAN DI SINI
+        await _productService.addProduct(
+          productName,
+          quantity,
+          price,
+        ); // <--- GUNAKAN DI SINI
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Produk "$productName" berhasil ditambahkan (simulasi).'),
+            content: Text(
+              'Produk "$productName" berhasil ditambahkan (simulasi).',
+            ),
           ),
         );
         Navigator.pop(context); // Kembali ke dashboard sebelumnya
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal menambahkan produk: ${e.toString()}'),
-          ),
+          SnackBar(content: Text('Gagal menambahkan produk: ${e.toString()}')),
         );
       }
     }
