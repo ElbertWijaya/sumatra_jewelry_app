@@ -44,25 +44,24 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
     setState(() => _isSaving = false);
   }
 
-  Future<void> _selesaikanOrder() async {
-    setState(() => _isSaving = true);
-    final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.done,
+Future<void> _teruskanKeCor() async {
+  setState(() => _isSaving = true);
+  final updatedOrder = _order.copyWith(
+    workflowStatus: OrderWorkflowStatus.waiting_casting,
+  );
+  try {
+    await OrderService().updateOrder(updatedOrder);
+    if (!mounted) return;
+    Navigator.of(context).pop(true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Pesanan diteruskan ke bagian Cor!')),
     );
-    try {
-      await OrderService().updateOrder(updatedOrder);
-      if (!mounted) return;
-      Navigator.of(context).pop(true);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Pesanan selesai!')));
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Gagal update pesanan: $e')));
-    }
-    setState(() => _isSaving = false);
+  } catch (e) {
+    ScaffoldMessenger.of(context)
+      .showSnackBar(SnackBar(content: Text('Gagal update pesanan: $e')));
   }
+  setState(() => _isSaving = false);
+}
 
   @override
   Widget build(BuildContext context) {
