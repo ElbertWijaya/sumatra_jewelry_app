@@ -33,7 +33,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
     super.didChangeDependencies();
     final Order? argOrder =
         ModalRoute.of(context)?.settings.arguments as Order?;
-    if (argOrder != null && (order == null || order.id != argOrder.id)) {
+    if (argOrder != null && (order.id != argOrder.id)) {
       order = argOrder;
       customerName = order.customerName;
       customerContact = order.customerContact;

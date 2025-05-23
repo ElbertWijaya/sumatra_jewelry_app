@@ -25,7 +25,11 @@ class _SalesTaskScreenState extends State<SalesTaskScreen> {
     try {
       final orders = await _orderService.getOrders();
       setState(() {
-        // Sales melihat order yang statusnya masih awal (belum selesai atau belum dibatalkan)
+        // Perlihatkan order yang statusnya:
+        // - Menunggu aksi sales (pending)
+        // - Sudah benar-benar selesai oleh sales (done)
+        // - Dibatalkan
+        // Saring status lain agar workflow urut dan tidak boros data
         _orders =
             orders
                 .where(

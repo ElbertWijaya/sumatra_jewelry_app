@@ -29,7 +29,7 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
   Future<void> _mulaiDesign() async {
     setState(() => _isSaving = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.inProgress,
+      workflowStatus: OrderWorkflowStatus.designing,
     );
     try {
       await OrderService().updateOrder(updatedOrder);
@@ -146,7 +146,7 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
                           child: const Text('Mulai Design'),
                         ),
                       ),
-                    if (_order.workflowStatus == OrderWorkflowStatus.inProgress)
+                    if (_order.workflowStatus == OrderWorkflowStatus.designing)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

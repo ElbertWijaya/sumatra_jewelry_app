@@ -12,19 +12,19 @@ class EmployeePerformanceScreen extends StatelessWidget {
         'name': 'Andi Carver',
         'role': 'Carver',
         'completed': 24,
-        'inProgress': 3,
+        'onProgress': 3,
       },
       {
         'name': 'Budi Caster',
         'role': 'Caster',
         'completed': 18,
-        'inProgress': 2,
+        'onProgress': 2,
       },
       {
         'name': 'Cici Diamond',
         'role': 'Diamond Setter',
         'completed': 30,
-        'inProgress': 1,
+        'onProgress': 1,
       },
       // Tambahkan data karyawan lain sesuai kebutuhan
     ];

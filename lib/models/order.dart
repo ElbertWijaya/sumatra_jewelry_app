@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 /// Enum Status Pesanan sesuai alur kerja multi-divisi
 enum OrderWorkflowStatus {
   pending, // Baru dibuat oleh sales, menunggu desain
-  inProgress,
   designing, // Sedang didesain oleh designer
   waiting_casting, // Menunggu proses cor setelah desain
   readyForCasting, // Siap untuk cor/casting
@@ -23,6 +22,7 @@ enum OrderWorkflowStatus {
   done, // Selesai, siap diambil customer
   cancelled, // Dibatalkan
   unknown, // Tidak diketahui
+  debut, // <<< Tambahan status debut tanpa merusak fungsi lain
 }
 
 /// Extension parsing OrderWorkflowStatus dari string dan label
@@ -67,6 +67,8 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
         return OrderWorkflowStatus.done;
       case 'cancelled':
         return OrderWorkflowStatus.cancelled;
+      case 'debut': // <<< Tambahkan parsing string debut
+        return OrderWorkflowStatus.debut;
       default:
         debugPrint('Status workflow pesanan tidak diketahui: $status');
         return OrderWorkflowStatus.unknown;
@@ -114,6 +116,8 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
         return 'Selesai';
       case OrderWorkflowStatus.cancelled:
         return 'Batal';
+      case OrderWorkflowStatus.debut: // <<< Label debut
+        return 'Debut';
       case OrderWorkflowStatus.unknown:
       default:
         return 'Tidak Diketahui';
