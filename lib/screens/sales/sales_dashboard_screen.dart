@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
-// Jika file detail sudah ada, import detail screen berikut (jika belum, buat sesuai instruksi sebelumnya)
 import 'sales_detail_screen.dart';
 
 class SalesDashboardScreen extends StatefulWidget {
@@ -20,6 +19,12 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   String _searchQuery = '';
   Object? _selectedStatusFilter;
   String? _selectedCategoryFilter;
+
+  // Tambah daftar status waiting (pending & waiting_sales_completion)
+  final List<OrderWorkflowStatus> waitingStatuses = [
+    OrderWorkflowStatus.pending,
+    OrderWorkflowStatus.waiting_sales_completion,
+  ];
 
   @override
   void initState() {
@@ -53,38 +58,39 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     List<Order> filtered = _orders;
 
     if (_selectedStatusFilter == null) {
-      filtered =
-          filtered
-              .where(
-                (order) =>
-                    order.workflowStatus != OrderWorkflowStatus.cancelled,
-              )
-              .toList();
+      filtered = filtered
+          .where(
+            (order) =>
+                order.workflowStatus != OrderWorkflowStatus.cancelled,
+          )
+          .toList();
+    } else if (_selectedStatusFilter == 'waiting') {
+      filtered = filtered
+          .where((order) => waitingStatuses.contains(order.workflowStatus))
+          .toList();
     } else if (_selectedStatusFilter is OrderWorkflowStatus) {
-      filtered =
-          filtered
-              .where((order) => order.workflowStatus == _selectedStatusFilter)
-              .toList();
+      filtered = filtered
+          .where((order) => order.workflowStatus == _selectedStatusFilter)
+          .toList();
     } else if (_selectedStatusFilter == 'onProgress') {
-      filtered =
-          filtered
-              .where(
-                (order) =>
-                    order.workflowStatus != OrderWorkflowStatus.pending &&
-                    order.workflowStatus != OrderWorkflowStatus.done &&
-                    order.workflowStatus != OrderWorkflowStatus.cancelled,
-              )
-              .toList();
+      filtered = filtered
+          .where(
+            (order) =>
+                order.workflowStatus != OrderWorkflowStatus.pending &&
+                order.workflowStatus != OrderWorkflowStatus.done &&
+                order.workflowStatus != OrderWorkflowStatus.cancelled &&
+                order.workflowStatus != OrderWorkflowStatus.waiting_sales_completion,
+          )
+          .toList();
     }
 
     if (_searchQuery.isNotEmpty) {
-      filtered =
-          filtered.where((order) {
-            final query = _searchQuery.toLowerCase();
-            return order.customerName.toLowerCase().contains(query) ||
-                order.jewelryType.toLowerCase().contains(query) ||
-                order.workflowStatus.label.toLowerCase().contains(query);
-          }).toList();
+      filtered = filtered.where((order) {
+        final query = _searchQuery.toLowerCase();
+        return order.customerName.toLowerCase().contains(query) ||
+            order.jewelryType.toLowerCase().contains(query) ||
+            order.workflowStatus.label.toLowerCase().contains(query);
+      }).toList();
     }
 
     return filtered;
@@ -97,26 +103,29 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   ) {
     int count;
     if (filterValue == null) {
-      count =
-          _orders
-              .where(
-                (order) =>
-                    order.workflowStatus != OrderWorkflowStatus.cancelled,
-              )
-              .length;
+      count = _orders
+          .where(
+            (order) =>
+                order.workflowStatus != OrderWorkflowStatus.cancelled,
+          )
+          .length;
+    } else if (filterValue == 'waiting') {
+      count = _orders
+          .where((order) => waitingStatuses.contains(order.workflowStatus))
+          .length;
     } else if (filterValue is OrderWorkflowStatus) {
       count =
           _orders.where((order) => order.workflowStatus == filterValue).length;
     } else if (filterValue == 'onProgress') {
-      count =
-          _orders
-              .where(
-                (order) =>
-                    order.workflowStatus != OrderWorkflowStatus.pending &&
-                    order.workflowStatus != OrderWorkflowStatus.done &&
-                    order.workflowStatus != OrderWorkflowStatus.cancelled,
-              )
-              .length;
+      count = _orders
+          .where(
+            (order) =>
+                order.workflowStatus != OrderWorkflowStatus.pending &&
+                order.workflowStatus != OrderWorkflowStatus.done &&
+                order.workflowStatus != OrderWorkflowStatus.cancelled &&
+                order.workflowStatus != OrderWorkflowStatus.waiting_sales_completion,
+          )
+          .length;
     } else {
       count = 0;
     }
@@ -308,7 +317,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                             ),
                             _buildStatusFilterButton(
                               'Waiting',
-                              OrderWorkflowStatus.pending,
+                              'waiting',
                               Colors.orange,
                             ),
                             _buildStatusFilterButton(
@@ -512,6 +521,10 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                                             OrderWorkflowStatus
                                                                 .cancelled
                                                         ? Colors.red
+                                                        : order.workflowStatus ==
+                                                            OrderWorkflowStatus
+                                                                .waiting_sales_completion
+                                                        ? Colors.orange
                                                         : Colors.blue,
                                               ),
                                             ),

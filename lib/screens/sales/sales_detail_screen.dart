@@ -211,11 +211,30 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
     );
   }
 
+  // Tambahan: Fungsi untuk menyelesaikan pesanan, hanya jika status waiting_sales_completion
+  Future<void> _selesaikanPesanan() async {
+    setState(() => _isSaving = true);
+    final updatedOrder = _order.copyWith(workflowStatus: OrderWorkflowStatus.done);
+    try {
+      await OrderService().updateOrder(updatedOrder);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pesanan berhasil diselesaikan!')),
+      );
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menyelesaikan pesanan: $e')),
+      );
+    }
+    setState(() => _isSaving = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Detail Pesanan'),
+        title: const Text('Detail Pesanan'),
         actions: [
           !_isEditing
               ? IconButton(
@@ -486,6 +505,22 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                               ),
                             ),
                           ],
+                        ),
+                      // Tambahan: Tampilkan tombol Selesaikan Pesanan jika statusnya waiting_sales_completion
+                      if (!_isEditing && _order.workflowStatus == OrderWorkflowStatus.waiting_sales_completion)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isSaving ? null : _selesaikanPesanan,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            child: const Text(
+                              'Selesaikan Pesanan',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ),
                         ),
                     ],
                   ),
