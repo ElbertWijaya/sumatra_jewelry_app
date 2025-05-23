@@ -252,7 +252,7 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                             ),
                             _buildStatusFilterButton(
                               'On Progress',
-                              OrderWorkflowStatus.inProgress,
+                              OrderWorkflowStatus.designing,
                               Colors.blue,
                             ),
                             _buildStatusFilterButton(
