@@ -29,8 +29,12 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
     setState(() => _isLoading = true);
     try {
       final orders = await _orderService.getOrders();
+      // Only show orders for carver, or remove this filter to see all
+      final filteredOrders =
+          orders.where((order) => order.currentRole == 'carver').toList();
+
       int pending = 0, processing = 0, delivered = 0, cancelled = 0;
-      for (final order in orders) {
+      for (final order in filteredOrders) {
         switch (order.status) {
           case OrderStatus.pending:
             pending++;
@@ -49,7 +53,7 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
         }
       }
       setState(() {
-        _orders = orders;
+        _orders = filteredOrders;
         _pending = pending;
         _processing = processing;
         _delivered = delivered;
@@ -121,7 +125,6 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Only the system/data logic is changed, not the screen design
     return Scaffold(
       appBar: AppBar(title: const Text('Carver Dashboard')),
       body:

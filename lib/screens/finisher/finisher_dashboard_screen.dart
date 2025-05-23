@@ -30,6 +30,8 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
     setState(() => _isLoading = true);
     try {
       final orders = await _orderService.getOrders();
+      final filtedOrders =
+          orders.where((order) => order.currentRole == 'finisher').toList();
       int pending = 0, processing = 0, delivered = 0, cancelled = 0;
       for (final order in orders) {
         switch (order.status) {
