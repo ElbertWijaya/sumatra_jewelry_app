@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
+// Jika file detail sudah ada, import detail screen berikut (jika belum, buat sesuai instruksi sebelumnya)
+import 'sales_detail_screen.dart';
 
 class SalesDashboardScreen extends StatefulWidget {
   const SalesDashboardScreen({Key? key}) : super(key: key);
@@ -432,6 +435,43 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                   itemCount: _filteredOrders.length,
                                   itemBuilder: (context, index) {
                                     final order = _filteredOrders[index];
+
+                                    // Tampilkan gambar jika ada, jika tidak tampilkan icon default
+                                    Widget leadingWidget;
+                                    if (order.imagePaths != null &&
+                                        order.imagePaths!.isNotEmpty &&
+                                        order.imagePaths!.first.isNotEmpty &&
+                                        File(
+                                          order.imagePaths!.first,
+                                        ).existsSync()) {
+                                      leadingWidget = ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.file(
+                                          File(order.imagePaths!.first),
+                                          width: 80,
+                                          height: 80,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  const Icon(
+                                                    Icons.image_not_supported,
+                                                    size: 32,
+                                                    color: Colors.grey,
+                                                  ),
+                                        ),
+                                      );
+                                    } else {
+                                      leadingWidget = const CircleAvatar(
+                                        backgroundColor: Colors.blueGrey,
+                                        radius: 40,
+                                        child: Icon(
+                                          Icons.image,
+                                          color: Colors.white,
+                                          size: 40,
+                                        ),
+                                      );
+                                    }
+
                                     return Card(
                                       margin: const EdgeInsets.symmetric(
                                         vertical: 8.0,
@@ -442,13 +482,9 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                       ),
                                       color: Colors.white.withOpacity(0.9),
                                       child: ListTile(
-                                        leading: const CircleAvatar(
-                                          backgroundColor: Colors.blueGrey,
-                                          child: Icon(
-                                            Icons.image,
-                                            color: Colors.white,
-                                          ),
-                                        ),
+                                        leading: leadingWidget,
+                                        minLeadingWidth: 90,
+                                        contentPadding: const EdgeInsets.all(8),
                                         title: Text(
                                           order.customerName,
                                           style: const TextStyle(
@@ -485,16 +521,20 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                           Icons.arrow_forward_ios,
                                           color: Colors.grey,
                                         ),
-                                        onTap: () {
-                                          Navigator.of(context)
-                                              .pushNamed(
-                                                '/sales/detail',
-                                                arguments: order,
-                                              )
-                                              .then((value) {
-                                                if (value == true)
-                                                  _fetchOrders();
-                                              });
+                                        onTap: () async {
+                                          // Navigasi ke halaman detail & edit
+                                          final result = await Navigator.of(
+                                            context,
+                                          ).push(
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (context) =>
+                                                      SalesDetailScreen(
+                                                        order: order,
+                                                      ),
+                                            ),
+                                          );
+                                          if (result == true) _fetchOrders();
                                         },
                                       ),
                                     );

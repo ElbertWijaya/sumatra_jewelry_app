@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 /// Enum Status Pesanan sesuai alur kerja multi-divisi
 enum OrderWorkflowStatus {
   pending, // Baru dibuat oleh sales, menunggu desain
+  inProgress,
   designing, // Sedang didesain oleh designer
   waiting_casting, // Menunggu proses cor setelah desain
   readyForCasting, // Siap untuk cor/casting

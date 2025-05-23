@@ -14,7 +14,6 @@ class DesignerDetailScreen extends StatefulWidget {
 class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
   late Order _order;
   bool _isSaving = false;
-  // Untuk checklist tugas
   bool _designDone = false;
   bool _printingDone = false;
   bool _qcDone = false;
@@ -23,7 +22,6 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
   void initState() {
     super.initState();
     _order = widget.order;
-    // Jika sudah on progress, load checklist dari order jika ada (tambahkan field di model jika mau simpan checklist)
   }
 
   Future<void> _mulaiDesign() async {
@@ -79,7 +77,6 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Gambar referensi
                     Text(
                       'Referensi Gambar',
                       style: Theme.of(context).textTheme.titleMedium,
@@ -138,6 +135,7 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
                         'Tanggal Siap: ${_order.readyDate!.day}/${_order.readyDate!.month}/${_order.readyDate!.year}',
                       ),
                     const SizedBox(height: 24),
+
                     if (_order.workflowStatus == OrderWorkflowStatus.pending)
                       SizedBox(
                         width: double.infinity,
@@ -146,6 +144,7 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
                           child: const Text('Mulai Design'),
                         ),
                       ),
+
                     if (_order.workflowStatus == OrderWorkflowStatus.inProgress)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
