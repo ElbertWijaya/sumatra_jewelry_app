@@ -88,6 +88,8 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
           _notesController.text.trim().isEmpty
               ? null
               : _notesController.text.trim(),
+      currentRole: 'designer', // NEW FIELD to support workflow
+      designStatus: DesignStatus.waiting, // NEW FIELD to support workflow
     );
     setState(() => _isLoading = true);
     try {

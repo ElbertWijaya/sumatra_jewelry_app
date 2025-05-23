@@ -3,6 +3,9 @@ import 'package:flutter/foundation.dart';
 /// Enum representing the possible statuses of an order.
 enum OrderStatus { pending, processing, delivered, cancelled, unknown }
 
+/// Enum for the design workflow status.
+enum DesignStatus { waiting, designing, done }
+
 /// Extension for parsing OrderStatus from string.
 extension OrderStatusX on OrderStatus {
   static OrderStatus fromString(String status) {
@@ -35,6 +38,33 @@ extension OrderStatusX on OrderStatus {
       case OrderStatus.unknown:
       default:
         return 'Unknown';
+    }
+  }
+}
+
+/// Extension for parsing DesignStatus from string.
+extension DesignStatusX on DesignStatus {
+  static DesignStatus fromString(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'waiting':
+        return DesignStatus.waiting;
+      case 'designing':
+        return DesignStatus.designing;
+      case 'done':
+        return DesignStatus.done;
+      default:
+        return DesignStatus.waiting;
+    }
+  }
+
+  String get label {
+    switch (this) {
+      case DesignStatus.waiting:
+        return 'Waiting';
+      case DesignStatus.designing:
+        return 'Designing';
+      case DesignStatus.done:
+        return 'Done';
     }
   }
 }
@@ -97,6 +127,10 @@ class Order {
   final DateTime? updatedAt;
   final String? notes;
 
+  // --- New fields for workflow (safe default: null or waiting) ---
+  final String? currentRole; // e.g. 'sales', 'designer', 'cor', etc.
+  final DesignStatus? designStatus; // Only relevant for designer workflow
+
   Order({
     required this.id,
     required this.customerName,
@@ -105,6 +139,8 @@ class Order {
     required this.createdAt,
     this.updatedAt,
     this.notes,
+    this.currentRole,
+    this.designStatus,
   }) : assert(id.isNotEmpty, 'Order id cannot be empty.'),
        assert(customerName.isNotEmpty, 'Customer name cannot be empty.'),
        assert(items.isNotEmpty, 'Order must contain at least one item.');
@@ -117,6 +153,8 @@ class Order {
     DateTime? createdAt,
     DateTime? updatedAt,
     String? notes,
+    String? currentRole,
+    DesignStatus? designStatus,
   }) {
     return Order(
       id: id ?? this.id,
@@ -126,6 +164,8 @@ class Order {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       notes: notes ?? this.notes,
+      currentRole: currentRole ?? this.currentRole,
+      designStatus: designStatus ?? this.designStatus,
     );
   }
 
@@ -144,6 +184,8 @@ class Order {
               ? DateTime.parse(json['updatedAt'] as String)
               : null,
       notes: json['notes'] as String?,
+      currentRole: json['currentRole'] as String?,
+      designStatus: DesignStatusX.fromString(json['designStatus'] as String?),
     );
   }
 
@@ -155,5 +197,7 @@ class Order {
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt?.toIso8601String(),
     'notes': notes,
+    'currentRole': currentRole,
+    'designStatus': designStatus?.name,
   };
 }

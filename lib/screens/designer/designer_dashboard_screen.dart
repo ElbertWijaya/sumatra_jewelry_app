@@ -1,12 +1,10 @@
-// sumatra_jewelry_app/lib/screens/designer/designer_dashboard_screen.dart
 import 'package:flutter/material.dart';
-import 'package:sumatra_jewelry_app/models/order.dart'; // Import Order model
-import 'package:sumatra_jewelry_app/services/order_service.dart'; // Import OrderService
-import 'package:sumatra_jewelry_app/screens/sales/order_detail_screen.dart'; // Untuk melihat detail pesanan
-import 'package:sumatra_jewelry_app/screens/auth/login_screen.dart'; // Untuk logout
+import '../../models/order.dart';
+import '../../services/order_service.dart';
+import 'designer_order_detail_screen.dart';
 
 class DesignerDashboardScreen extends StatefulWidget {
-  const DesignerDashboardScreen({super.key});
+  const DesignerDashboardScreen({Key? key}) : super(key: key);
 
   @override
   State<DesignerDashboardScreen> createState() =>
@@ -15,9 +13,8 @@ class DesignerDashboardScreen extends StatefulWidget {
 
 class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
   final OrderService _orderService = OrderService();
+  bool _isLoading = false;
   List<Order> _orders = [];
-  bool _isLoading = true;
-  String _errorMessage = '';
 
   @override
   void initState() {
@@ -26,191 +23,104 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
   }
 
   Future<void> _fetchOrders() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-    });
+    setState(() => _isLoading = true);
     try {
-      final fetchedOrders = await _orderService.getOrders();
+      final orders = await _orderService.getOrders();
       setState(() {
-        _orders = fetchedOrders;
+        _orders = orders.where((o) => o.currentRole == 'designer').toList();
       });
     } catch (e) {
-      setState(() {
-        _errorMessage =
-            'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to load orders: $e')));
     }
+    setState(() => _isLoading = false);
   }
 
-  Widget _buildOrderSummaryCard(String title, int count, Color color) {
-    return Expanded(
-      child: Card(
-        color: color,
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '$count',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  Future<void> _startDesign(Order order) async {
+    final updatedOrder = order.copyWith(designStatus: DesignStatus.designing);
+    setState(() => _isLoading = true);
+    try {
+      await _orderService.updateOrder(updatedOrder);
+      _fetchOrders();
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to start design: $e')));
+    }
+    setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Logika perhitungan untuk ringkasan pesanan menggunakan enum
-    final assignedToDesignerOrders = _orders
-        .where((order) => order.status == OrderStatus.assignedToDesigner)
-        .length;
-    final designingInProgressOrders = _orders
-        .where((order) => order.status == OrderStatus.designing)
-        .length;
-
+    final waitingOrders =
+        _orders.where((o) => o.designStatus == DesignStatus.waiting).toList();
+    final designingOrders =
+        _orders.where((o) => o.designStatus == DesignStatus.designing).toList();
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Designer Dashboard'),
-        centerTitle: true,
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              // Contoh logout, sesuaikan dengan AuthService Anda
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
-            },
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty
-              ? Center(
-                  child: Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.red, fontSize: 16),
-                  ),
-                )
+      appBar: AppBar(title: const Text('Designer Dashboard')),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
               : RefreshIndicator(
-                  onRefresh: _fetchOrders,
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Ringkasan Pesanan Designer',
-                              style: Theme.of(context).textTheme.headlineSmall
-                                  ?.copyWith(fontWeight: FontWeight.bold),
+                onRefresh: _fetchOrders,
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    const Text(
+                      'Waiting for Design',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    ...waitingOrders.isEmpty
+                        ? [const Text('No orders waiting for design.')]
+                        : waitingOrders.map(
+                          (order) => ListTile(
+                            title: Text(order.customerName),
+                            subtitle: Text(
+                              'Submitted by Sales • ${order.createdAt}',
                             ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                _buildOrderSummaryCard(
-                                  'Siap Desain',
-                                  assignedToDesignerOrders,
-                                  Colors.teal,
-                                ),
-                                const SizedBox(width: 10),
-                                _buildOrderSummaryCard(
-                                  'Sedang Desain',
-                                  designingInProgressOrders,
-                                  Colors.blue,
-                                ),
-                              ],
+                            trailing: ElevatedButton(
+                              onPressed: () => _startDesign(order),
+                              child: const Text('Start Design'),
                             ),
-                          ],
+                            onTap:
+                                () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => DesignerOrderDetailScreen(
+                                          order: order,
+                                          onUpdate: _fetchOrders,
+                                        ),
+                                  ),
+                                ),
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: _orders.isEmpty
-                            ? const Center(
-                                child: Text(
-                                  'Tidak ada pesanan yang tersedia untuk Anda.',
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Designing',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    ...designingOrders.isEmpty
+                        ? [const Text('No orders in design.')]
+                        : designingOrders.map(
+                          (order) => ListTile(
+                            title: Text(order.customerName),
+                            subtitle: Text('Designing • ${order.createdAt}'),
+                            onTap:
+                                () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => DesignerOrderDetailScreen(
+                                          order: order,
+                                          onUpdate: _fetchOrders,
+                                        ),
+                                  ),
                                 ),
-                              )
-                            : ListView.builder(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16.0),
-                                itemCount: _orders.length,
-                                itemBuilder: (context, index) {
-                                  final order = _orders[index];
-                                  // Hanya tampilkan pesanan yang relevan untuk Designer
-                                  if ([
-                                    OrderStatus.assignedToDesigner,
-                                    OrderStatus.designing,
-                                  ].contains(order.status)) {
-                                    return Card(
-                                      margin: const EdgeInsets.symmetric(
-                                          vertical: 8.0),
-                                      elevation: 2,
-                                      child: ListTile(
-                                        title: Text(
-                                          'Pesanan #${order.id} - ${order.customerName}',
-                                        ),
-                                        subtitle: Text(
-                                          'Produk: ${order.productName}\n'
-                                          'Status: ${order.status.toDisplayString()}',
-                                        ),
-                                        trailing: const Icon(
-                                          Icons.arrow_forward_ios,
-                                        ),
-                                        onTap: () async {
-                                          final result = await Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  OrderDetailScreen(
-                                                order: order,
-                                                userRole: 'designer',
-                                              ),
-                                            ),
-                                          );
-                                          if (result == true) {
-                                            _fetchOrders(); // Refresh jika ada perubahan
-                                          }
-                                        },
-                                      ),
-                                    );
-                                  }
-                                  return const SizedBox.shrink(); // Sembunyikan yang tidak relevan
-                                },
-                              ),
-                      ),
-                    ],
-                  ),
+                          ),
+                        ),
+                  ],
                 ),
+              ),
     );
   }
 }

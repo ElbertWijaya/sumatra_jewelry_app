@@ -1,12 +1,9 @@
-// sumatra_jewelry_app/lib/screens/cor/cor_dashboard_screen.dart
 import 'package:flutter/material.dart';
-import 'package:sumatra_jewelry_app/models/order.dart'; // Import Order model
-import 'package:sumatra_jewelry_app/services/order_service.dart'; // Import OrderService
-import 'package:sumatra_jewelry_app/screens/sales/order_detail_screen.dart'; // Untuk melihat detail pesanan
-import 'package:sumatra_jewelry_app/screens/auth/login_screen.dart'; // Untuk logout
+import '../../models/order.dart';
+import '../../services/order_service.dart';
 
 class CorDashboardScreen extends StatefulWidget {
-  const CorDashboardScreen({super.key});
+  const CorDashboardScreen({Key? key}) : super(key: key);
 
   @override
   State<CorDashboardScreen> createState() => _CorDashboardScreenState();
@@ -14,9 +11,8 @@ class CorDashboardScreen extends StatefulWidget {
 
 class _CorDashboardScreenState extends State<CorDashboardScreen> {
   final OrderService _orderService = OrderService();
+  bool _isLoading = false;
   List<Order> _orders = [];
-  bool _isLoading = true;
-  String _errorMessage = '';
 
   @override
   void initState() {
@@ -25,196 +21,41 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
   }
 
   Future<void> _fetchOrders() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-    });
+    setState(() => _isLoading = true);
     try {
-      final fetchedOrders = await _orderService.getOrders();
+      final orders = await _orderService.getOrders();
       setState(() {
-        _orders = fetchedOrders;
+        _orders = orders.where((o) => o.currentRole == 'cor').toList();
       });
     } catch (e) {
-      setState(() {
-        _errorMessage =
-            'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to load orders: $e')));
     }
-  }
-
-  Widget _buildOrderSummaryCard(String title, int count, Color color) {
-    return Expanded(
-      child: Card(
-        color: color,
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '$count',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Logika perhitungan untuk ringkasan pesanan menggunakan enum
-    final readyForCorOrders =
-        _orders
-            .where((order) => order.status == OrderStatus.readyForCor)
-            .length;
-    final corInProgressOrders =
-        _orders
-            .where((order) => order.status == OrderStatus.corInProgress)
-            .length;
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('COR Dashboard'),
-        centerTitle: true,
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              // Contoh logout, sesuaikan dengan AuthService Anda
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('COR Dashboard')),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : _errorMessage.isNotEmpty
-              ? Center(
-                child: Text(
-                  _errorMessage,
-                  style: const TextStyle(color: Colors.red, fontSize: 16),
-                ),
-              )
               : RefreshIndicator(
                 onRefresh: _fetchOrders,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Ringkasan Pesanan COR',
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              _buildOrderSummaryCard(
-                                'Siap COR',
-                                readyForCorOrders,
-                                Colors.purple,
-                              ),
-                              const SizedBox(width: 10),
-                              _buildOrderSummaryCard(
-                                'Sedang COR',
-                                corInProgressOrders,
-                                Colors.blue,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child:
-                          _orders.isEmpty
-                              ? const Center(
-                                child: Text(
-                                  'Tidak ada pesanan yang tersedia untuk Anda.',
-                                ),
-                              )
-                              : ListView.builder(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                ),
-                                itemCount: _orders.length,
-                                itemBuilder: (context, index) {
-                                  final order = _orders[index];
-                                  // Hanya tampilkan pesanan yang relevan untuk COR
-                                  if ([
-                                    OrderStatus.readyForCor,
-                                    OrderStatus.corInProgress,
-                                  ].contains(order.status)) {
-                                    return Card(
-                                      margin: const EdgeInsets.symmetric(
-                                        vertical: 8.0,
-                                      ),
-                                      elevation: 2,
-                                      child: ListTile(
-                                        title: Text(
-                                          'Pesanan #${order.id} - ${order.customerName}',
-                                        ),
-                                        subtitle: Text(
-                                          'Produk: ${order.productName}\n'
-                                          'Status: ${order.status.toDisplayString()}',
-                                        ),
-                                        trailing: const Icon(
-                                          Icons.arrow_forward_ios,
-                                        ),
-                                        onTap: () async {
-                                          final result = await Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder:
-                                                  (context) =>
-                                                      OrderDetailScreen(
-                                                        order: order,
-                                                        userRole: 'cor',
-                                                      ),
-                                            ),
-                                          );
-                                          if (result == true) {
-                                            _fetchOrders(); // Refresh jika ada perubahan
-                                          }
-                                        },
-                                      ),
-                                    );
-                                  }
-                                  return const SizedBox.shrink(); // Sembunyikan yang tidak relevan
-                                },
-                              ),
-                    ),
-                  ],
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _orders.length,
+                  separatorBuilder: (_, __) => const Divider(),
+                  itemBuilder: (context, index) {
+                    final order = _orders[index];
+                    return ListTile(
+                      title: Text(order.customerName),
+                      subtitle: Text('From Designer • ${order.createdAt}'),
+                      // Add navigation or actions as required for COR
+                    );
+                  },
                 ),
               ),
     );
