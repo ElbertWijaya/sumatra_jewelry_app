@@ -25,37 +25,68 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
     try {
       final orders = await _orderService.getOrders();
       setState(() {
-        _orders = orders.where((o) => o.currentRole == 'cor').toList();
+        _orders =
+            orders
+                .where(
+                  (o) =>
+                      o.workflowStatus == OrderWorkflowStatus.readyForCasting ||
+                      o.workflowStatus == OrderWorkflowStatus.casting,
+                )
+                .toList();
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load orders: $e')));
+      ).showSnackBar(SnackBar(content: Text('Gagal memuat pesanan: $e')));
     }
     setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
+    final ready =
+        _orders
+            .where(
+              (o) => o.workflowStatus == OrderWorkflowStatus.readyForCasting,
+            )
+            .length;
+    final casting =
+        _orders
+            .where((o) => o.workflowStatus == OrderWorkflowStatus.casting)
+            .length;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('COR Dashboard')),
+      appBar: AppBar(title: const Text('Dashboard Cor')),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
-                onRefresh: _fetchOrders,
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _orders.length,
-                  separatorBuilder: (_, __) => const Divider(),
-                  itemBuilder: (context, index) {
-                    final order = _orders[index];
-                    return ListTile(
-                      title: Text(order.customerName),
-                      subtitle: Text('From Designer • ${order.createdAt}'),
-                      // Add navigation or actions as required for COR
-                    );
-                  },
+              : Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Menunggu Cor: $ready'),
+                    Text('Sedang Cor: $casting'),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: _orders.length,
+                        itemBuilder: (_, idx) {
+                          final order = _orders[idx];
+                          return ListTile(
+                            title: Text(order.customerName),
+                            subtitle: Text(order.jewelryType),
+                            trailing: Text(order.workflowStatus.label),
+                            onTap:
+                                () => Navigator.of(
+                                  context,
+                                ).pushNamed('/order/detail', arguments: order),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
     );

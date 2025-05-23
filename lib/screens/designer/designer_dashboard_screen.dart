@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
-import 'designer_order_detail_screen.dart';
 
 class DesignerDashboardScreen extends StatefulWidget {
   const DesignerDashboardScreen({Key? key}) : super(key: key);
@@ -27,97 +26,66 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
     try {
       final orders = await _orderService.getOrders();
       setState(() {
-        _orders = orders.where((o) => o.currentRole == 'designer').toList();
+        _orders =
+            orders
+                .where(
+                  (o) =>
+                      o.workflowStatus == OrderWorkflowStatus.pending ||
+                      o.workflowStatus == OrderWorkflowStatus.designing,
+                )
+                .toList();
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load orders: $e')));
-    }
-    setState(() => _isLoading = false);
-  }
-
-  Future<void> _startDesign(Order order) async {
-    final updatedOrder = order.copyWith(designStatus: DesignStatus.designing);
-    setState(() => _isLoading = true);
-    try {
-      await _orderService.updateOrder(updatedOrder);
-      _fetchOrders();
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to start design: $e')));
+      ).showSnackBar(SnackBar(content: Text('Gagal memuat pesanan: $e')));
     }
     setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final waitingOrders =
-        _orders.where((o) => o.designStatus == DesignStatus.waiting).toList();
-    final designingOrders =
-        _orders.where((o) => o.designStatus == DesignStatus.designing).toList();
+    final pending =
+        _orders
+            .where((o) => o.workflowStatus == OrderWorkflowStatus.pending)
+            .length;
+    final designing =
+        _orders
+            .where((o) => o.workflowStatus == OrderWorkflowStatus.designing)
+            .length;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Designer Dashboard')),
+      appBar: AppBar(title: const Text('Dashboard Designer')),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
-                onRefresh: _fetchOrders,
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
+              : Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Waiting for Design',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    ...waitingOrders.isEmpty
-                        ? [const Text('No orders waiting for design.')]
-                        : waitingOrders.map(
-                          (order) => ListTile(
+                    Text('Menunggu Desain: $pending'),
+                    Text('Sedang Didisain: $designing'),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: _orders.length,
+                        itemBuilder: (_, idx) {
+                          final order = _orders[idx];
+                          return ListTile(
                             title: Text(order.customerName),
-                            subtitle: Text(
-                              'Submitted by Sales • ${order.createdAt}',
-                            ),
-                            trailing: ElevatedButton(
-                              onPressed: () => _startDesign(order),
-                              child: const Text('Start Design'),
-                            ),
+                            subtitle: Text(order.jewelryType),
+                            trailing: Text(order.workflowStatus.label),
                             onTap:
-                                () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder:
-                                        (_) => DesignerOrderDetailScreen(
-                                          order: order,
-                                          onUpdate: _fetchOrders,
-                                        ),
-                                  ),
+                                () => Navigator.of(context).pushNamed(
+                                  '/designer/detail',
+                                  arguments: order,
                                 ),
-                          ),
-                        ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Designing',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                          );
+                        },
+                      ),
                     ),
-                    ...designingOrders.isEmpty
-                        ? [const Text('No orders in design.')]
-                        : designingOrders.map(
-                          (order) => ListTile(
-                            title: Text(order.customerName),
-                            subtitle: Text('Designing • ${order.createdAt}'),
-                            onTap:
-                                () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder:
-                                        (_) => DesignerOrderDetailScreen(
-                                          order: order,
-                                          onUpdate: _fetchOrders,
-                                        ),
-                                  ),
-                                ),
-                          ),
-                        ),
                   ],
                 ),
               ),

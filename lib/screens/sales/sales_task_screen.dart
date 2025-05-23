@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
 
-class DiamondSetterTaskScreen extends StatefulWidget {
-  const DiamondSetterTaskScreen({Key? key}) : super(key: key);
+class SalesTaskScreen extends StatefulWidget {
+  const SalesTaskScreen({Key? key}) : super(key: key);
 
   @override
-  State<DiamondSetterTaskScreen> createState() =>
-      _DiamondSetterTaskScreenState();
+  State<SalesTaskScreen> createState() => _SalesTaskScreenState();
 }
 
-class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
+class _SalesTaskScreenState extends State<SalesTaskScreen> {
   final OrderService _orderService = OrderService();
   bool _isLoading = false;
   List<Order> _orders = [];
@@ -26,37 +25,39 @@ class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
     try {
       final orders = await _orderService.getOrders();
       setState(() {
+        // Sales melihat order yang statusnya masih awal (belum selesai atau belum dibatalkan)
         _orders =
             orders
                 .where(
                   (o) =>
-                      o.workflowStatus ==
-                          OrderWorkflowStatus.readyForStoneSetting ||
-                      o.workflowStatus == OrderWorkflowStatus.stoneSetting,
+                      o.workflowStatus == OrderWorkflowStatus.pending ||
+                      o.workflowStatus == OrderWorkflowStatus.done ||
+                      o.workflowStatus == OrderWorkflowStatus.cancelled,
                 )
                 .toList();
+        // Urutkan agar pending di atas
         _orders.sort(
           (a, b) => a.workflowStatus.index.compareTo(b.workflowStatus.index),
         );
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memuat tugas diamond setter: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal memuat pesanan: $e')));
     }
     setState(() => _isLoading = false);
   }
 
   void _goToDetail(Order order) {
-    Navigator.of(context).pushNamed('/order/detail', arguments: order);
+    Navigator.of(context).pushNamed('/sales/detail', arguments: order);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daftar Tugas Diamond Setter'),
+        title: const Text('Daftar Pesanan Sales'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -69,7 +70,7 @@ class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _orders.isEmpty
-              ? const Center(child: Text('Tidak ada tugas pasang batu.'))
+              ? const Center(child: Text('Belum ada pesanan.'))
               : RefreshIndicator(
                 onRefresh: _fetchOrders,
                 child: ListView.builder(
@@ -86,15 +87,19 @@ class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
                       child: ListTile(
                         title: Text(order.customerName),
                         subtitle: Text(
-                          '${order.jewelryType} • ${order.customerContact}',
+                          '${order.jewelryType} • ${order.customerContact}\n${order.address}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         trailing: Text(
                           order.workflowStatus.label,
                           style: TextStyle(
                             color:
-                                order.workflowStatus ==
-                                        OrderWorkflowStatus.stoneSetting
-                                    ? Colors.blue
+                                order.workflowStatus == OrderWorkflowStatus.done
+                                    ? Colors.green
+                                    : order.workflowStatus ==
+                                        OrderWorkflowStatus.cancelled
+                                    ? Colors.red
                                     : Colors.orange,
                             fontWeight: FontWeight.bold,
                           ),

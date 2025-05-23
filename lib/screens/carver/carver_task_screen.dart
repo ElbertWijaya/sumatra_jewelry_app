@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
 
-class DiamondSetterTaskScreen extends StatefulWidget {
-  const DiamondSetterTaskScreen({Key? key}) : super(key: key);
+class CarverTaskScreen extends StatefulWidget {
+  const CarverTaskScreen({Key? key}) : super(key: key);
 
   @override
-  State<DiamondSetterTaskScreen> createState() =>
-      _DiamondSetterTaskScreenState();
+  State<CarverTaskScreen> createState() => _CarverTaskScreenState();
 }
 
-class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
+class _CarverTaskScreenState extends State<CarverTaskScreen> {
   final OrderService _orderService = OrderService();
   bool _isLoading = false;
   List<Order> _orders = [];
@@ -30,9 +29,8 @@ class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
             orders
                 .where(
                   (o) =>
-                      o.workflowStatus ==
-                          OrderWorkflowStatus.readyForStoneSetting ||
-                      o.workflowStatus == OrderWorkflowStatus.stoneSetting,
+                      o.workflowStatus == OrderWorkflowStatus.readyForCarving ||
+                      o.workflowStatus == OrderWorkflowStatus.carving,
                 )
                 .toList();
         _orders.sort(
@@ -41,9 +39,9 @@ class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memuat tugas diamond setter: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal memuat tugas carver: $e')));
     }
     setState(() => _isLoading = false);
   }
@@ -56,7 +54,7 @@ class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daftar Tugas Diamond Setter'),
+        title: const Text('Daftar Tugas Carver'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -69,7 +67,7 @@ class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _orders.isEmpty
-              ? const Center(child: Text('Tidak ada tugas pasang batu.'))
+              ? const Center(child: Text('Tidak ada tugas ukir.'))
               : RefreshIndicator(
                 onRefresh: _fetchOrders,
                 child: ListView.builder(
@@ -93,7 +91,7 @@ class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
                           style: TextStyle(
                             color:
                                 order.workflowStatus ==
-                                        OrderWorkflowStatus.stoneSetting
+                                        OrderWorkflowStatus.carving
                                     ? Colors.blue
                                     : Colors.orange,
                             fontWeight: FontWeight.bold,

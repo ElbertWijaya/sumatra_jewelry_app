@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
-import 'sales_detail_screen.dart';
 
-/// Displays a chronological list of all orders for historical reference.
 class SalesHistoryScreen extends StatefulWidget {
   const SalesHistoryScreen({Key? key}) : super(key: key);
 
@@ -13,71 +11,95 @@ class SalesHistoryScreen extends StatefulWidget {
 
 class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
   final OrderService _orderService = OrderService();
-  List<Order> _orders = [];
   bool _isLoading = false;
+  List<Order> _orders = [];
 
   @override
   void initState() {
     super.initState();
-    _loadOrderHistory();
+    _fetchOrders();
   }
 
-  Future<void> _loadOrderHistory() async {
+  Future<void> _fetchOrders() async {
     setState(() => _isLoading = true);
     try {
       final orders = await _orderService.getOrders();
-      if (!mounted) return;
-      // Sort orders by createdAt descending (most recent first)
-      orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      setState(() => _orders = orders);
+      setState(() {
+        // Tampilkan hanya pesanan selesai & batal
+        _orders =
+            orders
+                .where(
+                  (o) =>
+                      o.workflowStatus == OrderWorkflowStatus.done ||
+                      o.workflowStatus == OrderWorkflowStatus.cancelled,
+                )
+                .toList();
+        _orders.sort(
+          (a, b) => b.updatedAt?.compareTo(a.updatedAt ?? DateTime(1990)) ?? 0,
+        );
+      });
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load order history: $e')),
+        SnackBar(content: Text('Gagal memuat riwayat pesanan: $e')),
       );
     }
     setState(() => _isLoading = false);
   }
 
-  void _navigateToDetail(String orderId) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => SalesDetailScreen(orderId: orderId)),
-    );
+  void _goToDetail(Order order) {
+    Navigator.of(context).pushNamed('/sales/detail', arguments: order);
   }
 
   @override
   Widget build(BuildContext context) {
-    // UI design remains unchanged; logic is robust and maintainable
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Order History'),
+        title: const Text('Riwayat Pesanan Sales'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _isLoading ? null : _loadOrderHistory,
-            tooltip: 'Refresh',
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
         ],
       ),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _orders.isEmpty
-              ? const Center(child: Text('No order history found.'))
-              : ListView.separated(
-                itemCount: _orders.length,
-                separatorBuilder: (_, __) => const Divider(),
-                itemBuilder: (context, index) {
-                  final order = _orders[index];
-                  return ListTile(
-                    title: Text(order.customerName),
-                    subtitle: Text(
-                      '${order.status.label} • ${order.createdAt}',
-                    ),
-                    trailing: Icon(Icons.chevron_right),
-                    onTap: () => _navigateToDetail(order.id),
-                  );
-                },
+              ? const Center(child: Text('Belum ada riwayat pesanan.'))
+              : RefreshIndicator(
+                onRefresh: _fetchOrders,
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _orders.length,
+                  itemBuilder: (context, idx) {
+                    final order = _orders[idx];
+                    return Card(
+                      elevation: 1,
+                      margin: const EdgeInsets.symmetric(
+                        vertical: 4,
+                        horizontal: 0,
+                      ),
+                      child: ListTile(
+                        title: Text(order.customerName),
+                        subtitle: Text(
+                          '${order.jewelryType} • ${order.customerContact}\n${order.address}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: Text(
+                          order.workflowStatus.label,
+                          style: TextStyle(
+                            color:
+                                order.workflowStatus == OrderWorkflowStatus.done
+                                    ? Colors.green
+                                    : Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        onTap: () => _goToDetail(order),
+                      ),
+                    );
+                  },
+                ),
               ),
     );
   }
