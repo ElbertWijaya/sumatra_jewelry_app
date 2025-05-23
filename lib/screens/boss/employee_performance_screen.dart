@@ -50,28 +50,27 @@ class _EmployeePerformanceScreenState extends State<EmployeePerformanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kinerja Karyawan'),
-        centerTitle: true,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty
+      appBar: AppBar(title: const Text('Kinerja Karyawan'), centerTitle: true),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _errorMessage.isNotEmpty
               ? Center(
-                  child: Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.red, fontSize: 16),
-                  ),
-                )
+                child: Text(
+                  _errorMessage,
+                  style: const TextStyle(color: Colors.red, fontSize: 16),
+                ),
+              )
               : RefreshIndicator(
-                  onRefresh: _fetchData,
-                  child: _allOrders.isEmpty
-                      ? const Center(
+                onRefresh: _fetchData,
+                child:
+                    _allOrders.isEmpty
+                        ? const Center(
                           child: Text(
                             'Tidak ada data pesanan untuk dianalisis performa.',
                           ),
                         )
-                      : ListView(
+                        : ListView(
                           padding: const EdgeInsets.all(16.0),
                           children: [
                             // Contoh tampilan placeholder untuk performa
@@ -86,17 +85,21 @@ class _EmployeePerformanceScreenState extends State<EmployeePerformanceScreen> {
                                   children: [
                                     Text(
                                       'Ringkasan Performa (Placeholder)',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleLarge,
+                                      style:
+                                          Theme.of(
+                                            context,
+                                          ).textTheme.titleLarge,
                                     ),
                                     const SizedBox(height: 10),
                                     Text(
-                                        'Jumlah Total Pesanan: ${_allOrders.length}'),
+                                      'Jumlah Total Pesanan: ${_allOrders.length}',
+                                    ),
                                     Text(
-                                        'Pesanan Selesai: ${_allOrders.where((o) => o.status == OrderStatus.completed).length}'),
+                                      'Pesanan Selesai: ${_allOrders.where((o) => o.status == OrderStatus.completed).length}',
+                                    ),
                                     Text(
-                                        'Perlu implementasi logika performa aktual.'),
+                                      'Perlu implementasi logika performa aktual.',
+                                    ),
                                   ],
                                 ),
                               ),
@@ -111,12 +114,16 @@ class _EmployeePerformanceScreenState extends State<EmployeePerformanceScreen> {
                             const SizedBox(height: 10),
                             ..._allOrders.map((order) {
                               return Card(
-                                margin: const EdgeInsets.symmetric(vertical: 4.0),
+                                margin: const EdgeInsets.symmetric(
+                                  vertical: 4.0,
+                                ),
                                 child: ListTile(
                                   title: Text(
-                                      '${order.productName} oleh ${order.customerName}'),
+                                    '${order.productName} oleh ${order.customerName}',
+                                  ),
                                   subtitle: Text(
-                                      'Status: ${order.status.toDisplayString()} (${order.assignedTo ?? 'Belum Ditugaskan'})'),
+                                    'Status: ${order.status.toDisplayString()} (${order.assignedTo ?? 'Belum Ditugaskan'})',
+                                  ),
                                   // Anda bisa menambahkan onTap untuk melihat detail pesanan jika perlu
                                   // onTap: () {
                                   //   Navigator.push(
@@ -131,10 +138,10 @@ class _EmployeePerformanceScreenState extends State<EmployeePerformanceScreen> {
                                   // },
                                 ),
                               );
-                            }).toList(),
+                            }),
                           ],
                         ),
-                ),
+              ),
     );
   }
 }

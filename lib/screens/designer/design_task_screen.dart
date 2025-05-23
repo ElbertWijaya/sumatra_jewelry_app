@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class DesignTaskScreen extends StatelessWidget {
-  const DesignTaskScreen({Key? key}) : super(key: key);
+  const DesignTaskScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

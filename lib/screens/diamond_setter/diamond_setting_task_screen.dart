@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class DiamondSettingTaskScreen extends StatelessWidget {
-  const DiamondSettingTaskScreen({Key? key}) : super(key: key);
+  const DiamondSettingTaskScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

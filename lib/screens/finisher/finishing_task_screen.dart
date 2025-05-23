@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class FinishingTaskScreen extends StatelessWidget {
-  const FinishingTaskScreen({Key? key}) : super(key: key);
+  const FinishingTaskScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
