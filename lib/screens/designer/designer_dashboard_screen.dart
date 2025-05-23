@@ -18,7 +18,7 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   String _searchQuery = '';
-  // Sekarang _selectedStatusFilter menjadi List<OrderWorkflowStatus> supaya bisa filter multi-status untuk "On Progress"
+  // _selectedStatusFilter adalah List<OrderWorkflowStatus> supaya bisa filter multi-status untuk "On Progress"
   List<OrderWorkflowStatus>? _selectedStatusFilter;
 
   @override
@@ -52,8 +52,9 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
   List<Order> get _filteredOrders {
     List<Order> filtered = _orders;
     if (_selectedStatusFilter != null && _selectedStatusFilter!.isNotEmpty) {
-      filtered =
-          filtered.where((order) => _selectedStatusFilter!.contains(order.workflowStatus)).toList();
+      filtered = filtered
+          .where((order) => _selectedStatusFilter!.contains(order.workflowStatus))
+          .toList();
     }
     if (_searchQuery.isNotEmpty) {
       filtered = filtered.where((order) {
@@ -139,11 +140,13 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
     final allStatuses = OrderWorkflowStatus.values;
     final waitingStatus = [OrderWorkflowStatus.pending];
     final workingStatus = [OrderWorkflowStatus.designing];
-    // "On Progress" = semua status setelah "pending" & "designing"
+    // "On Progress" = semua status setelah "pending" & "designing", TAPI TIDAK MENCANTUMKAN done/cancelled/unknown
     final onProgressStatuses = allStatuses
         .where((s) =>
             s != OrderWorkflowStatus.pending &&
             s != OrderWorkflowStatus.designing &&
+            s != OrderWorkflowStatus.done &&        // <--- PASTIKAN DONE TIDAK MASUK
+            s != OrderWorkflowStatus.cancelled &&
             s != OrderWorkflowStatus.unknown)
         .toList();
 

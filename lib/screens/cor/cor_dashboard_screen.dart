@@ -137,12 +137,15 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
     final allStatuses = OrderWorkflowStatus.values;
     final waitingStatus = [OrderWorkflowStatus.waiting_casting];
     final workingStatus = [OrderWorkflowStatus.casting];
+    // "On Progress" = semua status setelah "pending", "designing", "waiting_casting", "casting", TAPI TIDAK MENGANDUNG done/cancelled/unknown
     final onProgressStatuses = allStatuses
         .where((s) =>
             s != OrderWorkflowStatus.pending &&
             s != OrderWorkflowStatus.designing &&
             s != OrderWorkflowStatus.waiting_casting &&
             s != OrderWorkflowStatus.casting &&
+            s != OrderWorkflowStatus.done && // pastikan done tidak masuk!
+            s != OrderWorkflowStatus.cancelled &&
             s != OrderWorkflowStatus.unknown)
         .toList();
 

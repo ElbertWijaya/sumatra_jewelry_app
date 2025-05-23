@@ -135,6 +135,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     final allStatuses = OrderWorkflowStatus.values;
     final waitingStatus = [OrderWorkflowStatus.waiting_inventory];
     final workingStatus = [OrderWorkflowStatus.inventory];
+    // On Progress = semua status selain tahap inventory/waiting_inventory dan status yang sudah selesai/dibatalkan
     final onProgressStatuses = allStatuses
         .where((s) =>
             s != OrderWorkflowStatus.pending &&
@@ -149,6 +150,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
             s != OrderWorkflowStatus.finishing &&
             s != OrderWorkflowStatus.waiting_inventory &&
             s != OrderWorkflowStatus.inventory &&
+            s != OrderWorkflowStatus.done && // pastikan done tidak masuk!
+            s != OrderWorkflowStatus.cancelled &&
             s != OrderWorkflowStatus.unknown)
         .toList();
 

@@ -136,6 +136,7 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
     final allStatuses = OrderWorkflowStatus.values;
     final waitingStatus = [OrderWorkflowStatus.waiting_diamond_setting];
     final workingStatus = [OrderWorkflowStatus.stoneSetting];
+    // "On Progress" = semua status kecuali pending, designing, waiting_casting, casting, waiting_carving, carving, waiting_diamond_setting, stoneSetting, done, cancelled, unknown
     final onProgressStatuses = allStatuses
         .where((s) =>
             s != OrderWorkflowStatus.pending &&
@@ -146,6 +147,8 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
             s != OrderWorkflowStatus.carving &&
             s != OrderWorkflowStatus.waiting_diamond_setting &&
             s != OrderWorkflowStatus.stoneSetting &&
+            s != OrderWorkflowStatus.done && // pastikan done tidak masuk!
+            s != OrderWorkflowStatus.cancelled &&
             s != OrderWorkflowStatus.unknown)
         .toList();
 
@@ -343,7 +346,8 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
                                             borderRadius:
                                                 BorderRadius.circular(10),
                                           ),
-                                          color: Colors.white.withOpacity(0.9),
+                                          color:
+                                              Colors.white.withOpacity(0.9),
                                           child: ListTile(
                                             leading: leadingWidget,
                                             minLeadingWidth: 90,

@@ -136,6 +136,7 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
     final allStatuses = OrderWorkflowStatus.values;
     final waitingStatus = [OrderWorkflowStatus.waiting_carving];
     final workingStatus = [OrderWorkflowStatus.carving];
+    // On Progress = semua status selain pending, designing, waiting_casting, casting, waiting_carving, carving, done, cancelled, unknown
     final onProgressStatuses = allStatuses
         .where((s) =>
             s != OrderWorkflowStatus.pending &&
@@ -144,6 +145,8 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
             s != OrderWorkflowStatus.casting &&
             s != OrderWorkflowStatus.waiting_carving &&
             s != OrderWorkflowStatus.carving &&
+            s != OrderWorkflowStatus.done && // pastikan done tidak masuk!
+            s != OrderWorkflowStatus.cancelled &&
             s != OrderWorkflowStatus.unknown)
         .toList();
 
@@ -341,7 +344,8 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
                                             borderRadius:
                                                 BorderRadius.circular(10),
                                           ),
-                                          color: Colors.white.withOpacity(0.9),
+                                          color:
+                                              Colors.white.withOpacity(0.9),
                                           child: ListTile(
                                             leading: leadingWidget,
                                             minLeadingWidth: 90,

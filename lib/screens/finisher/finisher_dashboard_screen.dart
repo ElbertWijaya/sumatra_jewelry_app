@@ -135,6 +135,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
     final allStatuses = OrderWorkflowStatus.values;
     final waitingStatus = [OrderWorkflowStatus.waiting_finishing];
     final workingStatus = [OrderWorkflowStatus.finishing];
+    // On Progress = semua status selain pending, designing, waiting_casting, casting, waiting_carving, carving, waiting_diamond_setting, stoneSetting, waiting_finishing, finishing, done, cancelled, unknown
     final onProgressStatuses = allStatuses
         .where((s) =>
             s != OrderWorkflowStatus.pending &&
@@ -147,6 +148,8 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
             s != OrderWorkflowStatus.stoneSetting &&
             s != OrderWorkflowStatus.waiting_finishing &&
             s != OrderWorkflowStatus.finishing &&
+            s != OrderWorkflowStatus.done && // pastikan done tidak masuk!
+            s != OrderWorkflowStatus.cancelled &&
             s != OrderWorkflowStatus.unknown)
         .toList();
 
