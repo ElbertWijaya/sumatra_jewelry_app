@@ -1,7 +1,8 @@
-// sumatra_jewelry_app/main.dart
 import 'package:flutter/material.dart';
-import 'package:sumatra_jewelry_app/screens/auth/login_screen.dart';
-// Tambahkan import ini
+import 'screens/auth/login_screen.dart';
+import 'screens/sales/sales_dashboard_screen.dart';
+import 'screens/sales/sales_create_screen.dart';
+// Import dashboard lain bila ada
 
 void main() {
   runApp(const MyApp());
@@ -14,15 +15,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Sumatra Jewelry App',
-      theme: ThemeData(
-        primarySwatch: Colors.brown, // Warna utama yang cocok untuk perhiasan
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      // Untuk tujuan pengujian Designer Dashboard, ubah baris di bawah ini.
-      // Setelah selesai menguji, kembalikan ke 'LoginScreen()' atau logika autentikasi Anda.
-      home:
-          const LoginScreen(), // <<-- DIUBAH DI SINI UNTUK PENGUJIAN DESIGNER DASHBOARD
-      // home: const LoginScreen(), // Ini adalah baris asli jika ingin kembali ke Login Screen
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/sales/dashboard': (context) => const SalesDashboardScreen(),
+        '/sales/create': (context) => const SalesCreateScreen(),
+        // Tambahkan dashboard lain di sini
+      },
       debugShowCheckedModeBanner: false,
     );
   }
