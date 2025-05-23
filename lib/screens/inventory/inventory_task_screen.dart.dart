@@ -1,94 +1,51 @@
 import 'package:flutter/material.dart';
-import '../../models/order.dart';
-import '../../services/order_service.dart';
 
-class InventoryTaskScreen extends StatefulWidget {
-  const InventoryTaskScreen({Key? key}) : super(key: key);
-a
-  @override
-  State<InventoryTaskScreen> createState() => _InventoryTaskScreenState();
-}
+class InventoryTaskScreen extends StatelessWidget {
+  final TextEditingController kodeBarangController;
+  final TextEditingController lokasiRakController;
+  final TextEditingController catatanController;
+  final bool enabled;
 
-class _InventoryTaskScreenState extends State<InventoryTaskScreen> {
-  final OrderService _orderService = OrderService();
-  bool _isLoading = false;
-  List<Order> _orders = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchOrders();
-  }
-
-  Future<void> _fetchOrders() async {
-    setState(() => _isLoading = true);
-    try {
-      final orders = await _orderService.getOrders();
-      setState(() {
-        _orders = orders.where((o) =>
-          o.workflowStatus == OrderWorkflowStatus.readyForInventory ||
-          o.workflowStatus == OrderWorkflowStatus.inventory
-        ).toList();
-        _orders.sort((a, b) => a.workflowStatus.index.compareTo(b.workflowStatus.index));
-      });
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memuat tugas inventory: $e')),
-      );
-    }
-    setState(() => _isLoading = false);
-  }
-
-  void _goToDetail(Order order) {
-    Navigator.of(context).pushNamed('/order/detail', arguments: order);
-  }
+  const InventoryTaskScreen({
+    Key? key,
+    required this.kodeBarangController,
+    required this.lokasiRakController,
+    required this.catatanController,
+    this.enabled = true,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Daftar Tugas Inventory'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchOrders,
-            tooltip: 'Muat Ulang',
+    return Column(
+      children: [
+        TextField(
+          controller: kodeBarangController,
+          decoration: const InputDecoration(
+            labelText: 'Kode Barang',
+            border: OutlineInputBorder(),
           ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _orders.isEmpty
-              ? const Center(child: Text('Tidak ada tugas inventory.'))
-              : RefreshIndicator(
-                  onRefresh: _fetchOrders,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _orders.length,
-                    itemBuilder: (context, idx) {
-                      final order = _orders[idx];
-                      return Card(
-                        elevation: 1,
-                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
-                        child: ListTile(
-                          title: Text(order.customerName),
-                          subtitle: Text('${order.jewelryType} • ${order.customerContact}'),
-                          trailing: Text(
-                            order.workflowStatus.label,
-                            style: TextStyle(
-                              color: order.workflowStatus == OrderWorkflowStatus.inventory
-                                  ? Colors.blue
-                                  : Colors.orange,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          onTap: () => _goToDetail(order),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+          enabled: enabled,
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: lokasiRakController,
+          decoration: const InputDecoration(
+            labelText: 'Lokasi Rak',
+            border: OutlineInputBorder(),
+          ),
+          enabled: enabled,
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: catatanController,
+          decoration: const InputDecoration(
+            labelText: 'Catatan Tambahan (Opsional)',
+            border: OutlineInputBorder(),
+          ),
+          enabled: enabled,
+          maxLines: 2,
+        ),
+      ],
     );
   }
 }

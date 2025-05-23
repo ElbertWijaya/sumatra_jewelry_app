@@ -19,6 +19,7 @@ enum OrderWorkflowStatus {
   waiting_inventory, // Menunggu input inventaris
   readyForInventory, // Siap untuk inventory
   inventory, // Dalam proses inventory
+  waiting_sales_completion, // Menunggu konfirmasi dari sales
   done, // Selesai, siap diambil customer
   cancelled, // Dibatalkan
   unknown, // Tidak diketahui
@@ -63,11 +64,13 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
         return OrderWorkflowStatus.readyForInventory;
       case 'inventory':
         return OrderWorkflowStatus.inventory;
+      case 'waiting_sales_completion':
+        return OrderWorkflowStatus.waiting_sales_completion;
       case 'done':
         return OrderWorkflowStatus.done;
       case 'cancelled':
         return OrderWorkflowStatus.cancelled;
-      case 'debut': // <<< Tambahkan parsing string debut
+      case 'debut':
         return OrderWorkflowStatus.debut;
       default:
         debugPrint('Status workflow pesanan tidak diketahui: $status');
@@ -112,11 +115,13 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
         return 'Siap Inventory';
       case OrderWorkflowStatus.inventory:
         return 'Input Inventaris';
+      case OrderWorkflowStatus.waiting_sales_completion:
+        return 'Menunggu Konfirmasi Sales';
       case OrderWorkflowStatus.done:
         return 'Selesai';
       case OrderWorkflowStatus.cancelled:
         return 'Batal';
-      case OrderWorkflowStatus.debut: // <<< Label debut
+      case OrderWorkflowStatus.debut:
         return 'Debut';
       case OrderWorkflowStatus.unknown:
       default:
