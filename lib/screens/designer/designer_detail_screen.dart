@@ -183,7 +183,7 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
                                           !_isSaving)
                                       ? _selesaikanOrder
                                       : null,
-                              child: const Text('Selesaikan Order'),
+                              child: const Text('Teruskan ke Cor'),
                             ),
                           ),
                         ],
