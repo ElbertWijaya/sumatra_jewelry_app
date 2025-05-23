@@ -180,7 +180,7 @@ Future<void> _teruskanKeCor() async {
                                           _printingDone &&
                                           _qcDone &&
                                           !_isSaving)
-                                      ? _selesaikanOrder
+                                      ? _teruskanKeCor
                                       : null,
                               child: const Text('Teruskan ke Cor'),
                             ),
