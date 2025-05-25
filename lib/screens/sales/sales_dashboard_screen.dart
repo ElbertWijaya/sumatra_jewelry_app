@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
@@ -28,6 +29,10 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   double? priceMin;
   double? priceMax;
   String? ringSize;
+
+  // Random category display
+  List<String> _randomCategoryFilters = [];
+  bool _isRandomCategoryActive = true;
 
   final List<OrderWorkflowStatus> waitingStatuses = [
     OrderWorkflowStatus.pending,
@@ -66,6 +71,34 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     _fetchOrders();
   }
 
+  void _generateRandomCategoryFilters() {
+    final allOptions = [
+      ...jewelryTypes,
+      ...goldColors,
+      ...goldTypes,
+      ...stoneTypes,
+      'Ring Size: 13',
+      'Ring Size: 10',
+      'Ring Size: 12',
+      'Ring Size: 7',
+      'Ring Size: 5',
+    ];
+    allOptions.shuffle(Random());
+    setState(() {
+      _randomCategoryFilters = allOptions.take(5).toList();
+      _isRandomCategoryActive = true;
+      _selectedCategoryFilter = null;
+      // Reset juga filter sheet jika perlu
+      selectedJewelryTypes.clear();
+      selectedGoldColors.clear();
+      selectedGoldTypes.clear();
+      selectedStoneTypes.clear();
+      priceMin = null;
+      priceMax = null;
+      ringSize = null;
+    });
+  }
+
   Future<void> _fetchOrders() async {
     setState(() {
       _isLoading = true;
@@ -76,6 +109,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       setState(() {
         _orders = fetchedOrders;
       });
+      _generateRandomCategoryFilters(); // Generate random categories on refresh
     } catch (e) {
       setState(() {
         _errorMessage =
@@ -281,6 +315,12 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     );
   }
 
+  void _resetCategoryFilter() {
+    setState(() {
+      _generateRandomCategoryFilters();
+    });
+  }
+
   void _openFilterSheet() {
     showModalBottomSheet(
       context: context,
@@ -292,169 +332,188 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 24,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Jenis Perhiasan
-                    Text("Jenis Perhiasan", style: TextStyle(fontWeight: FontWeight.bold)),
-                    Wrap(
-                      spacing: 8,
-                      children: jewelryTypes.map((type) => FilterChip(
-                        label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
-                        selected: selectedJewelryTypes.contains(type),
-                        showCheckmark: false,
-                        backgroundColor: categoryInactiveBgColor,
-                        selectedColor: categoryActiveBgColor,
-                        side: BorderSide(color: selectedJewelryTypes.contains(type) ? categoryActiveBgColor : categoryInactiveBgColor),
-                        labelStyle: TextStyle(color: categoryInactiveTextColor),
-                        onSelected: (selected) {
-                          setModalState(() {
-                            selected
-                              ? selectedJewelryTypes.add(type)
-                              : selectedJewelryTypes.remove(type);
-                          });
-                        },
-                      )).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                    // Warna Emas
-                    Text("Warna Emas", style: TextStyle(fontWeight: FontWeight.bold)),
-                    Wrap(
-                      spacing: 8,
-                      children: goldColors.map((color) => FilterChip(
-                        label: Text(color, style: const TextStyle(color: categoryInactiveTextColor)),
-                        selected: selectedGoldColors.contains(color),
-                        showCheckmark: false,
-                        backgroundColor: categoryInactiveBgColor,
-                        selectedColor: categoryActiveBgColor,
-                        side: BorderSide(color: selectedGoldColors.contains(color) ? categoryActiveBgColor : categoryInactiveBgColor),
-                        labelStyle: TextStyle(color: categoryInactiveTextColor),
-                        onSelected: (selected) {
-                          setModalState(() {
-                            selected
-                              ? selectedGoldColors.add(color)
-                              : selectedGoldColors.remove(color);
-                          });
-                        },
-                      )).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                    // Harga Min - Max
-                    Text("Harga Min - Max", style: TextStyle(fontWeight: FontWeight.bold)),
-                    Row(
+            return Stack(
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 24,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Flexible(
-                          child: TextField(
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              hintText: "Min",
-                            ),
-                            onChanged: (v) {
+                        // Jenis Perhiasan
+                        Text("Jenis Perhiasan", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Wrap(
+                          spacing: 8,
+                          children: jewelryTypes.map((type) => FilterChip(
+                            label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
+                            selected: selectedJewelryTypes.contains(type),
+                            showCheckmark: false,
+                            backgroundColor: categoryInactiveBgColor,
+                            selectedColor: categoryActiveBgColor,
+                            side: BorderSide(color: selectedJewelryTypes.contains(type) ? categoryActiveBgColor : categoryInactiveBgColor),
+                            labelStyle: TextStyle(color: categoryInactiveTextColor),
+                            onSelected: (selected) {
                               setModalState(() {
-                                priceMin = double.tryParse(v);
+                                selected
+                                  ? selectedJewelryTypes.add(type)
+                                  : selectedJewelryTypes.remove(type);
                               });
                             },
-                          ),
+                          )).toList(),
                         ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: TextField(
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              hintText: "Max",
-                            ),
-                            onChanged: (v) {
+                        const SizedBox(height: 16),
+                        // Warna Emas
+                        Text("Warna Emas", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Wrap(
+                          spacing: 8,
+                          children: goldColors.map((color) => FilterChip(
+                            label: Text(color, style: const TextStyle(color: categoryInactiveTextColor)),
+                            selected: selectedGoldColors.contains(color),
+                            showCheckmark: false,
+                            backgroundColor: categoryInactiveBgColor,
+                            selectedColor: categoryActiveBgColor,
+                            side: BorderSide(color: selectedGoldColors.contains(color) ? categoryActiveBgColor : categoryInactiveBgColor),
+                            labelStyle: TextStyle(color: categoryInactiveTextColor),
+                            onSelected: (selected) {
                               setModalState(() {
-                                priceMax = double.tryParse(v);
+                                selected
+                                  ? selectedGoldColors.add(color)
+                                  : selectedGoldColors.remove(color);
                               });
                             },
-                          ),
+                          )).toList(),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Jenis Emas
-                    Text("Jenis Emas", style: TextStyle(fontWeight: FontWeight.bold)),
-                    Wrap(
-                      spacing: 8,
-                      children: goldTypes.map((type) => FilterChip(
-                        label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
-                        selected: selectedGoldTypes.contains(type),
-                        showCheckmark: false,
-                        backgroundColor: categoryInactiveBgColor,
-                        selectedColor: categoryActiveBgColor,
-                        side: BorderSide(color: selectedGoldTypes.contains(type) ? categoryActiveBgColor : categoryInactiveBgColor),
-                        labelStyle: TextStyle(color: categoryInactiveTextColor),
-                        onSelected: (selected) {
-                          setModalState(() {
-                            selected
-                              ? selectedGoldTypes.add(type)
-                              : selectedGoldTypes.remove(type);
-                          });
-                        },
-                      )).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                    // Jenis Batu
-                    Text("Jenis Batu", style: TextStyle(fontWeight: FontWeight.bold)),
-                    Wrap(
-                      spacing: 8,
-                      children: stoneTypes.map((type) => FilterChip(
-                        label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
-                        selected: selectedStoneTypes.contains(type),
-                        showCheckmark: false,
-                        backgroundColor: categoryInactiveBgColor,
-                        selectedColor: categoryActiveBgColor,
-                        side: BorderSide(color: selectedStoneTypes.contains(type) ? categoryActiveBgColor : categoryInactiveBgColor),
-                        labelStyle: TextStyle(color: categoryInactiveTextColor),
-                        onSelected: (selected) {
-                          setModalState(() {
-                            selected
-                              ? selectedStoneTypes.add(type)
-                              : selectedStoneTypes.remove(type);
-                          });
-                        },
-                      )).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                    // Ring Size
-                    Text("Ring Size", style: TextStyle(fontWeight: FontWeight.bold)),
-                    TextField(
-                      keyboardType: TextInputType.text,
-                      decoration: const InputDecoration(
-                        hintText: "Ring Size",
-                      ),
-                      onChanged: (v) {
-                        setModalState(() {
-                          ringSize = v;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              setState(() {}); // Apply filter
+                        const SizedBox(height: 16),
+                        // Harga Min - Max
+                        Text("Harga Min - Max", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  hintText: "Min",
+                                ),
+                                onChanged: (v) {
+                                  setModalState(() {
+                                    priceMin = double.tryParse(v);
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  hintText: "Max",
+                                ),
+                                onChanged: (v) {
+                                  setModalState(() {
+                                    priceMax = double.tryParse(v);
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Jenis Emas
+                        Text("Jenis Emas", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Wrap(
+                          spacing: 8,
+                          children: goldTypes.map((type) => FilterChip(
+                            label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
+                            selected: selectedGoldTypes.contains(type),
+                            showCheckmark: false,
+                            backgroundColor: categoryInactiveBgColor,
+                            selectedColor: categoryActiveBgColor,
+                            side: BorderSide(color: selectedGoldTypes.contains(type) ? categoryActiveBgColor : categoryInactiveBgColor),
+                            labelStyle: TextStyle(color: categoryInactiveTextColor),
+                            onSelected: (selected) {
+                              setModalState(() {
+                                selected
+                                  ? selectedGoldTypes.add(type)
+                                  : selectedGoldTypes.remove(type);
+                              });
                             },
-                            child: const Text("Terapkan Filter"),
-                          ),
+                          )).toList(),
                         ),
+                        const SizedBox(height: 16),
+                        // Jenis Batu
+                        Text("Jenis Batu", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Wrap(
+                          spacing: 8,
+                          children: stoneTypes.map((type) => FilterChip(
+                            label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
+                            selected: selectedStoneTypes.contains(type),
+                            showCheckmark: false,
+                            backgroundColor: categoryInactiveBgColor,
+                            selectedColor: categoryActiveBgColor,
+                            side: BorderSide(color: selectedStoneTypes.contains(type) ? categoryActiveBgColor : categoryInactiveBgColor),
+                            labelStyle: TextStyle(color: categoryInactiveTextColor),
+                            onSelected: (selected) {
+                              setModalState(() {
+                                selected
+                                  ? selectedStoneTypes.add(type)
+                                  : selectedStoneTypes.remove(type);
+                              });
+                            },
+                          )).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        // Ring Size
+                        Text("Ring Size", style: TextStyle(fontWeight: FontWeight.bold)),
+                        TextField(
+                          keyboardType: TextInputType.text,
+                          decoration: const InputDecoration(
+                            hintText: "Ring Size",
+                          ),
+                          onChanged: (v) {
+                            setModalState(() {
+                              ringSize = v;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  setState(() {
+                                    _isRandomCategoryActive = false;
+                                  });
+                                },
+                                child: const Text("Terapkan Filter"),
+                              ),
+                            ),
+                          ],
+                        )
                       ],
-                    )
-                  ],
+                    ),
+                  ),
                 ),
-              ),
+                // Tombol Reset di pojok kanan atas
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: IconButton(
+                    icon: const Icon(Icons.refresh, color: Colors.redAccent),
+                    tooltip: "Reset Category",
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _resetCategoryFilter();
+                    },
+                  ),
+                ),
+              ],
             );
           },
         );
@@ -468,6 +527,25 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Siapkan data kategori yang ditampilkan
+    List<String> categoryToShow;
+    if (_isRandomCategoryActive) {
+      categoryToShow = _randomCategoryFilters;
+    } else {
+      categoryToShow = [
+        ...selectedJewelryTypes,
+        ...selectedGoldColors,
+        ...selectedGoldTypes,
+        ...selectedStoneTypes,
+        if (ringSize != null && ringSize!.isNotEmpty) 'Ring Size: $ringSize',
+      ];
+      // Jika tidak memilih filter apapun, tetap kembalikan random
+      if (categoryToShow.every((e) => e.isEmpty) || categoryToShow.isEmpty) {
+        categoryToShow = _randomCategoryFilters;
+        _isRandomCategoryActive = true;
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sales Dashboard'),
@@ -608,37 +686,24 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                       scrollDirection: Axis.horizontal,
                                       child: Row(
                                         children: List.generate(
-                                            categories.length, (index) {
-                                          final cat = categories[index];
-                                          final isSelected = _selectedCategoryFilter == cat;
-
-                                          Color bgColor = isSelected
-                                              ? categoryActiveBgColor
-                                              : categoryInactiveBgColor;
-                                          Color txtColor = isSelected
-                                              ? categoryActiveTextColor
-                                              : categoryInactiveTextColor;
-
+                                            categoryToShow.length, (index) {
+                                          final cat = categoryToShow[index];
+                                          final isSelected = false;
                                           return Padding(
                                             padding: const EdgeInsets.only(right: 4.0),
                                             child: ChoiceChip(
-                                              label: Text(cat, style: TextStyle(color: txtColor)),
+                                              label: Text(cat, style: TextStyle(color: categoryInactiveTextColor)),
                                               selected: isSelected,
-                                              onSelected: (_) {
-                                                setState(() {
-                                                  _selectedCategoryFilter =
-                                                      isSelected ? null : cat;
-                                                });
-                                              },
-                                              selectedColor: categoryActiveBgColor,
+                                              onSelected: (_) {},
                                               backgroundColor: categoryInactiveBgColor,
+                                              selectedColor: categoryActiveBgColor,
                                               labelStyle: TextStyle(
-                                                color: txtColor,
+                                                color: categoryInactiveTextColor,
                                               ),
                                               shape: RoundedRectangleBorder(
                                                 borderRadius: BorderRadius.circular(16),
                                               ),
-                                              side: BorderSide(color: bgColor),
+                                              side: BorderSide(color: categoryInactiveBgColor),
                                             ),
                                           );
                                         }),
