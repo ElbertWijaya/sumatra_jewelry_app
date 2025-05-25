@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
 import 'sales_detail_screen.dart';
@@ -525,6 +526,15 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     await _fetchOrders();
   }
 
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false);
+    await prefs.remove('userRole');
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/login');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Siapkan data kategori yang ditampilkan
@@ -556,9 +566,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/login');
-            },
+            onPressed: _logout,
           ),
         ],
       ),

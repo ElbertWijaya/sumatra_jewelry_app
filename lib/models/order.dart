@@ -139,6 +139,10 @@ class Order {
   final String address; // Alamat (wajib)
   final String jewelryType; // Jenis Perhiasan (wajib)
 
+  // Tambahan: Gold Color & Gold Type
+  final String? goldColor; // Warna Emas
+  final String? goldType; // Jenis Emas
+
   // Opsional
   final String? stoneType; // Jenis Batu
   final String? stoneSize; // Ukuran Batu (format: 'xx x yy')
@@ -169,6 +173,8 @@ class Order {
     required this.customerContact,
     required this.address,
     required this.jewelryType,
+    this.goldColor, // ADD
+    this.goldType, // ADD
     this.stoneType,
     this.stoneSize,
     this.ringSize,
@@ -199,6 +205,8 @@ class Order {
     String? customerContact,
     String? address,
     String? jewelryType,
+    String? goldColor, // ADD
+    String? goldType, // ADD
     String? stoneType,
     String? stoneSize,
     String? ringSize,
@@ -224,6 +232,8 @@ class Order {
       customerContact: customerContact ?? this.customerContact,
       address: address ?? this.address,
       jewelryType: jewelryType ?? this.jewelryType,
+      goldColor: goldColor ?? this.goldColor, // ADD
+      goldType: goldType ?? this.goldType, // ADD
       stoneType: stoneType ?? this.stoneType,
       stoneSize: stoneSize ?? this.stoneSize,
       ringSize: ringSize ?? this.ringSize,
@@ -254,6 +264,8 @@ class Order {
       customerContact: json['customerContact'] as String,
       address: json['address'] as String,
       jewelryType: json['jewelryType'] as String,
+      goldColor: json['goldColor'] as String?, // ADD
+      goldType: json['goldType'] as String?, // ADD
       stoneType: json['stoneType'] as String?,
       stoneSize: json['stoneSize'] as String?,
       ringSize: json['ringSize'] as String?,
@@ -295,6 +307,8 @@ class Order {
     'customerContact': customerContact,
     'address': address,
     'jewelryType': jewelryType,
+    'goldColor': goldColor, // ADD
+    'goldType': goldType, // ADD
     'stoneType': stoneType,
     'stoneSize': stoneSize,
     'ringSize': ringSize,
