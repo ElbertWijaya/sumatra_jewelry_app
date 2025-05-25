@@ -6,7 +6,7 @@ import 'inventory_task_screen.dart';
 
 class InventoryDetailScreen extends StatefulWidget {
   final Order order;
-  const InventoryDetailScreen({Key? key, required this.order}) : super(key: key);
+  const InventoryDetailScreen({super.key, required this.order});
 
   @override
   State<InventoryDetailScreen> createState() => _InventoryDetailScreenState();

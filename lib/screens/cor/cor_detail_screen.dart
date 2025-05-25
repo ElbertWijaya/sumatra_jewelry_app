@@ -6,7 +6,7 @@ import 'cor_task_screen.dart';
 
 class CorDetailScreen extends StatefulWidget {
   final Order order;
-  const CorDetailScreen({Key? key, required this.order}) : super(key: key);
+  const CorDetailScreen({super.key, required this.order});
 
   @override
   State<CorDetailScreen> createState() => _CorDetailScreenState();

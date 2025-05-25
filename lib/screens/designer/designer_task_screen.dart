@@ -5,7 +5,7 @@ import '../../services/order_service.dart';
 
 class DesignerDetailScreen extends StatefulWidget {
   final Order order;
-  const DesignerDetailScreen({Key? key, required this.order}) : super(key: key);
+  const DesignerDetailScreen({super.key, required this.order});
 
   @override
   State<DesignerDetailScreen> createState() => _DesignerDetailScreenState();

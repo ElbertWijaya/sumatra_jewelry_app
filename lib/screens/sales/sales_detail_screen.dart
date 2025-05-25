@@ -6,7 +6,7 @@ import '../../services/order_service.dart';
 
 class SalesDetailScreen extends StatefulWidget {
   final Order order;
-  const SalesDetailScreen({Key? key, required this.order}) : super(key: key);
+  const SalesDetailScreen({super.key, required this.order});
 
   @override
   State<SalesDetailScreen> createState() => _SalesDetailScreenState();
@@ -75,7 +75,7 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
   }
 
   Future<void> _pickImages() async {
-    final List<XFile>? images = await _picker.pickMultiImage();
+    final List<XFile> images = await _picker.pickMultiImage();
     if (images != null && images.isNotEmpty) {
       setState(() {
         _images.addAll(images.map((x) => x.path));

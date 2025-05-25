@@ -8,7 +8,7 @@ import '../../services/order_service.dart';
 import 'package:flutter/services.dart';
 
 class SalesCreateScreen extends StatefulWidget {
-  const SalesCreateScreen({Key? key}) : super(key: key);
+  const SalesCreateScreen({super.key});
 
   @override
   State<SalesCreateScreen> createState() => _SalesCreateScreenState();
@@ -39,7 +39,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImages() async {
-    final List<XFile>? images = await _picker.pickMultiImage();
+    final List<XFile> images = await _picker.pickMultiImage();
     if (images != null && images.isNotEmpty) {
       setState(() {
         _pickedImages.addAll(images);

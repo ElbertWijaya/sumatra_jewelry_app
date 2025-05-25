@@ -5,7 +5,7 @@ import '../../services/order_service.dart';
 import 'carver_detail_screen.dart';
 
 class CarverDashboardScreen extends StatefulWidget {
-  const CarverDashboardScreen({Key? key}) : super(key: key);
+  const CarverDashboardScreen({super.key});
 
   @override
   State<CarverDashboardScreen> createState() => _CarverDashboardScreenState();
@@ -395,8 +395,9 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
                                                   ),
                                                 ),
                                               );
-                                              if (result == true)
+                                              if (result == true) {
                                                 _fetchOrders();
+                                              }
                                             },
                                           ),
                                         );

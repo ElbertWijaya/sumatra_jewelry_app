@@ -3,7 +3,7 @@ import '../../models/order.dart';
 import '../../services/order_service.dart';
 
 class SalesListScreen extends StatefulWidget {
-  const SalesListScreen({Key? key}) : super(key: key);
+  const SalesListScreen({super.key});
 
   @override
   State<SalesListScreen> createState() => _SalesListScreenState();

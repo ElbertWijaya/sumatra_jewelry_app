@@ -7,12 +7,12 @@ class FinisherTaskScreen extends StatelessWidget {
   final bool enabled;
 
   const FinisherTaskScreen({
-    Key? key,
+    super.key,
     required this.finishingDone,
     required this.qcFinishingDone,
     required this.onChanged,
     this.enabled = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

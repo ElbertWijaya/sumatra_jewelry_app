@@ -7,12 +7,12 @@ class DiamondSetterTaskScreen extends StatelessWidget {
   final bool enabled;
 
   const DiamondSetterTaskScreen({
-    Key? key,
+    super.key,
     required this.pasangBatuDone,
     required this.qcBatuDone,
     required this.onChanged,
     this.enabled = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

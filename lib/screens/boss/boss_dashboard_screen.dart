@@ -3,7 +3,7 @@ import '../../models/order.dart';
 import '../../services/order_service.dart';
 
 class BossDashboardScreen extends StatefulWidget {
-  const BossDashboardScreen({Key? key}) : super(key: key);
+  const BossDashboardScreen({super.key});
 
   @override
   State<BossDashboardScreen> createState() => _BossDashboardScreenState();
@@ -87,7 +87,7 @@ class _BossDashboardScreenState extends State<BossDashboardScreen> {
                           ),
                         ),
                       )
-                      .toList(),
+                      ,
                   const SizedBox(height: 32),
                   ElevatedButton(
                     onPressed: () {

@@ -7,12 +7,12 @@ class CorTaskScreen extends StatelessWidget {
   final bool enabled;
 
   const CorTaskScreen({
-    Key? key,
+    super.key,
     required this.lilinDone,
     required this.corDone,
     required this.onChanged,
     this.enabled = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

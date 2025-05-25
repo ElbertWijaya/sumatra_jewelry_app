@@ -5,7 +5,7 @@ import '../../services/order_service.dart';
 import 'sales_detail_screen.dart';
 
 class SalesDashboardScreen extends StatefulWidget {
-  const SalesDashboardScreen({Key? key}) : super(key: key);
+  const SalesDashboardScreen({super.key});
 
   @override
   State<SalesDashboardScreen> createState() => _SalesDashboardScreenState();
@@ -20,25 +20,45 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   Object? _selectedStatusFilter;
   String? _selectedCategoryFilter;
 
-  // Daftar status waiting (pending & waiting_sales_completion)
+  // Untuk filter sheet
+  List<String> selectedJewelryTypes = [];
+  List<String> selectedGoldColors = [];
+  List<String> selectedGoldTypes = [];
+  List<String> selectedStoneTypes = [];
+  double? priceMin;
+  double? priceMax;
+  String? ringSize;
+
   final List<OrderWorkflowStatus> waitingStatuses = [
     OrderWorkflowStatus.pending,
     OrderWorkflowStatus.waiting_sales_completion,
   ];
 
-  // Hanya status aktif yang boleh tampil
   final List<OrderWorkflowStatus> activeStatuses = [
     OrderWorkflowStatus.pending,
     OrderWorkflowStatus.waiting_sales_completion,
     // Tambahkan status aktif lain jika ada!
   ];
 
-  // Daftar kategori (tidak diubah, hanya contoh default)
   final List<String> categories = [
     'Progress',
     'Jenis',
     'Harga',
   ];
+
+  // Daftar pilihan filter
+  final List<String> jewelryTypes = [
+    "ring", "bangle", "earring", "pendant", "hairpin", "pin", "men ring", "women ring", "engagement ring", "custom"
+  ];
+  final List<String> goldColors = ["White Gold", "Rose Gold", "Yellow Gold"];
+  final List<String> goldTypes = ["19K", "18K", "14K", "9K"];
+  final List<String> stoneTypes = ["Opal", "Sapphire", "Jade", "Emerald", "Ruby", "Amethyst", "Diamond"];
+
+  // Warna untuk kategori dan filter sheet
+  static const Color categoryActiveBgColor = Color(0xFFFAF5E0);
+  static const Color categoryActiveTextColor = Color(0xFF656359);
+  static const Color categoryInactiveBgColor = Colors.white;
+  static const Color categoryInactiveTextColor = Color(0xFF656359);
 
   @override
   void initState() {
@@ -68,35 +88,31 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     }
   }
 
-  /// Menggabungkan seluruh info pesanan (yang tampil di halaman detail) jadi satu string untuk pencarian kategori
   String orderFullText(Order order) {
-    // Tambahkan field lain sesuai yang ditampilkan di halaman detail
     return [
-    order.customerName,
-    order.customerContact,
-    order.address,
-    order.jewelryType,
-    order.stoneType ?? '',
-    order.stoneSize ?? '',
-    order.ringSize ?? '',
-    order.readyDate?.toIso8601String() ?? '',
-    order.pickupDate?.toIso8601String() ?? '',
-    order.goldPricePerGram?.toString() ?? '',
-    order.finalPrice?.toString() ?? '',
-    order.notes ?? '',
-    order.workflowStatus.label,
-    order.assignedDesigner ?? '',
-    order.assignedCaster ?? '',
-    order.assignedCarver ?? '',
-    order.assignedDiamondSetter ?? '',
-    order.assignedFinisher ?? '',
-    order.assignedInventory ?? '',
-      // dst (field lain bisa ditambah di sini)
+      order.customerName,
+      order.customerContact,
+      order.address,
+      order.jewelryType,
+      order.stoneType ?? '',
+      order.stoneSize ?? '',
+      order.ringSize ?? '',
+      order.readyDate?.toIso8601String() ?? '',
+      order.pickupDate?.toIso8601String() ?? '',
+      order.goldPricePerGram?.toString() ?? '',
+      order.finalPrice?.toString() ?? '',
+      order.notes ?? '',
+      order.workflowStatus.label,
+      order.assignedDesigner ?? '',
+      order.assignedCaster ?? '',
+      order.assignedCarver ?? '',
+      order.assignedDiamondSetter ?? '',
+      order.assignedFinisher ?? '',
+      order.assignedInventory ?? '',
     ].join(' ').toLowerCase();
   }
 
   List<Order> get _filteredOrders {
-    // Pesanan selesai/dibatalkan otomatis tidak tampil
     List<Order> filtered = _orders.where((order) => activeStatuses.contains(order.workflowStatus)).toList();
 
     // Filter kategori (jika ada dipilih & bukan Progress/Jenis/Harga)
@@ -105,6 +121,44 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
         !_isDefaultCategory(_selectedCategoryFilter!)) {
       filtered = filtered.where((order) {
         return orderFullText(order).contains(_selectedCategoryFilter!.toLowerCase());
+      }).toList();
+    }
+
+    // Filter dari filter sheet (jika diisi)
+    if (selectedJewelryTypes.isNotEmpty) {
+      filtered = filtered.where((order) {
+        return selectedJewelryTypes.any((t) =>
+          (order.jewelryType.toLowerCase()).contains(t.toLowerCase())
+        );
+      }).toList();
+    }
+    if (selectedGoldColors.isNotEmpty) {
+      filtered = filtered.where((order) {
+        final info = orderFullText(order);
+        return selectedGoldColors.any((gold) => info.contains(gold.toLowerCase()));
+      }).toList();
+    }
+    if (selectedGoldTypes.isNotEmpty) {
+      filtered = filtered.where((order) {
+        final info = orderFullText(order);
+        return selectedGoldTypes.any((t) => info.contains(t.toLowerCase()));
+      }).toList();
+    }
+    if (selectedStoneTypes.isNotEmpty) {
+      filtered = filtered.where((order) {
+        final stones = (order.stoneType ?? '').toLowerCase();
+        return selectedStoneTypes.any((stone) => stones.contains(stone.toLowerCase()));
+      }).toList();
+    }
+    if (priceMin != null) {
+      filtered = filtered.where((order) => (order.finalPrice ?? 0) >= priceMin!).toList();
+    }
+    if (priceMax != null) {
+      filtered = filtered.where((order) => (order.finalPrice ?? 0) <= priceMax!).toList();
+    }
+    if (ringSize != null && ringSize!.isNotEmpty) {
+      filtered = filtered.where((order) {
+        return (order.ringSize ?? '').toLowerCase().contains(ringSize!.toLowerCase());
       }).toList();
     }
 
@@ -119,11 +173,9 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
           .where((order) => order.workflowStatus == _selectedStatusFilter)
           .toList();
     } else if (_selectedStatusFilter == 'onProgress') {
-      // Filter onProgress: status aktif tapi bukan waiting
       filtered = filtered
           .where(
-            (order) =>
-                !waitingStatuses.contains(order.workflowStatus),
+            (order) => !waitingStatuses.contains(order.workflowStatus),
           )
           .toList();
     }
@@ -138,7 +190,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   }
 
   bool _isDefaultCategory(String? value) {
-    // Kategori default (Progress/Jenis/Harga) hanya untuk tampilan visual, tidak untuk filter keyword
     return value == 'Progress' || value == 'Jenis' || value == 'Harga';
   }
 
@@ -155,7 +206,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     } else if (filterValue is OrderWorkflowStatus) {
       count = _orders.where((order) => order.workflowStatus == filterValue).length;
     } else if (filterValue == 'onProgress') {
-      // On progress = aktif tapi bukan waiting
       count = _orders
           .where((order) =>
               activeStatuses.contains(order.workflowStatus) &&
@@ -231,13 +281,188 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     );
   }
 
-  // Call this when an order is completed/cancelled to prepare for archiving
+  void _openFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Jenis Perhiasan
+                    Text("Jenis Perhiasan", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Wrap(
+                      spacing: 8,
+                      children: jewelryTypes.map((type) => FilterChip(
+                        label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
+                        selected: selectedJewelryTypes.contains(type),
+                        showCheckmark: false,
+                        backgroundColor: categoryInactiveBgColor,
+                        selectedColor: categoryActiveBgColor,
+                        side: BorderSide(color: selectedJewelryTypes.contains(type) ? categoryActiveBgColor : categoryInactiveBgColor),
+                        labelStyle: TextStyle(color: categoryInactiveTextColor),
+                        onSelected: (selected) {
+                          setModalState(() {
+                            selected
+                              ? selectedJewelryTypes.add(type)
+                              : selectedJewelryTypes.remove(type);
+                          });
+                        },
+                      )).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    // Warna Emas
+                    Text("Warna Emas", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Wrap(
+                      spacing: 8,
+                      children: goldColors.map((color) => FilterChip(
+                        label: Text(color, style: const TextStyle(color: categoryInactiveTextColor)),
+                        selected: selectedGoldColors.contains(color),
+                        showCheckmark: false,
+                        backgroundColor: categoryInactiveBgColor,
+                        selectedColor: categoryActiveBgColor,
+                        side: BorderSide(color: selectedGoldColors.contains(color) ? categoryActiveBgColor : categoryInactiveBgColor),
+                        labelStyle: TextStyle(color: categoryInactiveTextColor),
+                        onSelected: (selected) {
+                          setModalState(() {
+                            selected
+                              ? selectedGoldColors.add(color)
+                              : selectedGoldColors.remove(color);
+                          });
+                        },
+                      )).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    // Harga Min - Max
+                    Text("Harga Min - Max", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: TextField(
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              hintText: "Min",
+                            ),
+                            onChanged: (v) {
+                              setModalState(() {
+                                priceMin = double.tryParse(v);
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: TextField(
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              hintText: "Max",
+                            ),
+                            onChanged: (v) {
+                              setModalState(() {
+                                priceMax = double.tryParse(v);
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    // Jenis Emas
+                    Text("Jenis Emas", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Wrap(
+                      spacing: 8,
+                      children: goldTypes.map((type) => FilterChip(
+                        label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
+                        selected: selectedGoldTypes.contains(type),
+                        showCheckmark: false,
+                        backgroundColor: categoryInactiveBgColor,
+                        selectedColor: categoryActiveBgColor,
+                        side: BorderSide(color: selectedGoldTypes.contains(type) ? categoryActiveBgColor : categoryInactiveBgColor),
+                        labelStyle: TextStyle(color: categoryInactiveTextColor),
+                        onSelected: (selected) {
+                          setModalState(() {
+                            selected
+                              ? selectedGoldTypes.add(type)
+                              : selectedGoldTypes.remove(type);
+                          });
+                        },
+                      )).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    // Jenis Batu
+                    Text("Jenis Batu", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Wrap(
+                      spacing: 8,
+                      children: stoneTypes.map((type) => FilterChip(
+                        label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
+                        selected: selectedStoneTypes.contains(type),
+                        showCheckmark: false,
+                        backgroundColor: categoryInactiveBgColor,
+                        selectedColor: categoryActiveBgColor,
+                        side: BorderSide(color: selectedStoneTypes.contains(type) ? categoryActiveBgColor : categoryInactiveBgColor),
+                        labelStyle: TextStyle(color: categoryInactiveTextColor),
+                        onSelected: (selected) {
+                          setModalState(() {
+                            selected
+                              ? selectedStoneTypes.add(type)
+                              : selectedStoneTypes.remove(type);
+                          });
+                        },
+                      )).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    // Ring Size
+                    Text("Ring Size", style: TextStyle(fontWeight: FontWeight.bold)),
+                    TextField(
+                      keyboardType: TextInputType.text,
+                      decoration: const InputDecoration(
+                        hintText: "Ring Size",
+                      ),
+                      onChanged: (v) {
+                        setModalState(() {
+                          ringSize = v;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              setState(() {}); // Apply filter
+                            },
+                            child: const Text("Terapkan Filter"),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> handleOrderCompletionOrCancellation(Order order) async {
-    // TODO: Implement archiving logic here (copy order to archive database/table)
-    // Example:
-    // await ArchiveService().archiveOrder(order);
-    // await OrderService().deleteOrder(order.id);
-    // Setelah itu, refresh list
     await _fetchOrders();
   }
 
@@ -274,7 +499,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       ),
       body: Stack(
         children: [
-          // Background
           Positioned.fill(
             child: Image.asset(
               'assets/images/toko_sumatra.jpg',
@@ -301,12 +525,10 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                         child: Column(
                           children: [
                             SizedBox(
-                              height:
-                                  AppBar().preferredSize.height +
+                              height: AppBar().preferredSize.height +
                                   MediaQuery.of(context).padding.top +
                                   20,
                             ),
-                            // Search bar
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16.0,
@@ -348,7 +570,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                               ),
                             ),
                             const SizedBox(height: 100.0),
-                            // Status Filter Tabs
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16.0,
@@ -375,7 +596,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                 ],
                               ),
                             ),
-                            // Category Filter: scroll horizontal, icon filter kanan
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16.0,
@@ -383,7 +603,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  // Scrollable category
                                   Expanded(
                                     child: SingleChildScrollView(
                                       scrollDirection: Axis.horizontal,
@@ -392,10 +611,18 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                             categories.length, (index) {
                                           final cat = categories[index];
                                           final isSelected = _selectedCategoryFilter == cat;
+
+                                          Color bgColor = isSelected
+                                              ? categoryActiveBgColor
+                                              : categoryInactiveBgColor;
+                                          Color txtColor = isSelected
+                                              ? categoryActiveTextColor
+                                              : categoryInactiveTextColor;
+
                                           return Padding(
-                                            padding: EdgeInsets.only(right: 4.0),
+                                            padding: const EdgeInsets.only(right: 4.0),
                                             child: ChoiceChip(
-                                              label: Text(cat),
+                                              label: Text(cat, style: TextStyle(color: txtColor)),
                                               selected: isSelected,
                                               onSelected: (_) {
                                                 setState(() {
@@ -403,36 +630,27 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                                       isSelected ? null : cat;
                                                 });
                                               },
-                                              selectedColor: Theme.of(context)
-                                                  .colorScheme
-                                                  .primary,
+                                              selectedColor: categoryActiveBgColor,
+                                              backgroundColor: categoryInactiveBgColor,
                                               labelStyle: TextStyle(
-                                                color: isSelected
-                                                    ? Colors.white
-                                                    : Colors.white70,
+                                                color: txtColor,
                                               ),
-                                              backgroundColor: Colors.white.withOpacity(0.15),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(16),
+                                              ),
+                                              side: BorderSide(color: bgColor),
                                             ),
                                           );
                                         }),
                                       ),
                                     ),
                                   ),
-                                  // Icon filter selalu di kanan
                                   IconButton(
                                     icon: const Icon(
                                       Icons.filter_list,
                                       color: Colors.white70,
                                     ),
-                                    onPressed: () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Filter lebih lanjut akan ditambahkan!',
-                                          ),
-                                        ),
-                                      );
-                                    },
+                                    onPressed: _openFilterSheet,
                                   ),
                                 ],
                               ),
@@ -469,7 +687,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                       itemBuilder: (context, index) {
                                         final order = _filteredOrders[index];
 
-                                        // Tampilkan gambar jika ada, jika tidak tampilkan icon default
                                         Widget leadingWidget;
                                         if (order.imagePaths != null &&
                                             order.imagePaths!.isNotEmpty &&
@@ -562,7 +779,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                               color: Colors.grey,
                                             ),
                                             onTap: () async {
-                                              // Navigasi ke halaman detail & edit
                                               final result =
                                                   await Navigator.of(
                                                 context,

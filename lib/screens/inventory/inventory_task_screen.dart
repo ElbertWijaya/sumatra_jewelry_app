@@ -7,12 +7,12 @@ class InventoryTaskScreen extends StatelessWidget {
   final bool enabled;
 
   const InventoryTaskScreen({
-    Key? key,
+    super.key,
     required this.kodeBarangController,
     required this.lokasiRakController,
     required this.catatanController,
     this.enabled = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

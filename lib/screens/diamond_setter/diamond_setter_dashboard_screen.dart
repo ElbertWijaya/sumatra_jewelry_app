@@ -5,7 +5,7 @@ import '../../services/order_service.dart';
 import 'diamond_setter_detail_screen.dart';
 
 class DiamondSetterDashboardScreen extends StatefulWidget {
-  const DiamondSetterDashboardScreen({Key? key}) : super(key: key);
+  const DiamondSetterDashboardScreen({super.key});
 
   @override
   State<DiamondSetterDashboardScreen> createState() => _DiamondSetterDashboardScreenState();
@@ -397,8 +397,9 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
                                                   ),
                                                 ),
                                               );
-                                              if (result == true)
+                                              if (result == true) {
                                                 _fetchOrders();
+                                              }
                                             },
                                           ),
                                         );

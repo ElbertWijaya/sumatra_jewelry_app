@@ -6,7 +6,7 @@ import 'diamond_setter_task_screen.dart';
 
 class DiamondSetterDetailScreen extends StatefulWidget {
   final Order order;
-  const DiamondSetterDetailScreen({Key? key, required this.order}) : super(key: key);
+  const DiamondSetterDetailScreen({super.key, required this.order});
 
   @override
   State<DiamondSetterDetailScreen> createState() => _DiamondSetterDetailScreenState();

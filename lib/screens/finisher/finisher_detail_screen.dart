@@ -6,7 +6,7 @@ import 'finisher_task_screen.dart';
 
 class FinisherDetailScreen extends StatefulWidget {
   final Order order;
-  const FinisherDetailScreen({Key? key, required this.order}) : super(key: key);
+  const FinisherDetailScreen({super.key, required this.order});
 
   @override
   State<FinisherDetailScreen> createState() => _FinisherDetailScreenState();

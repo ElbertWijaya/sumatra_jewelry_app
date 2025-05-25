@@ -3,7 +3,7 @@ import '../../models/order.dart';
 import '../../services/order_service.dart';
 
 class SalesHistoryScreen extends StatefulWidget {
-  const SalesHistoryScreen({Key? key}) : super(key: key);
+  const SalesHistoryScreen({super.key});
 
   @override
   State<SalesHistoryScreen> createState() => _SalesHistoryScreenState();

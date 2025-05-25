@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class EmployeePerformanceScreen extends StatelessWidget {
-  const EmployeePerformanceScreen({Key? key}) : super(key: key);
+  const EmployeePerformanceScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

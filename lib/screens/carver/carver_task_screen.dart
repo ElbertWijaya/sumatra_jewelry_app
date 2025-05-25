@@ -7,12 +7,12 @@ class CarverTaskScreen extends StatelessWidget {
   final bool enabled;
 
   const CarverTaskScreen({
-    Key? key,
+    super.key,
     required this.ukirDone,
     required this.qcUkirDone,
     required this.onChanged,
     this.enabled = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

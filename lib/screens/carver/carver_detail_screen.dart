@@ -6,7 +6,7 @@ import 'carver_task_screen.dart';
 
 class CarverDetailScreen extends StatefulWidget {
   final Order order;
-  const CarverDetailScreen({Key? key, required this.order}) : super(key: key);
+  const CarverDetailScreen({super.key, required this.order});
 
   @override
   State<CarverDetailScreen> createState() => _CarverDetailScreenState();

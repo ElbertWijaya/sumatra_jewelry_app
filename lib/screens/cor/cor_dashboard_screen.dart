@@ -5,7 +5,7 @@ import '../../services/order_service.dart';
 import 'cor_detail_screen.dart';
 
 class CorDashboardScreen extends StatefulWidget {
-  const CorDashboardScreen({Key? key}) : super(key: key);
+  const CorDashboardScreen({super.key});
 
   @override
   State<CorDashboardScreen> createState() => _CorDashboardScreenState();
@@ -394,8 +394,9 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
                                                   ),
                                                 ),
                                               );
-                                              if (result == true)
+                                              if (result == true) {
                                                 _fetchOrders();
+                                              }
                                             },
                                           ),
                                         );

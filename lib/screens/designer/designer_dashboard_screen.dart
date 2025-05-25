@@ -5,7 +5,7 @@ import '../../services/order_service.dart';
 import 'designer_detail_screen.dart';
 
 class DesignerDashboardScreen extends StatefulWidget {
-  const DesignerDashboardScreen({Key? key}) : super(key: key);
+  const DesignerDashboardScreen({super.key});
 
   @override
   State<DesignerDashboardScreen> createState() =>
@@ -395,8 +395,9 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                                   ),
                                                 ),
                                               );
-                                              if (result == true)
+                                              if (result == true) {
                                                 _fetchOrders();
+                                              }
                                             },
                                           ),
                                         );

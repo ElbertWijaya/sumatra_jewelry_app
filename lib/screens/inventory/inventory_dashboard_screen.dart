@@ -5,7 +5,7 @@ import '../../services/order_service.dart';
 import 'inventory_detail_screen.dart';
 
 class InventoryDashboardScreen extends StatefulWidget {
-  const InventoryDashboardScreen({Key? key}) : super(key: key);
+  const InventoryDashboardScreen({super.key});
 
   @override
   State<InventoryDashboardScreen> createState() => _InventoryDashboardScreenState();
@@ -400,8 +400,9 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                                   ),
                                                 ),
                                               );
-                                              if (result == true)
+                                              if (result == true) {
                                                 _fetchOrders();
+                                              }
                                             },
                                           ),
                                         );

@@ -5,7 +5,7 @@ import '../../services/order_service.dart';
 import 'finisher_detail_screen.dart';
 
 class FinisherDashboardScreen extends StatefulWidget {
-  const FinisherDashboardScreen({Key? key}) : super(key: key);
+  const FinisherDashboardScreen({super.key});
 
   @override
   State<FinisherDashboardScreen> createState() => _FinisherDashboardScreenState();
@@ -397,8 +397,9 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                                   ),
                                                 ),
                                               );
-                                              if (result == true)
+                                              if (result == true) {
                                                 _fetchOrders();
+                                              }
                                             },
                                           ),
                                         );
