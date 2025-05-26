@@ -11,17 +11,30 @@ class DesignerDetailScreen extends StatefulWidget {
   State<DesignerDetailScreen> createState() => _DesignerDetailScreenState();
 }
 
-class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
+class _DesignerDetailScreenState extends State<DesignerDetailScreen>
+    with SingleTickerProviderStateMixin {
   late Order _order;
   bool _isProcessing = false;
   final List<String> todoList = ["Design", "Print", "Pengecekan"];
   List<String> checkedTodos = [];
+
+  // Tambahkan TabController untuk mengatur tab
+  late TabController _tabController;
+
+  // Misal, tab ke-1 adalah "On Progress"
+  int _currentTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _order = widget.order;
     checkedTodos = List<String>.from(_order.designerWorkChecklist ?? []);
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      setState(() {
+        _currentTabIndex = _tabController.index;
+      });
+    });
   }
 
   Future<void> _saveChecklist() async {
@@ -81,6 +94,25 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
 
   String showField(String? value) =>
       (value == null || value.trim().isEmpty) ? 'Belum diisi' : value;
+
+  double getOrderProgress(Order order) {
+    final List<OrderWorkflowStatus> onProgressStatuses = [
+      OrderWorkflowStatus.waiting_casting,
+      OrderWorkflowStatus.casting,
+      OrderWorkflowStatus.waiting_carving,
+      OrderWorkflowStatus.carving,
+      OrderWorkflowStatus.waiting_diamond_setting,
+      OrderWorkflowStatus.stoneSetting,
+      OrderWorkflowStatus.waiting_finishing,
+      OrderWorkflowStatus.finishing,
+      OrderWorkflowStatus.waiting_inventory,
+      OrderWorkflowStatus.inventory,
+      OrderWorkflowStatus.waiting_sales_completion,
+    ];
+    final idx = onProgressStatuses.indexOf(order.workflowStatus);
+    if (idx < 0) return 0.0;
+    return (idx + 1) / onProgressStatuses.length;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +174,10 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
             _buildDisplayField('Jenis Batu', showField(_order.stoneType)),
             _buildDisplayField('Ukuran Batu', showField(_order.stoneSize)),
             _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
-            _buildDisplayField('Status', _order.workflowStatus.label),
+            _buildDisplayField(
+              'Status',
+              _order.workflowStatus.label,
+            ),
             const SizedBox(height: 24),
 
             // PATCH: Tambahkan tombol "Terima & Mulai Kerjakan Pesanan"
@@ -155,7 +190,7 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
                 ),
               ),
 
-            // Checklist To Do List
+            // Tampilkan To Do Work checklist & Submit ke Cor jika status "designing"
             if (isWorking) ...[
               Text(
                 'To Do Work',
@@ -179,42 +214,44 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed:
-                    checkedTodos.length == todoList.length && !_isProcessing
-                        ? _submitToCor
-                        : null,
+                onPressed: checkedTodos.length == todoList.length && !_isProcessing
+                    ? _submitToCor
+                    : null,
                 child: const Text('Submit ke Cor'),
               ),
             ],
-            // Progress checklist, tampilkan juga jika sudah lewat tahap desain
-            if (_order.designerWorkChecklist != null &&
-                _order.designerWorkChecklist!.isNotEmpty &&
-                !isWorking)
+
+            // Progress bar: tampilkan jika status sudah masuk tahap on progress
+            if ({
+              OrderWorkflowStatus.waiting_casting,
+              OrderWorkflowStatus.casting,
+              OrderWorkflowStatus.waiting_carving,
+              OrderWorkflowStatus.carving,
+              OrderWorkflowStatus.waiting_diamond_setting,
+              OrderWorkflowStatus.stoneSetting,
+              OrderWorkflowStatus.waiting_finishing,
+              OrderWorkflowStatus.finishing,
+              OrderWorkflowStatus.waiting_inventory,
+              OrderWorkflowStatus.inventory,
+              OrderWorkflowStatus.waiting_sales_completion,
+            }.contains(_order.workflowStatus))
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Progress Designer:',
+                      'Status Pengerjaan',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    ...todoList.map(
-                      (name) => Row(
-                        children: [
-                          Icon(
-                            _order.designerWorkChecklist!.contains(name)
-                                ? Icons.check_box
-                                : Icons.check_box_outline_blank,
-                            color:
-                                _order.designerWorkChecklist!.contains(name)
-                                    ? Colors.green
-                                    : Colors.grey,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(name),
-                        ],
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: LinearProgressIndicator(
+                        value: getOrderProgress(_order),
+                        minHeight: 8,
+                        backgroundColor: Colors.grey[200],
+                        color: Colors.amber[700],
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ],

@@ -29,6 +29,11 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   List<String> selectedStoneTypes = [];
   double? priceMin;
   double? priceMax;
+  double getOrderProgress(Order order){
+    final idx = activeStatuses.indexOf(order.workflowStatus);
+    if (idx < 0) return 0.0;
+    return (idx + 1) / activeStatuses.length;
+  }
   String? ringSize;
 
   // Random category display
@@ -988,8 +993,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                           ),
                                         ),
                                         subtitle: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text('Jenis: ${order.jewelryType}'),
                                             Text(
@@ -1015,6 +1019,37 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                                         : Colors.blue,
                                               ),
                                             ),
+                                            // Progress bar
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 6.0, bottom: 2.0),
+                                              child: LinearProgressIndicator(
+                                                value: getOrderProgress(order),
+                                                minHeight: 6,
+                                                backgroundColor: Colors.grey[200],
+                                                color: Colors.amber[700],
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                            // Info On Monitoring
+                                            if (order.workflowStatus != OrderWorkflowStatus.done &&
+                                                order.workflowStatus != OrderWorkflowStatus.cancelled)
+                                              Padding(
+                                                padding: const EdgeInsets.only(top: 2.0),
+                                                child: Row(
+                                                  children: const [
+                                                    Icon(Icons.visibility, color: Colors.blue, size: 16),
+                                                    SizedBox(width: 4),
+                                                    Text(
+                                                      'On Monitoring',
+                                                      style: TextStyle(
+                                                        color: Colors.blue,
+                                                        fontSize: 12,
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
                                           ],
                                         ),
                                         trailing: const Icon(
@@ -1037,6 +1072,8 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                         },
                                       ),
                                     );
+
+
                                   },
                                 ),
                       ),

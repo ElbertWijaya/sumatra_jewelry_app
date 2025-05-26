@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
+import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
 import 'inventory_detail_screen.dart';
 
@@ -150,6 +151,13 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     if (mounted) {
       Navigator.pushReplacementNamed(context, '/login');
     }
+  }
+
+  double getOrderProgress(Order order) {
+    final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
+    final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
+    if (idx < 0) return 0.0;
+    return idx / maxIdx;
   }
 
   @override
@@ -404,6 +412,37 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                                         : Colors.green,
                                               ),
                                             ),
+                                            // Progress bar
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 6.0, bottom: 2.0),
+                                              child: LinearProgressIndicator(
+                                                value: getOrderProgress(order),
+                                                minHeight: 6,
+                                                backgroundColor: Colors.grey[200],
+                                                color: Colors.amber[700],
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                            // Info On Monitoring
+                                            if (order.workflowStatus != OrderWorkflowStatus.done &&
+                                                order.workflowStatus != OrderWorkflowStatus.cancelled)
+                                              Padding(
+                                                padding: const EdgeInsets.only(top: 2.0),
+                                                child: Row(
+                                                  children: const [
+                                                    Icon(Icons.visibility, color: Colors.blue, size: 16),
+                                                    SizedBox(width: 4),
+                                                    Text(
+                                                      'On Monitoring',
+                                                      style: TextStyle(
+                                                        color: Colors.blue,
+                                                        fontSize: 12,
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
                                           ],
                                         ),
                                         trailing: const Icon(

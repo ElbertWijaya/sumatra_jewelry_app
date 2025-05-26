@@ -81,6 +81,21 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
   String showField(String? value) =>
       (value == null || value.trim().isEmpty) ? 'Belum diisi' : value;
 
+  double getOrderProgress(Order order) {
+    final List<OrderWorkflowStatus> onProgressStatuses = [
+      OrderWorkflowStatus.waiting_diamond_setting,
+      OrderWorkflowStatus.stoneSetting,
+      OrderWorkflowStatus.waiting_finishing,
+      OrderWorkflowStatus.finishing,
+      OrderWorkflowStatus.waiting_inventory,
+      OrderWorkflowStatus.inventory,
+      OrderWorkflowStatus.waiting_sales_completion,
+    ];
+    final idx = onProgressStatuses.indexOf(order.workflowStatus);
+    if (idx < 0) return 0.0;
+    return (idx + 1) / onProgressStatuses.length;
+  }
+
   @override
   Widget build(BuildContext context) {
     print('Status order: ${_order.workflowStatus}');
@@ -182,6 +197,37 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                         : null,
                 child: const Text('Submit ke Diamond Setter'),
               ),
+              if ({
+                OrderWorkflowStatus.waiting_diamond_setting,
+                OrderWorkflowStatus.stoneSetting,
+                OrderWorkflowStatus.waiting_finishing,
+                OrderWorkflowStatus.finishing,
+                OrderWorkflowStatus.waiting_inventory,
+                OrderWorkflowStatus.inventory,
+                OrderWorkflowStatus.waiting_sales_completion,
+              }.contains(_order.workflowStatus))
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Status Pengerjaan',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: LinearProgressIndicator(
+                          value: getOrderProgress(_order),
+                          minHeight: 8,
+                          backgroundColor: Colors.grey[200],
+                          color: Colors.amber[700],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ],
         ),
