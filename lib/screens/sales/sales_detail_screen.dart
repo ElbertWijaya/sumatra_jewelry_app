@@ -451,6 +451,46 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                               'Status',
                               _order.workflowStatus.label,
                             ),
+
+                            if (_order.designerWorkChecklist != null &&
+                                _order.designerWorkChecklist!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Progress Designer:',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    ...["Design", "Print", "Pengecekan"].map(
+                                      (name) => Row(
+                                        children: [
+                                          Icon(
+                                            _order.designerWorkChecklist!
+                                                    .contains(name)
+                                                ? Icons.check_box
+                                                : Icons.check_box_outline_blank,
+                                            color:
+                                                _order.designerWorkChecklist!
+                                                        .contains(name)
+                                                    ? Colors.green
+                                                    : Colors.grey,
+                                            size: 18,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(name),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
                             _buildDisplayField(
                               'Designer',
                               showField(_order.assignedDesigner),

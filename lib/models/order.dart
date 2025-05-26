@@ -2,30 +2,30 @@ import 'package:flutter/foundation.dart';
 
 /// Enum Status Pesanan sesuai alur kerja multi-divisi
 enum OrderWorkflowStatus {
-  waiting_sales_check, // Baru dibuat, belum diverifikasi sales
-  waiting_designer, // Sudah dicek sales, siap diambil designer
-  pending, // (legacy) Baru dibuat oleh sales, menunggu desain
-  designing, // Sedang didesain oleh designer
-  waiting_casting, // Menunggu proses cor setelah desain
-  readyForCasting, // Siap untuk cor/casting
-  casting, // Sedang dicor oleh tukang cor
-  waiting_carving, // Menunggu proses carving setelah cor
-  readyForCarving, // Siap untuk carving
-  carving, // Sedang dikerjakan carver
-  waiting_diamond_setting, // Menunggu proses diamond setting
-  readyForStoneSetting, // Siap untuk pasang batu/berlian
-  stoneSetting, // Sedang pasang batu/berlian
-  waiting_finishing, // Menunggu proses finishing
-  readyForFinishing, // Siap untuk finishing
-  finishing, // Dalam proses finishing
-  waiting_inventory, // Menunggu input inventaris
-  readyForInventory, // Siap untuk Diinventory
-  inventory, // Dalam proses inventory
-  waiting_sales_completion, // Menunggu konfirmasi dari sales (tambahan)
-  done, // Selesai, siap diambil customer
-  cancelled, // Dibatalkan
-  unknown, // Tidak diketahui
-  debut, // <<< Tambahan status debut tanpa merusak fungsi lain
+  waiting_sales_check,
+  waiting_designer,
+  pending,
+  designing,
+  waiting_casting,
+  readyForCasting,
+  casting,
+  waiting_carving,
+  readyForCarving,
+  carving,
+  waiting_diamond_setting,
+  readyForStoneSetting,
+  stoneSetting,
+  waiting_finishing,
+  readyForFinishing,
+  finishing,
+  waiting_inventory,
+  readyForInventory,
+  inventory,
+  waiting_sales_completion,
+  done,
+  cancelled,
+  unknown,
+  debut,
 }
 
 /// Extension parsing OrderWorkflowStatus dari string dan label
@@ -142,30 +142,27 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
 
 /// Model data pesanan (Order) terhubung workflow multi-divisi
 class Order {
-  final List<String>? imagePaths; //Gambar
+  final List<String>? imagePaths;
   final String id;
-  final String customerName; // Nama Pelanggan (wajib)
-  final String customerContact; // Nomor Telepon (wajib)
-  final String address; // Alamat (wajib)
-  final String jewelryType; // Jenis Perhiasan (wajib)
+  final String customerName;
+  final String customerContact;
+  final String address;
+  final String jewelryType;
+  final String? goldColor;
+  final String? goldType;
+  final String? stoneType;
+  final String? stoneSize;
+  final String? ringSize;
+  final DateTime? readyDate;
+  final DateTime? pickupDate;
+  final double? goldPricePerGram;
+  final double? finalPrice;
+  final String? notes;
+  final OrderWorkflowStatus workflowStatus;
 
-  // Tambahan: Gold Color & Gold Type
-  final String? goldColor; // Warna Emas
-  final String? goldType; // Jenis Emas
+  // Tambahan: Checklist kerja designer
+  final List<String>? designerWorkChecklist;
 
-  // Opsional
-  final String? stoneType; // Jenis Batu
-  final String? stoneSize; // Ukuran Batu (format: 'xx x yy')
-  final String? ringSize; // Ukuran Cincin
-  final DateTime? readyDate; // Tanggal Siap
-  final DateTime? pickupDate; // Tanggal Ambil
-  final double? goldPricePerGram; // Harga Emas per Gram
-  final double? finalPrice; // Harga Akhir
-  final String? notes; // Catatan tambahan
-
-  final OrderWorkflowStatus workflowStatus; // Status workflow utama
-
-  // Assignment per divisi (opsional, bisa digunakan untuk tracking PIC per divisi)
   final String? assignedDesigner;
   final String? assignedCaster;
   final String? assignedCarver;
@@ -194,6 +191,7 @@ class Order {
     this.finalPrice,
     this.notes,
     this.workflowStatus = OrderWorkflowStatus.pending,
+    this.designerWorkChecklist,
     this.assignedDesigner,
     this.assignedCaster,
     this.assignedCarver,
@@ -226,6 +224,7 @@ class Order {
     double? finalPrice,
     String? notes,
     OrderWorkflowStatus? workflowStatus,
+    List<String>? designerWorkChecklist,
     String? assignedDesigner,
     String? assignedCaster,
     String? assignedCarver,
@@ -253,6 +252,8 @@ class Order {
       finalPrice: finalPrice ?? this.finalPrice,
       notes: notes ?? this.notes,
       workflowStatus: workflowStatus ?? this.workflowStatus,
+      designerWorkChecklist:
+          designerWorkChecklist ?? this.designerWorkChecklist,
       assignedDesigner: assignedDesigner ?? this.assignedDesigner,
       assignedCaster: assignedCaster ?? this.assignedCaster,
       assignedCarver: assignedCarver ?? this.assignedCarver,
@@ -293,6 +294,10 @@ class Order {
       workflowStatus: OrderWorkflowStatusX.fromString(
         json['workflowStatus'] as String?,
       ),
+      designerWorkChecklist:
+          (json['designerWorkChecklist'] as List?)
+              ?.map((e) => e as String)
+              .toList(),
       assignedDesigner: json['assignedDesigner'] as String?,
       assignedCaster: json['assignedCaster'] as String?,
       assignedCarver: json['assignedCarver'] as String?,
@@ -328,6 +333,7 @@ class Order {
     'finalPrice': finalPrice,
     'notes': notes,
     'workflowStatus': workflowStatus.name,
+    'designerWorkChecklist': designerWorkChecklist,
     'assignedDesigner': assignedDesigner,
     'assignedCaster': assignedCaster,
     'assignedCarver': assignedCarver,
