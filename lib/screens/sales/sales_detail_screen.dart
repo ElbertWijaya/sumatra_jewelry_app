@@ -330,8 +330,69 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
     );
   }
 
+  // Helper to build checklist progress section for each step
+  Widget buildChecklistSection(
+    String title,
+    List<String> todoList,
+    List<String>? checkedList,
+  ) {
+    if (checkedList == null || checkedList.isEmpty) return const SizedBox();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$title Progress:',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          ...todoList.map(
+            (name) => Row(
+              children: [
+                Icon(
+                  checkedList.contains(name)
+                      ? Icons.check_box
+                      : Icons.check_box_outline_blank,
+                  color:
+                      checkedList.contains(name) ? Colors.green : Colors.grey,
+                  size: 18,
+                ),
+                const SizedBox(width: 4),
+                Text(name),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Define each role's todoList sesuai implementasi di detail screen masing-masing role
+    const designerTodo = [
+      "Design",
+      "Print",
+      "Pengecekan",
+    ]; // Sesuaikan dengan checklist designer
+    const corTodo = [
+      "Susun lilin",
+      "Terima emas",
+      "Cor",
+    ]; // Checklist cor/casting
+    const carverTodo = [
+      "Bom",
+      "Polish",
+      "Getar",
+      "Kasih ke Olivia",
+    ]; // Checklist carver
+    const diamondSetterTodo = [
+      "Pilih batu",
+      "Pasang batu",
+      "Kasih ke Olivia",
+    ]; // Checklist diamond setter
+    const finisherTodo = ["Finishing"]; // Checklist finisher
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Pesanan'),
@@ -451,46 +512,32 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                               'Status',
                               _order.workflowStatus.label,
                             ),
-
-                            if (_order.designerWorkChecklist != null &&
-                                _order.designerWorkChecklist!.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Progress Designer:',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    ...["Design", "Print", "Pengecekan"].map(
-                                      (name) => Row(
-                                        children: [
-                                          Icon(
-                                            _order.designerWorkChecklist!
-                                                    .contains(name)
-                                                ? Icons.check_box
-                                                : Icons.check_box_outline_blank,
-                                            color:
-                                                _order.designerWorkChecklist!
-                                                        .contains(name)
-                                                    ? Colors.green
-                                                    : Colors.grey,
-                                            size: 18,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(name),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
+                            // Progress section for each process
+                            buildChecklistSection(
+                              "Designer",
+                              designerTodo,
+                              _order.designerWorkChecklist,
+                            ),
+                            buildChecklistSection(
+                              "Cor",
+                              corTodo,
+                              _order.castingWorkChecklist,
+                            ),
+                            buildChecklistSection(
+                              "Carver",
+                              carverTodo,
+                              _order.carvingWorkChecklist,
+                            ),
+                            buildChecklistSection(
+                              "Diamond Setter",
+                              diamondSetterTodo,
+                              _order.stoneSettingWorkChecklist,
+                            ),
+                            buildChecklistSection(
+                              "Finisher",
+                              finisherTodo,
+                              _order.finishingWorkChecklist,
+                            ),
                             _buildDisplayField(
                               'Designer',
                               showField(_order.assignedDesigner),

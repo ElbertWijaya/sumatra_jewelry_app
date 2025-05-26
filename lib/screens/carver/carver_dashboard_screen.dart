@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'carver_detail_screen.dart';
 
 class CarverDashboardScreen extends StatefulWidget {
@@ -676,6 +677,15 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
         );
       },
     );
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false);
+    await prefs.remove('userRole');
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/login');
+    }
   }
 
   @override

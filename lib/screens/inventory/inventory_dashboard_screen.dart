@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
 import 'inventory_detail_screen.dart';
@@ -140,6 +141,15 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false);
+    await prefs.remove('userRole');
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/login');
+    }
   }
 
   @override
