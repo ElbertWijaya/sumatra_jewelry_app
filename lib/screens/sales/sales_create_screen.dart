@@ -3,7 +3,7 @@ import '../../models/order.dart';
 import '../../services/order_service.dart';
 
 class SalesCreateScreen extends StatefulWidget {
-  const SalesCreateScreen({Key? key}) : super(key: key);
+  const SalesCreateScreen({super.key});
 
   @override
   State<SalesCreateScreen> createState() => _SalesCreateScreenState();
@@ -24,7 +24,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
   String? _goldType;
   String? _stoneType;
   DateTime? _readyDate;
-  List<String> _images = [];
+  final List<String> _images = [];
 
   bool _isSaving = false;
 
@@ -191,7 +191,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                                   child: Text(color),
                                 ),
                               )
-                              .toList(),
+                              ,
                         ],
                         onChanged: (val) => setState(() => _goldColor = val),
                       ),
@@ -210,7 +210,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                                   child: Text(type),
                                 ),
                               )
-                              .toList(),
+                              ,
                         ],
                         onChanged: (val) => setState(() => _goldType = val),
                       ),
@@ -229,7 +229,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                                   child: Text(type),
                                 ),
                               )
-                              .toList(),
+                              ,
                         ],
                         onChanged: (val) => setState(() => _stoneType = val),
                       ),

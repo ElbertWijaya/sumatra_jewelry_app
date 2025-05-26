@@ -1,4 +1,4 @@
-import '../models/order.dart';
+import 'order.dart';
 
 final List<OrderWorkflowStatus> fullWorkflowStatuses = [
   OrderWorkflowStatus.waiting_sales_check,
@@ -18,3 +18,10 @@ final List<OrderWorkflowStatus> fullWorkflowStatuses = [
   OrderWorkflowStatus.done,
   OrderWorkflowStatus.cancelled,
 ];
+
+double getOrderProgress(Order order) {
+  final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
+  final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
+  if (idx < 0) return 0.0;
+  return idx / maxIdx;
+}

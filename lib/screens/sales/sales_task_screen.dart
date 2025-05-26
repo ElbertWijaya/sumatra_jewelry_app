@@ -4,7 +4,7 @@ import '../../services/order_service.dart';
 
 class SalesTaskScreen extends StatefulWidget {
   final Order order;
-  const SalesTaskScreen({Key? key, required this.order}) : super(key: key);
+  const SalesTaskScreen({super.key, required this.order});
 
   @override
   State<SalesTaskScreen> createState() => _SalesTaskScreenState();

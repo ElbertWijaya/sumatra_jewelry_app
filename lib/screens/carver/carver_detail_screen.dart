@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
+import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
 
 class CarverDetailScreen extends StatefulWidget {
@@ -82,18 +83,10 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
       (value == null || value.trim().isEmpty) ? 'Belum diisi' : value;
 
   double getOrderProgress(Order order) {
-    final List<OrderWorkflowStatus> onProgressStatuses = [
-      OrderWorkflowStatus.waiting_diamond_setting,
-      OrderWorkflowStatus.stoneSetting,
-      OrderWorkflowStatus.waiting_finishing,
-      OrderWorkflowStatus.finishing,
-      OrderWorkflowStatus.waiting_inventory,
-      OrderWorkflowStatus.inventory,
-      OrderWorkflowStatus.waiting_sales_completion,
-    ];
-    final idx = onProgressStatuses.indexOf(order.workflowStatus);
+    final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
+    final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
     if (idx < 0) return 0.0;
-    return (idx + 1) / onProgressStatuses.length;
+    return idx / maxIdx;
   }
 
   @override

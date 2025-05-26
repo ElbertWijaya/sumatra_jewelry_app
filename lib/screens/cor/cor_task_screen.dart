@@ -5,7 +5,7 @@ import '../../services/order_service.dart';
 
 class CorTaskScreen extends StatefulWidget {
   final Order order;
-  const CorTaskScreen({Key? key, required this.order}) : super(key: key);
+  const CorTaskScreen({super.key, required this.order});
 
   @override
   State<CorTaskScreen> createState() => _CorTaskScreenState();

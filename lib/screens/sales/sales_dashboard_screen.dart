@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
+import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
 import 'sales_detail_screen.dart';
 
@@ -29,10 +30,11 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   List<String> selectedStoneTypes = [];
   double? priceMin;
   double? priceMax;
-  double getOrderProgress(Order order){
-    final idx = activeStatuses.indexOf(order.workflowStatus);
+  double getOrderProgress(Order order) {
+    final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
+    final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
     if (idx < 0) return 0.0;
-    return (idx + 1) / activeStatuses.length;
+    return idx / maxIdx;
   }
   String? ringSize;
 
@@ -1019,19 +1021,38 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                                         : Colors.blue,
                                               ),
                                             ),
-                                            // Progress bar
-                                            Padding(
-                                              padding: const EdgeInsets.only(top: 6.0, bottom: 2.0),
-                                              child: LinearProgressIndicator(
-                                                value: getOrderProgress(order),
-                                                minHeight: 6,
-                                                backgroundColor: Colors.grey[200],
-                                                color: Colors.amber[700],
-                                                borderRadius: BorderRadius.circular(8),
+                                            // Progress bar + persentase
+                                            if (order.workflowStatus != OrderWorkflowStatus.waiting_sales_check &&
+                                                order.workflowStatus != OrderWorkflowStatus.done &&
+                                                order.workflowStatus != OrderWorkflowStatus.cancelled)
+                                              Padding(
+                                                padding: const EdgeInsets.only(top: 6.0, bottom: 2.0),
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    // Tampilkan persentase di atas progress bar
+                                                    Text(
+                                                      '${(getOrderProgress(order) * 100).toStringAsFixed(0)}%',
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.black87,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 2),
+                                                    LinearProgressIndicator(
+                                                      value: getOrderProgress(order),
+                                                      minHeight: 6,
+                                                      backgroundColor: Colors.grey[200],
+                                                      color: Colors.amber[700],
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
                                             // Info On Monitoring
-                                            if (order.workflowStatus != OrderWorkflowStatus.done &&
+                                            if (order.workflowStatus != OrderWorkflowStatus.waiting_sales_check &&
+                                                order.workflowStatus != OrderWorkflowStatus.done &&
                                                 order.workflowStatus != OrderWorkflowStatus.cancelled)
                                               Padding(
                                                 padding: const EdgeInsets.only(top: 2.0),

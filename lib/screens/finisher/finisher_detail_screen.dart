@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
+import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
 
 class FinisherDetailScreen extends StatefulWidget {
@@ -21,11 +22,11 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
   void initState() {
     super.initState();
     _order = widget.order;
-    checkedTodos = List<String>.from(_order.castingWorkChecklist ?? []);
+    checkedTodos = List<String>.from(_order.finishingWorkChecklist ?? []);
   }
 
   Future<void> _saveChecklist() async {
-    final updatedOrder = _order.copyWith(castingWorkChecklist: checkedTodos);
+    final updatedOrder = _order.copyWith(finishingWorkChecklist: checkedTodos);
     await OrderService().updateOrder(updatedOrder);
     setState(() => _order = updatedOrder);
   }
@@ -33,8 +34,8 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
   Future<void> _submitToNext() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waiting_carving,
-      castingWorkChecklist: checkedTodos,
+      workflowStatus: OrderWorkflowStatus.waiting_finishing,
+      finishingWorkChecklist: checkedTodos,
     );
     await OrderService().updateOrder(updatedOrder);
     setState(() {
@@ -47,8 +48,7 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
   Future<void> _acceptOrder() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.casting,
-      assignedCaster: _order.assignedCaster ?? 'Nama Cor',
+      workflowStatus: OrderWorkflowStatus.finishing,
     );
     await OrderService().updateOrder(updatedOrder);
     setState(() {
@@ -81,13 +81,20 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
   String showField(String? value) =>
       (value == null || value.trim().isEmpty) ? 'Belum diisi' : value;
 
+  double getOrderProgress(Order order) {
+    final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
+    final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
+    if (idx < 0) return 0.0;
+    return idx / maxIdx;
+  }
+
   @override
   Widget build(BuildContext context) {
-    bool isWorking = _order.workflowStatus == OrderWorkflowStatus.casting;
-    bool isWaiting =
-        _order.workflowStatus == OrderWorkflowStatus.waiting_casting;
+    bool isWorking = _order.workflowStatus == OrderWorkflowStatus.finishing;
+    bool isWaiting = _order.workflowStatus == OrderWorkflowStatus.waiting_finishing;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Detail Pesanan Cor')),
+      appBar: AppBar(title: const Text('Detail Pesanan Finisher')), // Perbaiki judul
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -142,7 +149,9 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
             _buildDisplayField('Ukuran Batu', showField(_order.stoneSize)),
             _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
             _buildDisplayField('Status', _order.workflowStatus.label),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
+
+            // Tampilkan tombol hanya saat waiting_finishing
             if (isWaiting)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
@@ -151,7 +160,38 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
                   child: const Text('Terima & Mulai Kerjakan Pesanan'),
                 ),
               ),
+
+            // Progress bar, persentase, checklist, dan "Progress Cor" hanya saat status finishing
             if (isWorking) ...[
+              Text(
+                'Progress Pesanan',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Expanded(
+                    child: LinearProgressIndicator(
+                      value: getOrderProgress(_order),
+                      minHeight: 8,
+                      backgroundColor: Colors.grey[200],
+                      color: Colors.amber[700],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Checklist Finishing
               Text(
                 'To Do Work',
                 style: Theme.of(context).textTheme.titleMedium,
@@ -178,42 +218,42 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
                     checkedTodos.length == todoList.length && !_isProcessing
                         ? _submitToNext
                         : null,
-                child: const Text('Submit ke Carver'),
+                child: const Text('Submit ke Inventory'),
               ),
-            ],
-            if (_order.castingWorkChecklist != null &&
-                _order.castingWorkChecklist!.isNotEmpty &&
-                !isWorking)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Progress Cor:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    ...todoList.map(
-                      (name) => Row(
-                        children: [
-                          Icon(
-                            _order.castingWorkChecklist!.contains(name)
-                                ? Icons.check_box
-                                : Icons.check_box_outline_blank,
-                            color:
-                                _order.castingWorkChecklist!.contains(name)
-                                    ? Colors.green
-                                    : Colors.grey,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(name),
-                        ],
+
+              // Progress Cor hanya saat finishing
+              if (_order.finishingWorkChecklist != null &&
+                  _order.finishingWorkChecklist!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Progress Cor:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                    ),
-                  ],
+                      ...todoList.map(
+                        (name) => Row(
+                          children: [
+                            Icon(
+                              _order.finishingWorkChecklist!.contains(name)
+                                  ? Icons.check_box
+                                  : Icons.check_box_outline_blank,
+                              color: _order.finishingWorkChecklist!.contains(name)
+                                  ? Colors.green
+                                  : Colors.grey,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(name),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+            ],
           ],
         ),
       ),

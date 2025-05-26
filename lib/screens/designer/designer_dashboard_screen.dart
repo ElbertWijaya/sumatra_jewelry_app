@@ -1000,38 +1000,44 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                             Text(
                                               'Status: ${order.workflowStatus.label}',
                                               style: TextStyle(
-                                                color:
-                                                    order.workflowStatus ==
-                                                            OrderWorkflowStatus
-                                                                .waiting_designer
-                                                        ? Colors.orange
-                                                        : order.workflowStatus ==
-                                                            OrderWorkflowStatus
-                                                                .designing
+                                                color: order.workflowStatus == OrderWorkflowStatus.waiting_designer
+                                                    ? Colors.orange
+                                                    : order.workflowStatus == OrderWorkflowStatus.designing
                                                         ? Colors.blue
-                                                        : onProgressStatuses
-                                                            .contains(
-                                                              order
-                                                                  .workflowStatus,
-                                                            )
-                                                        ? Colors.green
-                                                        : Colors.grey,
+                                                        : Colors.green,
                                               ),
                                             ),
-                                            // Progress bar
-                                            Padding(
-                                              padding: const EdgeInsets.only(top: 6.0, bottom: 2.0),
-                                              child: LinearProgressIndicator(
-                                                value: getOrderProgress(order),
-                                                minHeight: 6,
-                                                backgroundColor: Colors.grey[200],
-                                                color: Colors.amber[700],
-                                                borderRadius: BorderRadius.circular(8),
+                                            // Progress bar & persentase hanya jika status "On Progress"
+                                            if (waitingStatuses.contains(order.workflowStatus) ||
+                                                onProgressStatuses.contains(order.workflowStatus))
+                                              Padding(
+                                                padding: const EdgeInsets.only(top: 6.0, bottom: 2.0),
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      '${(getOrderProgress(order) * 100).toStringAsFixed(0)}%',
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.black87,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 2),
+                                                    LinearProgressIndicator(
+                                                      value: getOrderProgress(order),
+                                                      minHeight: 6,
+                                                      backgroundColor: Colors.grey[200],
+                                                      color: Colors.amber[700],
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
                                             // Info On Monitoring
                                             if (order.workflowStatus != OrderWorkflowStatus.done &&
-                                                order.workflowStatus != OrderWorkflowStatus.cancelled)
+                                                order.workflowStatus != OrderWorkflowStatus.cancelled &&
+                                                _selectedStatusFilter != 'working') // <-- tambahkan kondisi ini
                                               Padding(
                                                 padding: const EdgeInsets.only(top: 2.0),
                                                 child: Row(

@@ -5,7 +5,7 @@ import '../../services/order_service.dart';
 
 class DesignerTaskScreen extends StatefulWidget {
   final Order order;
-  const DesignerTaskScreen({Key? key, required this.order}) : super(key: key);
+  const DesignerTaskScreen({super.key, required this.order});
 
   @override
   State<DesignerTaskScreen> createState() => _DesignerTaskScreenState();

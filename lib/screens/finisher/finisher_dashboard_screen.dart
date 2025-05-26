@@ -121,6 +121,10 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
         _orders = fetchedOrders;
       });
       _generateRandomCategoryFilters();
+      print('Fetched orders:');
+      for (var o in fetchedOrders) {
+        print('${o.customerName} - ${o.workflowStatus}');
+      }
     } catch (e) {
       setState(() {
         _errorMessage =
@@ -712,7 +716,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
     }
     return Scaffold(
       appBar: AppBar(
-        title: const Text('r Dashboard'),
+        title: const Text('Finisher Dashboard'),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -947,6 +951,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                         ),
                                       );
                                     }
+                                    print(order.workflowStatus);
                                     return Card(
                                       margin: const EdgeInsets.symmetric(
                                         vertical: 8.0,
@@ -983,20 +988,37 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                                                 : Colors.grey,
                                               ),
                                             ),
-                                            // Progress bar
-                                            Padding(
-                                              padding: const EdgeInsets.only(top: 6.0, bottom: 2.0),
-                                              child: LinearProgressIndicator(
-                                                value: getOrderProgress(order),
-                                                minHeight: 6,
-                                                backgroundColor: Colors.grey[200],
-                                                color: Colors.amber[700],
-                                                borderRadius: BorderRadius.circular(8),
+                                            // Progress bar & persentase hanya jika status "Waiting" atau "On Progress"
+                                            if (waitingStatuses.contains(order.workflowStatus) ||
+                                                onProgressStatuses.contains(order.workflowStatus))
+                                              Padding(
+                                                padding: const EdgeInsets.only(top: 6.0, bottom: 2.0),
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      '${(getOrderProgress(order) * 100).toStringAsFixed(0)}%',
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.black87,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 2),
+                                                    LinearProgressIndicator(
+                                                      value: getOrderProgress(order),
+                                                      minHeight: 6,
+                                                      backgroundColor: Colors.grey[200],
+                                                      color: Colors.amber[700],
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
                                             // Info On Monitoring
                                             if (order.workflowStatus != OrderWorkflowStatus.done &&
-                                                order.workflowStatus != OrderWorkflowStatus.cancelled)
+                                                order.workflowStatus != OrderWorkflowStatus.cancelled &&
+                                                _selectedStatusFilter != 'working')
                                               Padding(
                                                 padding: const EdgeInsets.only(top: 2.0),
                                                 child: Row(

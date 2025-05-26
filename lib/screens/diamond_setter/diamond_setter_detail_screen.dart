@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
+import '../../models/order_workflow.dart';
 
 class DiamondSetterDetailScreen extends StatefulWidget {
   final Order order;
@@ -89,6 +90,13 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
 
   String showField(String? value) =>
       (value == null || value.trim().isEmpty) ? 'Belum diisi' : value;
+
+  double getOrderProgress(Order order) {
+    final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
+    final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
+    if (idx < 0) return 0.0;
+    return idx / maxIdx;
+  }
 
   @override
   Widget build(BuildContext context) {
