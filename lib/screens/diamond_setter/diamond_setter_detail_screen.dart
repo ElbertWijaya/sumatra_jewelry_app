@@ -2,175 +2,222 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
-import 'diamond_setter_task_screen.dart';
 
 class DiamondSetterDetailScreen extends StatefulWidget {
   final Order order;
   const DiamondSetterDetailScreen({super.key, required this.order});
 
   @override
-  State<DiamondSetterDetailScreen> createState() => _DiamondSetterDetailScreenState();
+  State<DiamondSetterDetailScreen> createState() =>
+      _DiamondSetterDetailScreenState();
 }
 
 class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
   late Order _order;
-  bool _isSaving = false;
-  bool _pasangBatuDone = false;
-  bool _qcBatuDone = false;
+  bool _isProcessing = false;
+  final List<String> todoList = ["Cor", "Bersihkan", "QC"];
+  List<String> checkedTodos = [];
 
   @override
   void initState() {
     super.initState();
     _order = widget.order;
-    // TODO: Load checklist state from order if needed
+    checkedTodos = List<String>.from(_order.castingWorkChecklist ?? []);
   }
 
-  Future<void> _mulaiDiamondSetting() async {
-    setState(() => _isSaving = true);
+  Future<void> _saveChecklist() async {
+    final updatedOrder = _order.copyWith(castingWorkChecklist: checkedTodos);
+    await OrderService().updateOrder(updatedOrder);
+    setState(() => _order = updatedOrder);
+  }
+
+  Future<void> _submitToNext() async {
+    setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.stoneSetting,
+      workflowStatus: OrderWorkflowStatus.waiting_carving,
+      castingWorkChecklist: checkedTodos,
     );
-    try {
-      await OrderService().updateOrder(updatedOrder);
-      if (!mounted) return;
-      Navigator.of(context).pop(true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pesanan masuk proses Pasang Batu!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal update pesanan: $e')));
-    }
-    setState(() => _isSaving = false);
-  }
-
-  Future<void> _teruskanKeFinisher() async {
-    setState(() => _isSaving = true);
-    final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waiting_finishing,
-    );
-    try {
-      await OrderService().updateOrder(updatedOrder);
-      if (!mounted) return;
-      Navigator.of(context).pop(true);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Pesanan diteruskan ke Finisher!')));
-    } catch (e) {
-      ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('Gagal update pesanan: $e')));
-    }
-    setState(() => _isSaving = false);
-  }
-
-  void _onTaskChanged(bool pasangBatu, bool qcBatu) {
+    await OrderService().updateOrder(updatedOrder);
     setState(() {
-      _pasangBatuDone = pasangBatu;
-      _qcBatuDone = qcBatu;
+      _order = updatedOrder;
+      _isProcessing = false;
     });
+    if (mounted) Navigator.of(context).pop(true);
   }
+
+  Future<void> _acceptOrder() async {
+    setState(() => _isProcessing = true);
+    final updatedOrder = _order.copyWith(
+      workflowStatus: OrderWorkflowStatus.casting,
+      assignedCaster: _order.assignedCaster ?? 'Nama Cor',
+    );
+    await OrderService().updateOrder(updatedOrder);
+    setState(() {
+      _order = updatedOrder;
+      _isProcessing = false;
+    });
+    if (mounted) Navigator.of(context).pop(true);
+  }
+
+  Widget _buildDisplayField(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+
+  String showField(String? value) =>
+      (value == null || value.trim().isEmpty) ? 'Belum diisi' : value;
 
   @override
   Widget build(BuildContext context) {
-    final imageList = List<String>.from(_order.imagePaths ?? []);
+    bool isWorking = _order.workflowStatus == OrderWorkflowStatus.casting;
+    bool isWaiting =
+        _order.workflowStatus == OrderWorkflowStatus.waiting_casting;
     return Scaffold(
-      appBar: AppBar(title: const Text('Detail Pesanan - Diamond Setter')),
-      body: _isSaving
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Referensi Gambar',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 110,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: imageList.length,
-                      itemBuilder: (context, idx) => Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.file(
-                            File(imageList[idx]),
-                            width: 110,
-                            height: 110,
-                            fit: BoxFit.cover,
-                            errorBuilder: (c, e, s) => Container(
-                              width: 110,
-                              height: 110,
-                              color: Colors.grey[200],
-                              child: const Icon(
-                                Icons.broken_image,
-                                size: 40,
-                                color: Colors.grey,
+      appBar: AppBar(title: const Text('Detail Pesanan Cor')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_order.imagePaths != null && _order.imagePaths!.isNotEmpty)
+              SizedBox(
+                height: 110,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _order.imagePaths!.length,
+                  itemBuilder: (context, idx) {
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          File(_order.imagePaths![idx]),
+                          width: 110,
+                          height: 110,
+                          fit: BoxFit.cover,
+                          errorBuilder:
+                              (c, e, s) => Container(
+                                width: 110,
+                                height: 110,
+                                color: Colors.grey[200],
+                                child: const Icon(Icons.broken_image, size: 40),
                               ),
-                            ),
-                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Nama Pelanggan: ${_order.customerName}'),
-                  Text('Nomor Telepon: ${_order.customerContact}'),
-                  Text('Alamat: ${_order.address}'),
-                  Text('Jenis Perhiasan: ${_order.jewelryType}'),
-                  if (_order.stoneType != null && _order.stoneType!.isNotEmpty)
-                    Text('Jenis Batu: ${_order.stoneType}'),
-                  if (_order.stoneSize != null && _order.stoneSize!.isNotEmpty)
-                    Text('Ukuran Batu: ${_order.stoneSize}'),
-                  if (_order.ringSize != null && _order.ringSize!.isNotEmpty)
-                    Text('Ukuran Cincin: ${_order.ringSize}'),
-                  if (_order.goldPricePerGram != null)
-                    Text('Harga Emas/Gram: ${_order.goldPricePerGram}'),
-                  if (_order.notes != null && _order.notes!.isNotEmpty)
-                    Text('Catatan Tambahan: ${_order.notes}'),
-                  if (_order.readyDate != null)
-                    Text(
-                      'Tanggal Siap: ${_order.readyDate!.day}/${_order.readyDate!.month}/${_order.readyDate!.year}',
-                    ),
-                  const SizedBox(height: 24),
-                  if (_order.workflowStatus == OrderWorkflowStatus.waiting_diamond_setting)
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isSaving ? null : _mulaiDiamondSetting,
-                        child: const Text('Mulai Pasang Batu'),
-                      ),
-                    ),
-                  if (_order.workflowStatus == OrderWorkflowStatus.stoneSetting)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Checklist Tugas Sebelum Diteruskan:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        DiamondSetterTaskScreen(
-                          pasangBatuDone: _pasangBatuDone,
-                          qcBatuDone: _qcBatuDone,
-                          onChanged: _onTaskChanged,
-                          enabled: !_isSaving,
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: (_pasangBatuDone && _qcBatuDone && !_isSaving)
-                                ? _teruskanKeFinisher
-                                : null,
-                            child: const Text('Teruskan ke Finisher'),
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
+                    );
+                  },
+                ),
               ),
+            const SizedBox(height: 16),
+            _buildDisplayField(
+              'Nama Pelanggan',
+              showField(_order.customerName),
             ),
+            _buildDisplayField(
+              'Nomor Telepon',
+              showField(_order.customerContact),
+            ),
+            _buildDisplayField('Alamat', showField(_order.address)),
+            _buildDisplayField(
+              'Jenis Perhiasan',
+              showField(_order.jewelryType),
+            ),
+            _buildDisplayField('Warna Emas', showField(_order.goldColor)),
+            _buildDisplayField('Jenis Emas', showField(_order.goldType)),
+            _buildDisplayField('Jenis Batu', showField(_order.stoneType)),
+            _buildDisplayField('Ukuran Batu', showField(_order.stoneSize)),
+            _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
+            _buildDisplayField('Status', _order.workflowStatus.label),
+            const SizedBox(height: 24),
+            if (isWaiting)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: ElevatedButton(
+                  onPressed: _isProcessing ? null : _acceptOrder,
+                  child: const Text('Terima & Mulai Kerjakan Pesanan'),
+                ),
+              ),
+            if (isWorking) ...[
+              Text(
+                'To Do Work',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              ...todoList.map(
+                (task) => CheckboxListTile(
+                  title: Text(task),
+                  value: checkedTodos.contains(task),
+                  onChanged: (val) async {
+                    setState(() {
+                      if (val == true && !checkedTodos.contains(task)) {
+                        checkedTodos.add(task);
+                      } else if (val == false && checkedTodos.contains(task)) {
+                        checkedTodos.remove(task);
+                      }
+                    });
+                    await _saveChecklist();
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed:
+                    checkedTodos.length == todoList.length && !_isProcessing
+                        ? _submitToNext
+                        : null,
+                child: const Text('Submit ke Carver'),
+              ),
+            ],
+            if (_order.castingWorkChecklist != null &&
+                _order.castingWorkChecklist!.isNotEmpty &&
+                !isWorking)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Progress Cor:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    ...todoList.map(
+                      (name) => Row(
+                        children: [
+                          Icon(
+                            _order.castingWorkChecklist!.contains(name)
+                                ? Icons.check_box
+                                : Icons.check_box_outline_blank,
+                            color:
+                                _order.castingWorkChecklist!.contains(name)
+                                    ? Colors.green
+                                    : Colors.grey,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(name),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -162,6 +162,10 @@ class Order {
 
   // Tambahan: Checklist kerja designer
   final List<String>? designerWorkChecklist;
+  final List<String>? castingWorkChecklist;
+  final List<String>? carvingWorkChecklist;
+  final List<String>? stoneSettingWorkChecklist;
+  final List<String>? finishingWorkChecklist;
 
   final String? assignedDesigner;
   final String? assignedCaster;
@@ -192,6 +196,10 @@ class Order {
     this.notes,
     this.workflowStatus = OrderWorkflowStatus.pending,
     this.designerWorkChecklist,
+    this.castingWorkChecklist,
+    this.carvingWorkChecklist,
+    this.stoneSettingWorkChecklist,
+    this.finishingWorkChecklist,
     this.assignedDesigner,
     this.assignedCaster,
     this.assignedCarver,
@@ -225,6 +233,10 @@ class Order {
     String? notes,
     OrderWorkflowStatus? workflowStatus,
     List<String>? designerWorkChecklist,
+    List<String>? castingWorkChecklist,
+    List<String>? carvingWorkChecklist,
+    List<String>? stoneSettingWorkChecklist,
+    List<String>? finishingWorkChecklist,
     String? assignedDesigner,
     String? assignedCaster,
     String? assignedCarver,
@@ -254,6 +266,12 @@ class Order {
       workflowStatus: workflowStatus ?? this.workflowStatus,
       designerWorkChecklist:
           designerWorkChecklist ?? this.designerWorkChecklist,
+      castingWorkChecklist: castingWorkChecklist ?? this.castingWorkChecklist,
+      carvingWorkChecklist: carvingWorkChecklist ?? this.carvingWorkChecklist,
+      stoneSettingWorkChecklist:
+          stoneSettingWorkChecklist ?? this.stoneSettingWorkChecklist,
+      finishingWorkChecklist:
+          finishingWorkChecklist ?? this.finishingWorkChecklist,
       assignedDesigner: assignedDesigner ?? this.assignedDesigner,
       assignedCaster: assignedCaster ?? this.assignedCaster,
       assignedCarver: assignedCarver ?? this.assignedCarver,
@@ -298,6 +316,23 @@ class Order {
           (json['designerWorkChecklist'] as List?)
               ?.map((e) => e as String)
               .toList(),
+      castingWorkChecklist:
+          (json['castingWorkChecklist'] as List?)
+              ?.map((e) => e as String)
+              .toList(),
+      carvingWorkChecklist:
+          (json['carvingWorkChecklist'] as List?)
+              ?.map((e) => e as String)
+              .toList(),
+      stoneSettingWorkChecklist:
+          (json['stoneSettingWorkChecklist'] as List?)
+              ?.map((e) => e as String)
+              .toList(),
+      finishingWorkChecklist:
+          (json['finishingWorkChecklist'] as List?)
+              ?.map((e) => e as String)
+              .toList(),
+
       assignedDesigner: json['assignedDesigner'] as String?,
       assignedCaster: json['assignedCaster'] as String?,
       assignedCarver: json['assignedCarver'] as String?,
@@ -334,6 +369,10 @@ class Order {
     'notes': notes,
     'workflowStatus': workflowStatus.name,
     'designerWorkChecklist': designerWorkChecklist,
+    'castingWorkChecklist': castingWorkChecklist,
+    'carvingWorkChecklist': carvingWorkChecklist,
+    'stoneSettingWorkChecklist': stoneSettingWorkChecklist,
+    'finishingWorkChecklist': finishingWorkChecklist,
     'assignedDesigner': assignedDesigner,
     'assignedCaster': assignedCaster,
     'assignedCarver': assignedCarver,
