@@ -8,7 +8,7 @@ class CorTaskScreen extends StatefulWidget {
   const CorTaskScreen({Key? key, required this.order}) : super(key: key);
 
   @override
-  State<CorTaskScreen> createState() => CorTaskScreen();
+  State<CorTaskScreen> createState() => _CorTaskScreenState();
 }
 
 class _CorTaskScreenState extends State<CorTaskScreen> {
