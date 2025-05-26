@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:math';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
 import 'diamond_setter_detail_screen.dart';
@@ -23,7 +23,7 @@ class _DiamondSetterDashboardScreenState
   String _searchQuery = '';
   Object? _selectedStatusFilter = 'waiting';
 
-  // Filter sheet
+  // Untuk filter sheet
   List<String> selectedJewelryTypes = [];
   List<String> selectedGoldColors = [];
   List<String> selectedGoldTypes = [];
@@ -32,9 +32,11 @@ class _DiamondSetterDashboardScreenState
   double? priceMax;
   String? ringSize;
 
+  // Random category display
   List<String> _randomCategoryFilters = [];
   bool _isRandomCategoryActive = true;
 
+  // Statuses
   final List<OrderWorkflowStatus> waitingStatuses = [
     OrderWorkflowStatus.waiting_diamond_setting,
   ];
@@ -49,9 +51,10 @@ class _DiamondSetterDashboardScreenState
     OrderWorkflowStatus.waiting_inventory,
     OrderWorkflowStatus.inventory,
     OrderWorkflowStatus.waiting_sales_completion,
+    // Tambah status lain jika perlu
   ];
 
-  // Filter options
+  // Daftar pilihan filter
   final List<String> jewelryTypes = [
     "ring",
     "bangle",
@@ -76,6 +79,7 @@ class _DiamondSetterDashboardScreenState
     "Diamond",
   ];
 
+  // Warna untuk kategori dan filter sheet
   static const Color categoryActiveBgColor = Color(0xFFFAF5E0);
   static const Color categoryInactiveBgColor = Colors.white;
   static const Color categoryInactiveTextColor = Color(0xFF656359);
@@ -102,6 +106,7 @@ class _DiamondSetterDashboardScreenState
     setState(() {
       _randomCategoryFilters = allOptions.take(5).toList();
       _isRandomCategoryActive = true;
+      // Reset juga filter sheet jika perlu
       selectedJewelryTypes.clear();
       selectedGoldColors.clear();
       selectedGoldTypes.clear();
@@ -170,7 +175,7 @@ class _DiamondSetterDashboardScreenState
             )
             .toList();
 
-    // Category, filters, search (copy from designer logic)
+    // Filter kategori (random/category)
     String? selectedCategory;
     if (_isRandomCategoryActive && _randomCategoryFilters.isNotEmpty) {
       selectedCategory = null;
@@ -184,7 +189,9 @@ class _DiamondSetterDashboardScreenState
             if (ringSize != null && ringSize!.isNotEmpty)
               'Ring Size: $ringSize',
           ].where((e) => e.isNotEmpty).toList();
-      if (cat.isNotEmpty) selectedCategory = cat.first;
+      if (cat.isNotEmpty) {
+        selectedCategory = cat.first;
+      }
     }
     if (selectedCategory != null && selectedCategory.isNotEmpty) {
       filtered =
@@ -196,6 +203,8 @@ class _DiamondSetterDashboardScreenState
               )
               .toList();
     }
+
+    // Filter dari filter sheet (jika diisi)
     if (selectedJewelryTypes.isNotEmpty) {
       filtered =
           filtered
@@ -255,6 +264,8 @@ class _DiamondSetterDashboardScreenState
               )
               .toList();
     }
+
+    // Tab status filter
     if (_selectedStatusFilter == 'waiting') {
       filtered =
           filtered
@@ -273,6 +284,8 @@ class _DiamondSetterDashboardScreenState
               )
               .toList();
     }
+
+    // Search
     if (_searchQuery.isNotEmpty) {
       filtered =
           filtered
@@ -282,6 +295,7 @@ class _DiamondSetterDashboardScreenState
               )
               .toList();
     }
+
     return filtered;
   }
 
@@ -658,6 +672,7 @@ class _DiamondSetterDashboardScreenState
                     ),
                   ),
                 ),
+                // Tombol Reset di pojok kanan atas
                 Positioned(
                   right: 0,
                   top: 0,
@@ -689,6 +704,7 @@ class _DiamondSetterDashboardScreenState
 
   @override
   Widget build(BuildContext context) {
+    // Siapkan data kategori yang ditampilkan
     List<String> categoryToShow;
     if (_isRandomCategoryActive) {
       categoryToShow = _randomCategoryFilters;
@@ -705,9 +721,10 @@ class _DiamondSetterDashboardScreenState
         _isRandomCategoryActive = true;
       }
     }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cor Dashboard'),
+        title: const Text('Diamond Setter Dashboard'),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -908,6 +925,7 @@ class _DiamondSetterDashboardScreenState
                                   itemCount: _filteredOrders.length,
                                   itemBuilder: (context, index) {
                                     final order = _filteredOrders[index];
+
                                     Widget leadingWidget;
                                     if (order.imagePaths != null &&
                                         order.imagePaths!.isNotEmpty &&
@@ -942,6 +960,7 @@ class _DiamondSetterDashboardScreenState
                                         ),
                                       );
                                     }
+
                                     return Card(
                                       margin: const EdgeInsets.symmetric(
                                         vertical: 8.0,
@@ -972,11 +991,11 @@ class _DiamondSetterDashboardScreenState
                                                 color:
                                                     order.workflowStatus ==
                                                             OrderWorkflowStatus
-                                                                .waiting_casting
+                                                                .waiting_diamond_setting
                                                         ? Colors.orange
                                                         : order.workflowStatus ==
                                                             OrderWorkflowStatus
-                                                                .casting
+                                                                .stoneSetting
                                                         ? Colors.blue
                                                         : onProgressStatuses
                                                             .contains(

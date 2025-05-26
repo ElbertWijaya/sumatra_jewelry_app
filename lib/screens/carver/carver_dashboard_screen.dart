@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'dart:math';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'carver_detail_screen.dart';
 
 class CarverDashboardScreen extends StatefulWidget {
@@ -972,11 +972,11 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
                                                 color:
                                                     order.workflowStatus ==
                                                             OrderWorkflowStatus
-                                                                .waiting_casting
+                                                                .waiting_carving
                                                         ? Colors.orange
                                                         : order.workflowStatus ==
                                                             OrderWorkflowStatus
-                                                                .casting
+                                                                .carving
                                                         ? Colors.blue
                                                         : onProgressStatuses
                                                             .contains(

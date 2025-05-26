@@ -26,20 +26,22 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
   void initState() {
     super.initState();
     _order = widget.order;
-    checkedTodos = List<String>.from(_order.castingWorkChecklist ?? []);
+    checkedTodos = List<String>.from(_order.stoneSettingWorkChecklist ?? []);
   }
 
   Future<void> _saveChecklist() async {
-    final updatedOrder = _order.copyWith(castingWorkChecklist: checkedTodos);
+    final updatedOrder = _order.copyWith(
+      stoneSettingWorkChecklist: checkedTodos,
+    );
     await OrderService().updateOrder(updatedOrder);
     setState(() => _order = updatedOrder);
   }
 
-  Future<void> _submitToNext() async {
+  Future<void> _submitToFinisher() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waiting_carving,
-      castingWorkChecklist: checkedTodos,
+      workflowStatus: OrderWorkflowStatus.waiting_finishing,
+      stoneSettingWorkChecklist: checkedTodos,
     );
     await OrderService().updateOrder(updatedOrder);
     setState(() {
@@ -51,9 +53,11 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
 
   Future<void> _acceptOrder() async {
     setState(() => _isProcessing = true);
+
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.casting,
-      assignedCaster: _order.assignedCaster ?? 'Nama Cor',
+      workflowStatus: OrderWorkflowStatus.stoneSetting,
+      assignedDiamondSetter:
+          _order.assignedDiamondSetter ?? 'Nama Diamond Setter',
     );
     await OrderService().updateOrder(updatedOrder);
     setState(() {
@@ -88,11 +92,11 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    bool isWorking = _order.workflowStatus == OrderWorkflowStatus.casting;
-    bool isWaiting =
-        _order.workflowStatus == OrderWorkflowStatus.waiting_casting;
+    bool isWorking = _order.workflowStatus == OrderWorkflowStatus.stoneSetting;
+    bool isWaitingDiamondSetter =
+        _order.workflowStatus == OrderWorkflowStatus.waiting_diamond_setting;
     return Scaffold(
-      appBar: AppBar(title: const Text('Detail Pesanan Cor')),
+      appBar: AppBar(title: const Text('Detail Pesanan Diamond Setter')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -148,7 +152,9 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
             _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
             _buildDisplayField('Status', _order.workflowStatus.label),
             const SizedBox(height: 24),
-            if (isWaiting)
+
+            // PATCH: Tambahkan tombol "Terima & Mulai Kerjakan Pesanan"
+            if (isWaitingDiamondSetter)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
                 child: ElevatedButton(
@@ -156,6 +162,8 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                   child: const Text('Terima & Mulai Kerjakan Pesanan'),
                 ),
               ),
+
+            // Checklist To Do List
             if (isWorking) ...[
               Text(
                 'To Do Work',
@@ -181,13 +189,14 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
               ElevatedButton(
                 onPressed:
                     checkedTodos.length == todoList.length && !_isProcessing
-                        ? _submitToNext
+                        ? _submitToFinisher
                         : null,
-                child: const Text('Submit ke Carver'),
+                child: const Text('Submit ke Finisher'),
               ),
             ],
-            if (_order.castingWorkChecklist != null &&
-                _order.castingWorkChecklist!.isNotEmpty &&
+            // Progress checklist, tampilkan juga jika sudah lewat tahap desain
+            if (_order.stoneSettingWorkChecklist != null &&
+                _order.stoneSettingWorkChecklist!.isNotEmpty &&
                 !isWorking)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -195,26 +204,38 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Progress Cor:',
+                      'Progress Stone Setter:',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    ...todoList.map(
-                      (name) => Row(
-                        children: [
-                          Icon(
-                            _order.castingWorkChecklist!.contains(name)
-                                ? Icons.check_box
-                                : Icons.check_box_outline_blank,
-                            color:
-                                _order.castingWorkChecklist!.contains(name)
-                                    ? Colors.green
-                                    : Colors.grey,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(name),
-                        ],
-                      ),
+                    // Progress bar
+                    Builder(
+                      builder: (context) {
+                        final total = todoList.length;
+                        final done =
+                            _order.stoneSettingWorkChecklist!
+                                .where((item) => todoList.contains(item))
+                                .length;
+                        final percent = total > 0 ? done / total : 0.0;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: 16),
+                            LinearProgressIndicator(
+                              value: percent,
+                              minHeight: 10,
+                              backgroundColor: Colors.grey[300],
+                              color: Colors.green,
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              "${(percent * 100).toStringAsFixed(0)}% Selesai",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),

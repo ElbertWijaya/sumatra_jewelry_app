@@ -33,7 +33,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
   Future<void> _submitToNext() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waiting_carving,
+      workflowStatus: OrderWorkflowStatus.waiting_diamond_setting,
       castingWorkChecklist: checkedTodos,
     );
     await OrderService().updateOrder(updatedOrder);
@@ -47,8 +47,8 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
   Future<void> _acceptOrder() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.casting,
-      assignedCaster: _order.assignedCaster ?? 'Nama Cor',
+      workflowStatus: OrderWorkflowStatus.carving,
+      assignedCaster: _order.assignedCaster ?? 'Nama Carver',
     );
     await OrderService().updateOrder(updatedOrder);
     setState(() {
@@ -83,11 +83,12 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    bool isWorking = _order.workflowStatus == OrderWorkflowStatus.casting;
+    print('Status order: ${_order.workflowStatus}');
+    bool isWorking = _order.workflowStatus == OrderWorkflowStatus.carving;
     bool isWaiting =
-        _order.workflowStatus == OrderWorkflowStatus.waiting_casting;
+        _order.workflowStatus == OrderWorkflowStatus.waiting_carving;
     return Scaffold(
-      appBar: AppBar(title: const Text('Detail Pesanan Cor')),
+      appBar: AppBar(title: const Text('Detail Pesanan Carver')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -175,45 +176,13 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed:
-                    checkedTodos.length == todoList.length && !_isProcessing
+                    todoList.every((item) => checkedTodos.contains(item)) &&
+                            !_isProcessing
                         ? _submitToNext
                         : null,
-                child: const Text('Submit ke Carver'),
+                child: const Text('Submit ke Diamond Setter'),
               ),
             ],
-            if (_order.castingWorkChecklist != null &&
-                _order.castingWorkChecklist!.isNotEmpty &&
-                !isWorking)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Progress Cor:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    ...todoList.map(
-                      (name) => Row(
-                        children: [
-                          Icon(
-                            _order.castingWorkChecklist!.contains(name)
-                                ? Icons.check_box
-                                : Icons.check_box_outline_blank,
-                            color:
-                                _order.castingWorkChecklist!.contains(name)
-                                    ? Colors.green
-                                    : Colors.grey,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(name),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
           ],
         ),
       ),
