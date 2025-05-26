@@ -15,7 +15,11 @@ class DiamondSetterDetailScreen extends StatefulWidget {
 class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
   late Order _order;
   bool _isProcessing = false;
-  final List<String> todoList = ["Cor", "Bersihkan", "QC"];
+  final List<String> todoList = [
+    "Pilih batu",
+    "Pasang batu",
+    "Kasih ke Olivia",
+  ];
   List<String> checkedTodos = [];
 
   @override

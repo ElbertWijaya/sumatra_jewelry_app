@@ -14,7 +14,7 @@ class FinisherDetailScreen extends StatefulWidget {
 class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
   late Order _order;
   bool _isProcessing = false;
-  final List<String> todoList = ["Cor", "Bersihkan", "QC"];
+  final List<String> todoList = ["Finishing"];
   List<String> checkedTodos = [];
 
   @override

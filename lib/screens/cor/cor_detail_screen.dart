@@ -14,7 +14,7 @@ class CorDetailScreen extends StatefulWidget {
 class _CorDetailScreenState extends State<CorDetailScreen> {
   late Order _order;
   bool _isProcessing = false;
-  final List<String> todoList = ["Cor", "Bersihkan", "QC"];
+  final List<String> todoList = ["Susun lilin", "Terima emas", "Cor"];
   List<String> checkedTodos = [];
 
   @override
