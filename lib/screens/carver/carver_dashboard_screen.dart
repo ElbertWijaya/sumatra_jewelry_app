@@ -704,6 +704,7 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
         elevation: 0,
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
+          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
         ],
       ),
       extendBodyBehindAppBar: true,
