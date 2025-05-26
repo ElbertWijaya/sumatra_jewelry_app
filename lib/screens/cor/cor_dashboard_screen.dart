@@ -79,7 +79,6 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
   ];
 
   static const Color categoryActiveBgColor = Color(0xFFFAF5E0);
-  static const Color categoryActiveTextColor = Color(0xFF656359);
   static const Color categoryInactiveBgColor = Colors.white;
   static const Color categoryInactiveTextColor = Color(0xFF656359);
 
