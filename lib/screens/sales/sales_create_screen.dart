@@ -89,8 +89,8 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
       notes: notes,
       workflowStatus: OrderWorkflowStatus.pending,
       imagePaths: _pickedImages.map((e) => e.path).toList(),
-      // goldColor: goldColor,
-      // goldType: goldType,
+      goldColor: goldColor,
+      goldType: goldType,
     );
 
     try {

@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
 import 'designer_detail_screen.dart';
@@ -8,8 +10,7 @@ class DesignerDashboardScreen extends StatefulWidget {
   const DesignerDashboardScreen({super.key});
 
   @override
-  State<DesignerDashboardScreen> createState() =>
-      _DesignerDashboardScreenState();
+  State<DesignerDashboardScreen> createState() => _DesignerDashboardScreenState();
 }
 
 class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
@@ -18,13 +19,102 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   String _searchQuery = '';
-  // _selectedStatusFilter adalah List<OrderWorkflowStatus> supaya bisa filter multi-status untuk "On Progress"
-  List<OrderWorkflowStatus>? _selectedStatusFilter;
+  Object? _selectedStatusFilter;
+  String? _selectedCategoryFilter;
+
+  // Untuk filter sheet
+  List<String> selectedJewelryTypes = [];
+  List<String> selectedGoldColors = [];
+  List<String> selectedGoldTypes = [];
+  List<String> selectedStoneTypes = [];
+  double? priceMin;
+  double? priceMax;
+  String? ringSize;
+
+  // Random category display
+  List<String> _randomCategoryFilters = [];
+  bool _isRandomCategoryActive = true;
+
+  // Status groups
+  final List<OrderWorkflowStatus> waitingStatuses = [
+    OrderWorkflowStatus.pending,
+  ];
+  final List<OrderWorkflowStatus> workingStatuses = [
+    OrderWorkflowStatus.designing,
+  ];
+
+  final List<OrderWorkflowStatus> onProgressStatuses = [
+    OrderWorkflowStatus.waiting_casting,
+    OrderWorkflowStatus.readyForCasting,
+    OrderWorkflowStatus.casting,
+    OrderWorkflowStatus.waiting_carving,
+    OrderWorkflowStatus.readyForCarving,
+    OrderWorkflowStatus.carving,
+    OrderWorkflowStatus.waiting_diamond_setting,
+    OrderWorkflowStatus.readyForStoneSetting,
+    OrderWorkflowStatus.stoneSetting,
+    OrderWorkflowStatus.waiting_finishing,
+    OrderWorkflowStatus.readyForFinishing,
+    OrderWorkflowStatus.finishing,
+    OrderWorkflowStatus.waiting_inventory,
+    OrderWorkflowStatus.readyForInventory,
+    OrderWorkflowStatus.inventory,
+    OrderWorkflowStatus.waiting_sales_completion,
+    OrderWorkflowStatus.done,
+    OrderWorkflowStatus.cancelled,
+    OrderWorkflowStatus.debut,
+  ];
+
+  final List<String> categories = [
+    'Progress',
+    'Jenis',
+    'Harga',
+  ];
+
+  // Daftar pilihan filter
+  final List<String> jewelryTypes = [
+    "ring", "bangle", "earring", "pendant", "hairpin", "pin", "men ring", "women ring", "engagement ring", "custom"
+  ];
+  final List<String> goldColors = ["White Gold", "Rose Gold", "Yellow Gold"];
+  final List<String> goldTypes = ["19K", "18K", "14K", "9K"];
+  final List<String> stoneTypes = ["Opal", "Sapphire", "Jade", "Emerald", "Ruby", "Amethyst", "Diamond"];
+
+  static const Color categoryActiveBgColor = Color(0xFFFAF5E0);
+  static const Color categoryActiveTextColor = Color(0xFF656359);
+  static const Color categoryInactiveBgColor = Colors.white;
+  static const Color categoryInactiveTextColor = Color(0xFF656359);
 
   @override
   void initState() {
     super.initState();
     _fetchOrders();
+  }
+
+  void _generateRandomCategoryFilters() {
+    final allOptions = [
+      ...jewelryTypes,
+      ...goldColors,
+      ...goldTypes,
+      ...stoneTypes,
+      'Ring Size: 13',
+      'Ring Size: 10',
+      'Ring Size: 12',
+      'Ring Size: 7',
+      'Ring Size: 5',
+    ];
+    allOptions.shuffle(Random());
+    setState(() {
+      _randomCategoryFilters = allOptions.take(5).toList();
+      _isRandomCategoryActive = true;
+      _selectedCategoryFilter = null;
+      selectedJewelryTypes.clear();
+      selectedGoldColors.clear();
+      selectedGoldTypes.clear();
+      selectedStoneTypes.clear();
+      priceMin = null;
+      priceMax = null;
+      ringSize = null;
+    });
   }
 
   Future<void> _fetchOrders() async {
@@ -37,10 +127,10 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
       setState(() {
         _orders = fetchedOrders;
       });
+      _generateRandomCategoryFilters();
     } catch (e) {
       setState(() {
-        _errorMessage =
-            'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
+        _errorMessage = 'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
       });
     } finally {
       setState(() {
@@ -49,54 +139,135 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
     }
   }
 
+  String orderFullText(Order order) {
+    return [
+      order.customerName,
+      order.customerContact,
+      order.address,
+      order.jewelryType,
+      order.stoneType ?? '',
+      order.stoneSize ?? '',
+      order.ringSize ?? '',
+      order.readyDate?.toIso8601String() ?? '',
+      order.pickupDate?.toIso8601String() ?? '',
+      order.goldPricePerGram?.toString() ?? '',
+      order.finalPrice?.toString() ?? '',
+      order.notes ?? '',
+      order.workflowStatus.label,
+      order.assignedDesigner ?? '',
+      order.assignedCaster ?? '',
+      order.assignedCarver ?? '',
+      order.assignedDiamondSetter ?? '',
+      order.assignedFinisher ?? '',
+      order.assignedInventory ?? '',
+    ].join(' ').toLowerCase();
+  }
+
   List<Order> get _filteredOrders {
     List<Order> filtered = _orders;
-    if (_selectedStatusFilter != null && _selectedStatusFilter!.isNotEmpty) {
-      filtered = filtered
-          .where((order) => _selectedStatusFilter!.contains(order.workflowStatus))
-          .toList();
+    // Status filter
+    if (_selectedStatusFilter == null || _selectedStatusFilter == 'waiting') {
+      filtered = filtered.where((order) => waitingStatuses.contains(order.workflowStatus)).toList();
+    } else if (_selectedStatusFilter == 'working') {
+      filtered = filtered.where((order) => workingStatuses.contains(order.workflowStatus)).toList();
+    } else if (_selectedStatusFilter == 'onprogress') {
+      filtered = filtered.where((order) => onProgressStatuses.contains(order.workflowStatus)).toList();
     }
-    if (_searchQuery.isNotEmpty) {
+
+    // Filter kategori (jika ada dipilih & bukan Progress/Jenis/Harga)
+    if (_selectedCategoryFilter != null &&
+        _selectedCategoryFilter!.isNotEmpty &&
+        !_isDefaultCategory(_selectedCategoryFilter!)) {
       filtered = filtered.where((order) {
-        final query = _searchQuery.toLowerCase();
-        return order.customerName.toLowerCase().contains(query) ||
-            order.jewelryType.toLowerCase().contains(query) ||
-            order.workflowStatus.label.toLowerCase().contains(query);
+        return orderFullText(order).contains(_selectedCategoryFilter!.toLowerCase());
       }).toList();
     }
+
+    // Filter dari filter sheet (jika diisi)
+    if (selectedJewelryTypes.isNotEmpty) {
+      filtered = filtered.where((order) {
+        return selectedJewelryTypes.any((t) =>
+          (order.jewelryType.toLowerCase()).contains(t.toLowerCase())
+        );
+      }).toList();
+    }
+    if (selectedGoldColors.isNotEmpty) {
+      filtered = filtered.where((order) {
+        final info = orderFullText(order);
+        return selectedGoldColors.any((gold) => info.contains(gold.toLowerCase()));
+      }).toList();
+    }
+    if (selectedGoldTypes.isNotEmpty) {
+      filtered = filtered.where((order) {
+        final info = orderFullText(order);
+        return selectedGoldTypes.any((t) => info.contains(t.toLowerCase()));
+      }).toList();
+    }
+    if (selectedStoneTypes.isNotEmpty) {
+      filtered = filtered.where((order) {
+        final stones = (order.stoneType ?? '').toLowerCase();
+        return selectedStoneTypes.any((stone) => stones.contains(stone.toLowerCase()));
+      }).toList();
+    }
+    if (priceMin != null) {
+      filtered = filtered.where((order) => (order.finalPrice ?? 0) >= priceMin!).toList();
+    }
+    if (priceMax != null) {
+      filtered = filtered.where((order) => (order.finalPrice ?? 0) <= priceMax!).toList();
+    }
+    if (ringSize != null && ringSize!.isNotEmpty) {
+      filtered = filtered.where((order) {
+        return (order.ringSize ?? '').toLowerCase().contains(ringSize!.toLowerCase());
+      }).toList();
+    }
+
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered.where((order) {
+        return orderFullText(order).contains(_searchQuery.toLowerCase());
+      }).toList();
+    }
+
     return filtered;
+  }
+
+  bool _isDefaultCategory(String? value) {
+    return value == 'Progress' || value == 'Jenis' || value == 'Harga';
   }
 
   Widget _buildStatusFilterButton(
     String label,
-    List<OrderWorkflowStatus> filterStatuses,
+    Object? filterValue,
     Color color,
   ) {
-    int count = filterStatuses.isEmpty
-        ? _orders.length
-        : _orders.where((order) => filterStatuses.contains(order.workflowStatus)).length;
-    final isSelected = _selectedStatusFilter == filterStatuses ||
-        (_selectedStatusFilter != null &&
-            _selectedStatusFilter!.length == filterStatuses.length &&
-            _selectedStatusFilter!.every((element) => filterStatuses.contains(element)));
+    int count = 0;
+    if (filterValue == null || filterValue == 'waiting') {
+      count = _orders.where((order) => waitingStatuses.contains(order.workflowStatus)).length;
+    } else if (filterValue == 'working') {
+      count = _orders.where((order) => workingStatuses.contains(order.workflowStatus)).length;
+    } else if (filterValue == 'onprogress') {
+      count = _orders.where((order) => onProgressStatuses.contains(order.workflowStatus)).length;
+    }
+
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4.0),
         child: InkWell(
           onTap: () {
             setState(() {
-              _selectedStatusFilter = filterStatuses;
+              _selectedStatusFilter = filterValue;
             });
           },
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? color.withOpacity(0.8)
-                  : Colors.grey[200],
+              color:
+                  _selectedStatusFilter == filterValue
+                      ? color.withOpacity(0.8)
+                      : Colors.grey[200],
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: isSelected ? color : Colors.grey,
+                color:
+                    _selectedStatusFilter == filterValue ? color : Colors.grey,
                 width: 1.5,
               ),
             ),
@@ -107,20 +278,29 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: isSelected ? Colors.white : Colors.black87,
+                    color:
+                        _selectedStatusFilter == filterValue
+                            ? Colors.white
+                            : Colors.black87,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.white : color,
+                    color:
+                        _selectedStatusFilter == filterValue
+                            ? Colors.white
+                            : color,
                     shape: BoxShape.circle,
                   ),
                   child: Text(
                     '$count',
                     style: TextStyle(
-                      color: isSelected ? color : Colors.white,
+                      color:
+                          _selectedStatusFilter == filterValue
+                              ? color
+                              : Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -134,21 +314,232 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
     );
   }
 
+  void _resetCategoryFilter() {
+    setState(() {
+      _generateRandomCategoryFilters();
+    });
+  }
+
+  void _openFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Stack(
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 24,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Jenis Perhiasan", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Wrap(
+                          spacing: 8,
+                          children: jewelryTypes.map((type) => FilterChip(
+                            label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
+                            selected: selectedJewelryTypes.contains(type),
+                            showCheckmark: false,
+                            backgroundColor: categoryInactiveBgColor,
+                            selectedColor: categoryActiveBgColor,
+                            side: BorderSide(color: selectedJewelryTypes.contains(type) ? categoryActiveBgColor : categoryInactiveBgColor),
+                            labelStyle: TextStyle(color: categoryInactiveTextColor),
+                            onSelected: (selected) {
+                              setModalState(() {
+                                selected
+                                  ? selectedJewelryTypes.add(type)
+                                  : selectedJewelryTypes.remove(type);
+                              });
+                            },
+                          )).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        Text("Warna Emas", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Wrap(
+                          spacing: 8,
+                          children: goldColors.map((color) => FilterChip(
+                            label: Text(color, style: const TextStyle(color: categoryInactiveTextColor)),
+                            selected: selectedGoldColors.contains(color),
+                            showCheckmark: false,
+                            backgroundColor: categoryInactiveBgColor,
+                            selectedColor: categoryActiveBgColor,
+                            side: BorderSide(color: selectedGoldColors.contains(color) ? categoryActiveBgColor : categoryInactiveBgColor),
+                            labelStyle: TextStyle(color: categoryInactiveTextColor),
+                            onSelected: (selected) {
+                              setModalState(() {
+                                selected
+                                  ? selectedGoldColors.add(color)
+                                  : selectedGoldColors.remove(color);
+                              });
+                            },
+                          )).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        Text("Harga Min - Max", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  hintText: "Min",
+                                ),
+                                onChanged: (v) {
+                                  setModalState(() {
+                                    priceMin = double.tryParse(v);
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  hintText: "Max",
+                                ),
+                                onChanged: (v) {
+                                  setModalState(() {
+                                    priceMax = double.tryParse(v);
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text("Jenis Emas", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Wrap(
+                          spacing: 8,
+                          children: goldTypes.map((type) => FilterChip(
+                            label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
+                            selected: selectedGoldTypes.contains(type),
+                            showCheckmark: false,
+                            backgroundColor: categoryInactiveBgColor,
+                            selectedColor: categoryActiveBgColor,
+                            side: BorderSide(color: selectedGoldTypes.contains(type) ? categoryActiveBgColor : categoryInactiveBgColor),
+                            labelStyle: TextStyle(color: categoryInactiveTextColor),
+                            onSelected: (selected) {
+                              setModalState(() {
+                                selected
+                                  ? selectedGoldTypes.add(type)
+                                  : selectedGoldTypes.remove(type);
+                              });
+                            },
+                          )).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        Text("Jenis Batu", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Wrap(
+                          spacing: 8,
+                          children: stoneTypes.map((type) => FilterChip(
+                            label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
+                            selected: selectedStoneTypes.contains(type),
+                            showCheckmark: false,
+                            backgroundColor: categoryInactiveBgColor,
+                            selectedColor: categoryActiveBgColor,
+                            side: BorderSide(color: selectedStoneTypes.contains(type) ? categoryActiveBgColor : categoryInactiveBgColor),
+                            labelStyle: TextStyle(color: categoryInactiveTextColor),
+                            onSelected: (selected) {
+                              setModalState(() {
+                                selected
+                                  ? selectedStoneTypes.add(type)
+                                  : selectedStoneTypes.remove(type);
+                              });
+                            },
+                          )).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        Text("Ring Size", style: TextStyle(fontWeight: FontWeight.bold)),
+                        TextField(
+                          keyboardType: TextInputType.text,
+                          decoration: const InputDecoration(
+                            hintText: "Ring Size",
+                          ),
+                          onChanged: (v) {
+                            setModalState(() {
+                              ringSize = v;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  setState(() {
+                                    _isRandomCategoryActive = false;
+                                  });
+                                },
+                                child: const Text("Terapkan Filter"),
+                              ),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: IconButton(
+                    icon: const Icon(Icons.refresh, color: Colors.redAccent),
+                    tooltip: "Reset Category",
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _resetCategoryFilter();
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false);
+    await prefs.remove('userRole');
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/login');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Daftar status yang akan dipakai untuk filter
-    final allStatuses = OrderWorkflowStatus.values;
-    final waitingStatus = [OrderWorkflowStatus.pending];
-    final workingStatus = [OrderWorkflowStatus.designing];
-    // "On Progress" = semua status setelah "pending" & "designing", TAPI TIDAK MENCANTUMKAN done/cancelled/unknown
-    final onProgressStatuses = allStatuses
-        .where((s) =>
-            s != OrderWorkflowStatus.pending &&
-            s != OrderWorkflowStatus.designing &&
-            s != OrderWorkflowStatus.done &&        // <--- PASTIKAN DONE TIDAK MASUK
-            s != OrderWorkflowStatus.cancelled &&
-            s != OrderWorkflowStatus.unknown)
-        .toList();
+    List<String> categoryToShow;
+    if (_isRandomCategoryActive) {
+      categoryToShow = _randomCategoryFilters;
+    } else {
+      categoryToShow = [
+        ...selectedJewelryTypes,
+        ...selectedGoldColors,
+        ...selectedGoldTypes,
+        ...selectedStoneTypes,
+        if (ringSize != null && ringSize!.isNotEmpty) 'Ring Size: $ringSize',
+      ];
+      if (categoryToShow.every((e) => e.isEmpty) || categoryToShow.isEmpty) {
+        categoryToShow = _randomCategoryFilters;
+        _isRandomCategoryActive = true;
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -160,9 +551,7 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/login');
-            },
+            onPressed: _logout,
           ),
         ],
       ),
@@ -247,30 +636,76 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                 vertical: 8.0,
                               ),
                               child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceAround,
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
                                 children: [
                                   _buildStatusFilterButton(
                                     'Waiting',
-                                    waitingStatus,
+                                    'waiting',
                                     Colors.orange,
                                   ),
                                   _buildStatusFilterButton(
                                     'Working',
-                                    workingStatus,
-                                    Colors.blue,
+                                    'working',
+                                    Colors.green,
                                   ),
                                   _buildStatusFilterButton(
                                     'On Progress',
-                                    onProgressStatuses,
-                                    Colors.green,
+                                    'onprogress',
+                                    Colors.blue,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                                vertical: 8.0,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Row(
+                                        children: List.generate(
+                                            categoryToShow.length, (index) {
+                                          final cat = categoryToShow[index];
+                                          final isSelected = false;
+                                          return Padding(
+                                            padding: const EdgeInsets.only(right: 4.0),
+                                            child: ChoiceChip(
+                                              label: Text(cat, style: TextStyle(color: categoryInactiveTextColor)),
+                                              selected: isSelected,
+                                              onSelected: (_) {},
+                                              backgroundColor: categoryInactiveBgColor,
+                                              selectedColor: categoryActiveBgColor,
+                                              labelStyle: TextStyle(
+                                                color: categoryInactiveTextColor,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(16),
+                                              ),
+                                              side: BorderSide(color: categoryInactiveBgColor),
+                                            ),
+                                          );
+                                        }),
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.filter_list,
+                                      color: Colors.white70,
+                                    ),
+                                    onPressed: _openFilterSheet,
                                   ),
                                 ],
                               ),
                             ),
                             ConstrainedBox(
                               constraints: BoxConstraints(
-                                maxHeight: MediaQuery.of(context).size.height -
+                                maxHeight:
+                                    MediaQuery.of(context).size.height -
                                     AppBar().preferredSize.height -
                                     MediaQuery.of(context).padding.top -
                                     (10.0 + 12.0 * 2 + 16.0 * 2) -
@@ -285,7 +720,7 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                       child: Text(
                                         _searchQuery.isNotEmpty
                                             ? 'Tidak ada pesanan cocok dengan pencarian Anda.'
-                                            : 'Tidak ada pesanan.',
+                                            : 'Tidak ada pesanan aktif.',
                                         style: const TextStyle(
                                           color: Colors.white70,
                                         ),
@@ -314,13 +749,13 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                               width: 80,
                                               height: 80,
                                               fit: BoxFit.cover,
-                                              errorBuilder: (context, error,
-                                                      stackTrace) =>
-                                                  const Icon(
-                                                Icons.image_not_supported,
-                                                size: 32,
-                                                color: Colors.grey,
-                                              ),
+                                              errorBuilder:
+                                                  (context, error, stackTrace) =>
+                                                      const Icon(
+                                                        Icons.image_not_supported,
+                                                        size: 32,
+                                                        color: Colors.grey,
+                                                      ),
                                             ),
                                           );
                                         } else {
@@ -361,8 +796,7 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.start,
                                               children: [
-                                                Text(
-                                                    'Jenis: ${order.jewelryType}'),
+                                                Text('Jenis: ${order.jewelryType}'),
                                                 Text(
                                                   'Status: ${order.workflowStatus.label}',
                                                   style: TextStyle(
@@ -373,8 +807,8 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                                         : order.workflowStatus ==
                                                                 OrderWorkflowStatus
                                                                     .designing
-                                                            ? Colors.blue
-                                                            : Colors.green,
+                                                            ? Colors.green
+                                                            : Colors.blue,
                                                   ),
                                                 ),
                                               ],
@@ -386,18 +820,17 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                             onTap: () async {
                                               final result =
                                                   await Navigator.of(
-                                                          context)
-                                                      .push(
+                                                context,
+                                              ).push(
                                                 MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      DesignerDetailScreen(
-                                                    order: order,
-                                                  ),
+                                                  builder:
+                                                      (context) =>
+                                                          DesignerDetailScreen(
+                                                            order: order,
+                                                          ),
                                                 ),
                                               );
-                                              if (result == true) {
-                                                _fetchOrders();
-                                              }
+                                              if (result == true) _fetchOrders();
                                             },
                                           ),
                                         );

@@ -41,8 +41,24 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   ];
 
   final List<OrderWorkflowStatus> activeStatuses = [
-    OrderWorkflowStatus.pending,
-    OrderWorkflowStatus.waiting_sales_completion,
+  OrderWorkflowStatus.pending,
+  OrderWorkflowStatus.designing,
+  OrderWorkflowStatus.waiting_casting,
+  OrderWorkflowStatus.readyForCasting,
+  OrderWorkflowStatus.casting,
+  OrderWorkflowStatus.waiting_carving,
+  OrderWorkflowStatus.readyForCarving,
+  OrderWorkflowStatus.carving,
+  OrderWorkflowStatus.waiting_diamond_setting,
+  OrderWorkflowStatus.readyForStoneSetting,
+  OrderWorkflowStatus.stoneSetting,
+  OrderWorkflowStatus.waiting_finishing,
+  OrderWorkflowStatus.readyForFinishing,
+  OrderWorkflowStatus.finishing,
+  OrderWorkflowStatus.waiting_inventory,
+  OrderWorkflowStatus.readyForInventory,
+  OrderWorkflowStatus.inventory,
+  OrderWorkflowStatus.waiting_sales_completion,
     // Tambahkan status aktif lain jika ada!
   ];
 

@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
@@ -13,10 +14,7 @@ class DesignerDetailScreen extends StatefulWidget {
 
 class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
   late Order _order;
-  bool _isSaving = false;
-  bool _designDone = false;
-  bool _printingDone = false;
-  bool _qcDone = false;
+  bool _isProcessing = false;
 
   @override
   void initState() {
@@ -24,172 +22,149 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
     _order = widget.order;
   }
 
-  Future<void> _mulaiDesign() async {
-    setState(() => _isSaving = true);
-    final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.designing,
-    );
-    try {
-      await OrderService().updateOrder(updatedOrder);
-      if (!mounted) return;
-      Navigator.of(context).pop(true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pesanan masuk On Progress!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Gagal update pesanan: $e')));
-    }
-    setState(() => _isSaving = false);
+  Future<void> _acceptOrder() async {
+    setState(() => _isProcessing = true);
+    final updatedOrder = _order.copyWith(workflowStatus: OrderWorkflowStatus.designing);
+    await OrderService().updateOrder(updatedOrder);
+    setState(() {
+      _order = updatedOrder;
+      _isProcessing = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pesanan diterima!')));
   }
 
-Future<void> _teruskanKeCor() async {
-  setState(() => _isSaving = true);
-  final updatedOrder = _order.copyWith(
-    workflowStatus: OrderWorkflowStatus.waiting_casting,
-  );
-  try {
+  Future<void> _markDesignDone() async {
+    setState(() => _isProcessing = true);
+    final updatedOrder = _order.copyWith(workflowStatus: OrderWorkflowStatus.waiting_casting);
     await OrderService().updateOrder(updatedOrder);
-    if (!mounted) return;
-    Navigator.of(context).pop(true);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Pesanan diteruskan ke bagian Cor!')),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text('Gagal update pesanan: $e')));
+    setState(() {
+      _order = updatedOrder;
+      _isProcessing = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Desain selesai, lanjut ke cor!')));
   }
-  setState(() => _isSaving = false);
-}
+
+  String showField(String? value) => (value == null || value.trim().isEmpty) ? 'Belum diisi' : value;
+  String showDouble(double? value) => value == null ? 'Belum diisi' : value.toString();
+  String showDate(DateTime? date) =>
+      date == null ? 'Belum diisi' : "${date.day}/${date.month}/${date.year}";
+
+  Widget _buildDisplayField(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 140, child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold))),
+          const SizedBox(width: 8),
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+
+  bool get isWaiting => _order.workflowStatus == OrderWorkflowStatus.pending;
+  bool get isWorking => _order.workflowStatus == OrderWorkflowStatus.designing;
+  bool get isOnProgress =>
+    !isWaiting && !isWorking;
 
   @override
   Widget build(BuildContext context) {
-    final imageList = List<String>.from(_order.imagePaths ?? []);
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Pesanan')),
-      body:
-          _isSaving
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Referensi Gambar',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 110,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: imageList.length,
-                        itemBuilder:
-                            (context, idx) => Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.file(
-                                  File(imageList[idx]),
-                                  width: 110,
-                                  height: 110,
-                                  fit: BoxFit.cover,
-                                  errorBuilder:
-                                      (c, e, s) => Container(
-                                        width: 110,
-                                        height: 110,
-                                        color: Colors.grey[200],
-                                        child: const Icon(
-                                          Icons.broken_image,
-                                          size: 40,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                ),
-                              ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Gambar referensi
+            if (_order.imagePaths != null && _order.imagePaths!.isNotEmpty)
+              SizedBox(
+                height: 110,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _order.imagePaths!.length,
+                  itemBuilder: (context, idx) {
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          File(_order.imagePaths![idx]),
+                          width: 110,
+                          height: 110,
+                          fit: BoxFit.cover,
+                          errorBuilder: (c, e, s) => Container(
+                            width: 110,
+                            height: 110,
+                            color: Colors.grey[200],
+                            child: const Icon(
+                              Icons.broken_image,
+                              size: 40,
+                              color: Colors.grey,
                             ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text('Nama Pelanggan: ${_order.customerName}'),
-                    Text('Nomor Telepon: ${_order.customerContact}'),
-                    Text('Alamat: ${_order.address}'),
-                    Text('Jenis Perhiasan: ${_order.jewelryType}'),
-                    if (_order.stoneType != null &&
-                        _order.stoneType!.isNotEmpty)
-                      Text('Jenis Batu: ${_order.stoneType}'),
-                    if (_order.stoneSize != null &&
-                        _order.stoneSize!.isNotEmpty)
-                      Text('Ukuran Batu: ${_order.stoneSize}'),
-                    if (_order.ringSize != null && _order.ringSize!.isNotEmpty)
-                      Text('Ukuran Cincin: ${_order.ringSize}'),
-                    if (_order.goldPricePerGram != null)
-                      Text('Harga Emas/Gram: ${_order.goldPricePerGram}'),
-                    if (_order.notes != null && _order.notes!.isNotEmpty)
-                      Text('Catatan Tambahan: ${_order.notes}'),
-                    if (_order.readyDate != null)
-                      Text(
-                        'Tanggal Siap: ${_order.readyDate!.day}/${_order.readyDate!.month}/${_order.readyDate!.year}',
-                      ),
-                    const SizedBox(height: 24),
-
-                    if (_order.workflowStatus == OrderWorkflowStatus.pending)
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _isSaving ? null : _mulaiDesign,
-                          child: const Text('Mulai Design'),
+                          ),
                         ),
                       ),
-
-                    if (_order.workflowStatus == OrderWorkflowStatus.designing)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Checklist Tugas Sebelum Selesai:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          CheckboxListTile(
-                            value: _designDone,
-                            onChanged:
-                                (v) => setState(() => _designDone = v ?? false),
-                            title: const Text('Design'),
-                          ),
-                          CheckboxListTile(
-                            value: _printingDone,
-                            onChanged:
-                                (v) =>
-                                    setState(() => _printingDone = v ?? false),
-                            title: const Text('Printing'),
-                          ),
-                          CheckboxListTile(
-                            value: _qcDone,
-                            onChanged:
-                                (v) => setState(() => _qcDone = v ?? false),
-                            title: const Text('Pengecekan'),
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed:
-                                  (_designDone &&
-                                          _printingDone &&
-                                          _qcDone &&
-                                          !_isSaving)
-                                      ? _teruskanKeCor
-                                      : null,
-                              child: const Text('Teruskan ke Cor'),
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
+                    );
+                  },
                 ),
               ),
+            const SizedBox(height: 16),
+            _buildDisplayField('Nama Pelanggan', showField(_order.customerName)),
+            _buildDisplayField('Nomor Telepon', showField(_order.customerContact)),
+            _buildDisplayField('Alamat', showField(_order.address)),
+            _buildDisplayField('Jenis Perhiasan', showField(_order.jewelryType)),
+            _buildDisplayField('Warna Emas', showField(_order.goldColor)),
+            _buildDisplayField('Jenis Emas', showField(_order.goldType)),
+            _buildDisplayField('Jenis Batu', showField(_order.stoneType)),
+            _buildDisplayField('Ukuran Batu', showField(_order.stoneSize)),
+            _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
+            _buildDisplayField('Harga Emas/Gram', showDouble(_order.goldPricePerGram)),
+            _buildDisplayField('Catatan Tambahan', showField(_order.notes)),
+            _buildDisplayField('Tanggal Siap', showDate(_order.readyDate)),
+            _buildDisplayField('Status', _order.workflowStatus.label),
+            _buildDisplayField('Designer', showField(_order.assignedDesigner)),
+            _buildDisplayField('Caster', showField(_order.assignedCaster)),
+            _buildDisplayField('Carver', showField(_order.assignedCarver)),
+            _buildDisplayField('Diamond Setter', showField(_order.assignedDiamondSetter)),
+            _buildDisplayField('Finisher', showField(_order.assignedFinisher)),
+            _buildDisplayField('Inventory', showField(_order.assignedInventory)),
+            const SizedBox(height: 24),
+            if (isWaiting)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isProcessing ? null : _acceptOrder,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text(
+                    'Terima Pesanan',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            if (isWorking)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isProcessing ? null : _markDesignDone,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text(
+                    'Selesai Desain, Lanjut ke Cor',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            // Jika On Progress, TIDAK ada tombol aksi apapun
+          ],
+        ),
+      ),
     );
   }
 }
