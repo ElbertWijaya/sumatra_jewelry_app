@@ -1,14 +1,10 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:uuid/uuid.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
-import 'package:flutter/services.dart';
 
 class SalesCreateScreen extends StatefulWidget {
-  const SalesCreateScreen({super.key});
+  const SalesCreateScreen({Key? key}) : super(key: key);
 
   @override
   State<SalesCreateScreen> createState() => _SalesCreateScreenState();
@@ -16,350 +12,298 @@ class SalesCreateScreen extends StatefulWidget {
 
 class _SalesCreateScreenState extends State<SalesCreateScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _orderService = OrderService();
+  final _nameController = TextEditingController();
+  final _contactController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _stoneSizeController = TextEditingController();
+  final _ringSizeController = TextEditingController();
+  final _notesController = TextEditingController();
+  final _goldPriceController = TextEditingController();
 
-  // Form fields
-  String customerName = '';
-  String customerContact = '';
-  String address = '';
-  String? jewelryType;
-  String? goldColor;
-  String? goldType;
-  String? stoneType;
-  String? stoneSize;
-  String? ringSize;
-  DateTime? readyDate;
-  double? goldPricePerGram;
-  String? notes;
+  String? _jewelryType;
+  String? _goldColor;
+  String? _goldType;
+  String? _stoneType;
+  DateTime? _readyDate;
+  List<String> _images = [];
 
-  final TextEditingController _dateController = TextEditingController();
+  bool _isSaving = false;
 
-  bool _isLoading = false;
-
-  // Pilihan Kategori Baru
   final List<String> jewelryTypes = [
-    "ring", "bangle", "earring", "pendant", "hairpin", "pin", "men ring", "women ring", "engagement ring", "custom"
+    "ring",
+    "bangle",
+    "earring",
+    "pendant",
+    "hairpin",
+    "pin",
+    "men ring",
+    "women ring",
+    "engagement ring",
+    "custom",
   ];
   final List<String> goldColors = ["White Gold", "Rose Gold", "Yellow Gold"];
   final List<String> goldTypes = ["19K", "18K", "14K", "9K"];
-  final List<String> stoneTypes = ["Opal", "Sapphire", "Jade", "Emerald", "Ruby", "Amethyst", "Diamond"];
-
-  // Image picker
-  final List<XFile> _pickedImages = [];
-  final ImagePicker _picker = ImagePicker();
-
-  Future<void> _pickImages() async {
-    final List<XFile> images = await _picker.pickMultiImage();
-    if (images.isNotEmpty) {
-      setState(() {
-        _pickedImages.addAll(images);
-      });
-    }
-  }
-
-  void _removeImage(int idx) {
-    setState(() {
-      _pickedImages.removeAt(idx);
-    });
-  }
+  final List<String> stoneTypes = [
+    "Opal",
+    "Sapphire",
+    "Jade",
+    "Emerald",
+    "Ruby",
+    "Amethyst",
+    "Diamond",
+  ];
 
   @override
   void dispose() {
-    _dateController.dispose();
+    _nameController.dispose();
+    _contactController.dispose();
+    _addressController.dispose();
+    _stoneSizeController.dispose();
+    _ringSizeController.dispose();
+    _notesController.dispose();
+    _goldPriceController.dispose();
     super.dispose();
   }
 
-  Future<void> _submitOrder() async {
+  Future<void> _saveOrder() async {
     if (!_formKey.currentState!.validate()) return;
-    _formKey.currentState!.save();
-
-    setState(() => _isLoading = true);
+    setState(() => _isSaving = true);
 
     final order = Order(
-      id: const Uuid().v4(),
-      customerName: customerName,
-      customerContact: customerContact,
-      address: address,
-      jewelryType: jewelryType ?? '',
-      stoneType: stoneType,
-      stoneSize: stoneSize,
-      ringSize: ringSize,
-      readyDate: readyDate,
-      goldPricePerGram: goldPricePerGram,
-      notes: notes,
-      workflowStatus: OrderWorkflowStatus.pending,
-      imagePaths: _pickedImages.map((e) => e.path).toList(),
-      goldColor: goldColor,
-      goldType: goldType,
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      customerName: _nameController.text,
+      customerContact: _contactController.text,
+      address: _addressController.text,
+      jewelryType: _jewelryType ?? "",
+      goldColor: _goldColor,
+      goldType: _goldType,
+      stoneType: _stoneType,
+      stoneSize:
+          _stoneSizeController.text.isEmpty ? null : _stoneSizeController.text,
+      ringSize:
+          _ringSizeController.text.isEmpty ? null : _ringSizeController.text,
+      goldPricePerGram: double.tryParse(_goldPriceController.text),
+      notes: _notesController.text.isEmpty ? null : _notesController.text,
+      readyDate: _readyDate,
+      imagePaths: _images,
+      workflowStatus: OrderWorkflowStatus.waiting_sales_check,
+      createdAt: DateTime.now(),
     );
 
     try {
-      await _orderService.addOrder(order);
+      await OrderService().addOrder(order);
       if (!mounted) return;
+      Navigator.of(context).pop(true);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Pesanan berhasil dibuat!')));
-      Navigator.of(context).pop(true);
     } catch (e) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Gagal membuat pesanan: $e')));
     }
-    setState(() => _isLoading = false);
+    setState(() => _isSaving = false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Buat Pesanan Baru')),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    // === PILIHAN GAMBAR ===
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Referensi Gambar',
-                        style: Theme.of(context).textTheme.bodyMedium,
+      appBar: AppBar(title: const Text('Buat Pesanan')),
+      body:
+          _isSaving
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Nama Pelanggan *',
+                        ),
+                        validator:
+                            (v) =>
+                                (v == null || v.trim().isEmpty)
+                                    ? 'Wajib diisi'
+                                    : null,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 100,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _pickedImages.length + 1,
-                        itemBuilder: (context, index) {
-                          if (index < _pickedImages.length) {
-                            final file = _pickedImages[index];
-                            return Stack(
-                              children: [
-                                Container(
-                                  margin: const EdgeInsets.symmetric(
-                                    horizontal: 4,
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _contactController,
+                        decoration: const InputDecoration(
+                          labelText: 'Nomor Telepon *',
+                        ),
+                        keyboardType: TextInputType.phone,
+                        validator:
+                            (v) =>
+                                (v == null || v.trim().isEmpty)
+                                    ? 'Wajib diisi'
+                                    : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _addressController,
+                        decoration: const InputDecoration(
+                          labelText: 'Alamat *',
+                        ),
+                        validator:
+                            (v) =>
+                                (v == null || v.trim().isEmpty)
+                                    ? 'Wajib diisi'
+                                    : null,
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: _jewelryType,
+                        decoration: const InputDecoration(
+                          labelText: 'Jenis Perhiasan *',
+                        ),
+                        items:
+                            jewelryTypes
+                                .map(
+                                  (type) => DropdownMenuItem(
+                                    value: type,
+                                    child: Text(type),
                                   ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.file(
-                                      File(file.path),
-                                      width: 100,
-                                      height: 100,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
+                                )
+                                .toList(),
+                        validator:
+                            (v) =>
+                                (v == null || v.isEmpty)
+                                    ? 'Pilih salah satu'
+                                    : null,
+                        onChanged: (val) => setState(() => _jewelryType = val),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: _goldColor,
+                        decoration: const InputDecoration(
+                          labelText: 'Warna Emas',
+                        ),
+                        items: [
+                          const DropdownMenuItem(value: null, child: Text('-')),
+                          ...goldColors
+                              .map(
+                                (color) => DropdownMenuItem(
+                                  value: color,
+                                  child: Text(color),
                                 ),
-                                Positioned(
-                                  top: 2,
-                                  right: 2,
-                                  child: GestureDetector(
-                                    onTap: () => _removeImage(index),
-                                    child: Container(
-                                      decoration: const BoxDecoration(
-                                        color: Colors.black54,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(
-                                        Icons.close,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  ),
+                              )
+                              .toList(),
+                        ],
+                        onChanged: (val) => setState(() => _goldColor = val),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: _goldType,
+                        decoration: const InputDecoration(
+                          labelText: 'Jenis Emas',
+                        ),
+                        items: [
+                          const DropdownMenuItem(value: null, child: Text('-')),
+                          ...goldTypes
+                              .map(
+                                (type) => DropdownMenuItem(
+                                  value: type,
+                                  child: Text(type),
                                 ),
-                              ],
-                            );
-                          } else {
-                            return Container(
-                              width: 100,
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                              ),
-                              child: OutlinedButton(
-                                onPressed: _pickImages,
-                                style: OutlinedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
+                              )
+                              .toList(),
+                        ],
+                        onChanged: (val) => setState(() => _goldType = val),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: _stoneType,
+                        decoration: const InputDecoration(
+                          labelText: 'Jenis Batu',
+                        ),
+                        items: [
+                          const DropdownMenuItem(value: null, child: Text('-')),
+                          ...stoneTypes
+                              .map(
+                                (type) => DropdownMenuItem(
+                                  value: type,
+                                  child: Text(type),
                                 ),
-                                child: const Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.add_a_photo, size: 32),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      'Tambah\nGambar',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(fontSize: 12),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }
-                        },
+                              )
+                              .toList(),
+                        ],
+                        onChanged: (val) => setState(() => _stoneType = val),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    // === FORM FIELD LAINNYA ===
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Nama Pelanggan *',
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _stoneSizeController,
+                        decoration: const InputDecoration(
+                          labelText: 'Ukuran Batu',
+                        ),
                       ),
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Wajib diisi' : null,
-                      onSaved: (v) => customerName = v ?? '',
-                    ),
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Nomor Telepon *',
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _ringSizeController,
+                        decoration: const InputDecoration(
+                          labelText: 'Ukuran Cincin',
+                        ),
                       ),
-                      keyboardType: TextInputType.phone,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Wajib diisi' : null,
-                      onSaved: (v) => customerContact = v ?? '',
-                    ),
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Alamat *',
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _goldPriceController,
+                        decoration: const InputDecoration(
+                          labelText: 'Harga Emas/Gram',
+                        ),
+                        keyboardType: TextInputType.number,
                       ),
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Wajib diisi' : null,
-                      onSaved: (v) => address = v ?? '',
-                    ),
-                    // === KATEGORI BARU ===
-                    DropdownButtonFormField<String>(
-                      value: jewelryType,
-                      decoration: const InputDecoration(
-                        labelText: "Jenis Perhiasan *",
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _notesController,
+                        decoration: const InputDecoration(
+                          labelText: 'Catatan Tambahan',
+                        ),
                       ),
-                      items: jewelryTypes
-                          .map((type) => DropdownMenuItem(
-                                value: type,
-                                child: Text(type),
-                              ))
-                          .toList(),
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Wajib dipilih' : null,
-                      onChanged: (val) => setState(() => jewelryType = val),
-                      onSaved: (val) => jewelryType = val,
-                    ),
-                    DropdownButtonFormField<String>(
-                      value: goldColor,
-                      decoration: const InputDecoration(
-                        labelText: "Warna Emas",
-                      ),
-                      items: goldColors
-                          .map((color) => DropdownMenuItem(
-                                value: color,
-                                child: Text(color),
-                              ))
-                          .toList(),
-                      onChanged: (val) => setState(() => goldColor = val),
-                      onSaved: (val) => goldColor = val,
-                    ),
-                    DropdownButtonFormField<String>(
-                      value: goldType,
-                      decoration: const InputDecoration(
-                        labelText: "Jenis Emas",
-                      ),
-                      items: goldTypes
-                          .map((type) => DropdownMenuItem(
-                                value: type,
-                                child: Text(type),
-                              ))
-                          .toList(),
-                      onChanged: (val) => setState(() => goldType = val),
-                      onSaved: (val) => goldType = val,
-                    ),
-                    DropdownButtonFormField<String>(
-                      value: stoneType,
-                      decoration: const InputDecoration(
-                        labelText: "Jenis Batu",
-                      ),
-                      items: stoneTypes
-                          .map((type) => DropdownMenuItem(
-                                value: type,
-                                child: Text(type),
-                              ))
-                          .toList(),
-                      onChanged: (val) => setState(() => stoneType = val),
-                      onSaved: (val) => stoneType = val,
-                    ),
-                    // === END KATEGORI BARU ===
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Ukuran Batu',
-                      ),
-                      onSaved: (v) => stoneSize = v,
-                    ),
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Ukuran Cincin',
-                      ),
-                      onSaved: (v) => ringSize = v,
-                    ),
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Harga Emas/Gram',
-                      ),
-                      keyboardType: TextInputType.number,
-                      onSaved:
-                          (v) => goldPricePerGram = double.tryParse(v ?? ''),
-                    ),
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Catatan Tambahan',
-                      ),
-                      onSaved: (v) => notes = v,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _dateController,
-                      readOnly: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Tanggal Siap',
-                        suffixIcon: Icon(Icons.calendar_today),
-                      ),
-                      onTap: () async {
-                        FocusScope.of(context).requestFocus(FocusNode());
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: readyDate ?? DateTime.now(),
-                          firstDate: DateTime.now().subtract(
-                            const Duration(days: 1),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _readyDate == null
+                                  ? 'Tanggal Siap (opsional)'
+                                  : 'Tanggal Siap: ${_readyDate?.day}/${_readyDate?.month}/${_readyDate?.year}',
+                            ),
                           ),
-                          lastDate: DateTime.now().add(
-                            const Duration(days: 365),
+                          IconButton(
+                            icon: const Icon(Icons.calendar_today),
+                            onPressed: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: _readyDate ?? DateTime.now(),
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime(2100),
+                              );
+                              if (picked != null) {
+                                setState(() {
+                                  _readyDate = picked;
+                                });
+                              }
+                            },
                           ),
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            readyDate = picked;
-                            _dateController.text =
-                                "${picked.day}/${picked.month}/${picked.year}";
-                          });
-                        }
-                      },
-                      validator: (v) => null,
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _submitOrder,
-                      child: const Text('Simpan Pesanan'),
-                    ),
-                  ],
+                        ],
+                      ),
+                      // Gambar bisa kamu tambahkan di sini (opsional)
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isSaving ? null : _saveOrder,
+                          child: const Text('Simpan'),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
     );
   }
 }

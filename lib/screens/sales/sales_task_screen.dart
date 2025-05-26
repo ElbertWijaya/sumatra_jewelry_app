@@ -1,119 +1,80 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
 
 class SalesTaskScreen extends StatefulWidget {
-  const SalesTaskScreen({super.key});
+  final Order order;
+  const SalesTaskScreen({Key? key, required this.order}) : super(key: key);
 
   @override
   State<SalesTaskScreen> createState() => _SalesTaskScreenState();
 }
 
 class _SalesTaskScreenState extends State<SalesTaskScreen> {
-  final OrderService _orderService = OrderService();
-  bool _isLoading = false;
-  List<Order> _orders = [];
+  late Order _order;
+  bool _isProcessing = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchOrders();
+    _order = widget.order;
   }
 
-  Future<void> _fetchOrders() async {
-    setState(() => _isLoading = true);
+  Future<void> _submitToDesigner() async {
+    setState(() => _isProcessing = true);
+    final updatedOrder = _order.copyWith(
+      workflowStatus: OrderWorkflowStatus.waiting_designer,
+    );
     try {
-      final orders = await _orderService.getOrders();
-      setState(() {
-        // Perlihatkan order yang statusnya:
-        // - Menunggu aksi sales (pending)
-        // - Sudah benar-benar selesai oleh sales (done)
-        // - Dibatalkan
-        // Saring status lain agar workflow urut dan tidak boros data
-        _orders =
-            orders
-                .where(
-                  (o) =>
-                      o.workflowStatus == OrderWorkflowStatus.pending ||
-                      o.workflowStatus == OrderWorkflowStatus.done ||
-                      o.workflowStatus == OrderWorkflowStatus.cancelled,
-                )
-                .toList();
-        // Urutkan agar pending di atas
-        _orders.sort(
-          (a, b) => a.workflowStatus.index.compareTo(b.workflowStatus.index),
-        );
-      });
-    } catch (e) {
+      await OrderService().updateOrder(updatedOrder);
       if (!mounted) return;
+      setState(() {
+        _order = updatedOrder;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pesanan berhasil dikirim ke designer!')),
+      );
+      Navigator.of(context).pop(true);
+    } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Gagal memuat pesanan: $e')));
+      ).showSnackBar(SnackBar(content: Text('Gagal submit ke designer: $e')));
     }
-    setState(() => _isLoading = false);
-  }
-
-  void _goToDetail(Order order) {
-    Navigator.of(context).pushNamed('/sales/detail', arguments: order);
+    setState(() => _isProcessing = false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Daftar Pesanan Sales'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchOrders,
-            tooltip: 'Muat Ulang',
-          ),
-        ],
-      ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _orders.isEmpty
-              ? const Center(child: Text('Belum ada pesanan.'))
-              : RefreshIndicator(
-                onRefresh: _fetchOrders,
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _orders.length,
-                  itemBuilder: (context, idx) {
-                    final order = _orders[idx];
-                    return Card(
-                      elevation: 1,
-                      margin: const EdgeInsets.symmetric(
-                        vertical: 4,
-                        horizontal: 0,
-                      ),
-                      child: ListTile(
-                        title: Text(order.customerName),
-                        subtitle: Text(
-                          '${order.jewelryType} • ${order.customerContact}\n${order.address}',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: Text(
-                          order.workflowStatus.label,
-                          style: TextStyle(
-                            color:
-                                order.workflowStatus == OrderWorkflowStatus.done
-                                    ? Colors.green
-                                    : order.workflowStatus ==
-                                        OrderWorkflowStatus.cancelled
-                                    ? Colors.red
-                                    : Colors.orange,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        onTap: () => _goToDetail(order),
-                      ),
-                    );
-                  },
+      appBar: AppBar(title: const Text('Tugas Sales')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ... tampilkan detail order (field sama seperti detail) ...
+            // Tombol submit ke designer jika status waiting_sales_check
+            if (_order.workflowStatus ==
+                OrderWorkflowStatus.waiting_sales_check)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isProcessing ? null : _submitToDesigner,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text(
+                    'Submit ke Designer',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
+            // ... tombol/aksi lain sesuai kebutuhan ...
+          ],
+        ),
+      ),
     );
   }
 }

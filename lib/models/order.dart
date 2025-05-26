@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 
 /// Enum Status Pesanan sesuai alur kerja multi-divisi
 enum OrderWorkflowStatus {
-  pending, // Baru dibuat oleh sales, menunggu desain
+  waiting_sales_check, // Baru dibuat, belum diverifikasi sales
+  waiting_designer, // Sudah dicek sales, siap diambil designer
+  pending, // (legacy) Baru dibuat oleh sales, menunggu desain
   designing, // Sedang didesain oleh designer
   waiting_casting, // Menunggu proses cor setelah desain
   readyForCasting, // Siap untuk cor/casting
@@ -17,9 +19,9 @@ enum OrderWorkflowStatus {
   readyForFinishing, // Siap untuk finishing
   finishing, // Dalam proses finishing
   waiting_inventory, // Menunggu input inventaris
-  readyForInventory, // Siap untuk inventory
+  readyForInventory, // Siap untuk Diinventory
   inventory, // Dalam proses inventory
-  waiting_sales_completion, // Menunggu konfirmasi dari sales
+  waiting_sales_completion, // Menunggu konfirmasi dari sales (tambahan)
   done, // Selesai, siap diambil customer
   cancelled, // Dibatalkan
   unknown, // Tidak diketahui
@@ -30,6 +32,10 @@ enum OrderWorkflowStatus {
 extension OrderWorkflowStatusX on OrderWorkflowStatus {
   static OrderWorkflowStatus fromString(String? status) {
     switch ((status ?? '').toLowerCase()) {
+      case 'waiting_sales_check':
+        return OrderWorkflowStatus.waiting_sales_check;
+      case 'waiting_designer':
+        return OrderWorkflowStatus.waiting_designer;
       case 'pending':
         return OrderWorkflowStatus.pending;
       case 'designing':
@@ -81,6 +87,10 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
   /// Label status workflow dalam bahasa Indonesia
   String get label {
     switch (this) {
+      case OrderWorkflowStatus.waiting_sales_check:
+        return 'Cek & Submit Sales';
+      case OrderWorkflowStatus.waiting_designer:
+        return 'Menunggu Designer';
       case OrderWorkflowStatus.pending:
         return 'Menunggu Desain';
       case OrderWorkflowStatus.designing:
@@ -173,8 +183,8 @@ class Order {
     required this.customerContact,
     required this.address,
     required this.jewelryType,
-    this.goldColor, // ADD
-    this.goldType, // ADD
+    this.goldColor,
+    this.goldType,
     this.stoneType,
     this.stoneSize,
     this.ringSize,
@@ -205,8 +215,8 @@ class Order {
     String? customerContact,
     String? address,
     String? jewelryType,
-    String? goldColor, // ADD
-    String? goldType, // ADD
+    String? goldColor,
+    String? goldType,
     String? stoneType,
     String? stoneSize,
     String? ringSize,
@@ -232,8 +242,8 @@ class Order {
       customerContact: customerContact ?? this.customerContact,
       address: address ?? this.address,
       jewelryType: jewelryType ?? this.jewelryType,
-      goldColor: goldColor ?? this.goldColor, // ADD
-      goldType: goldType ?? this.goldType, // ADD
+      goldColor: goldColor ?? this.goldColor,
+      goldType: goldType ?? this.goldType,
       stoneType: stoneType ?? this.stoneType,
       stoneSize: stoneSize ?? this.stoneSize,
       ringSize: ringSize ?? this.ringSize,
@@ -264,8 +274,8 @@ class Order {
       customerContact: json['customerContact'] as String,
       address: json['address'] as String,
       jewelryType: json['jewelryType'] as String,
-      goldColor: json['goldColor'] as String?, // ADD
-      goldType: json['goldType'] as String?, // ADD
+      goldColor: json['goldColor'] as String?,
+      goldType: json['goldType'] as String?,
       stoneType: json['stoneType'] as String?,
       stoneSize: json['stoneSize'] as String?,
       ringSize: json['ringSize'] as String?,
@@ -307,8 +317,8 @@ class Order {
     'customerContact': customerContact,
     'address': address,
     'jewelryType': jewelryType,
-    'goldColor': goldColor, // ADD
-    'goldType': goldType, // ADD
+    'goldColor': goldColor,
+    'goldType': goldType,
     'stoneType': stoneType,
     'stoneSize': stoneSize,
     'ringSize': ringSize,
