@@ -970,7 +970,8 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
                                           ),
                                         ),
                                         subtitle: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text('Jenis: ${order.jewelryType}'),
                                             Text(
@@ -979,11 +980,11 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
                                                 color:
                                                     order.workflowStatus ==
                                                             OrderWorkflowStatus
-                                                                .waiting_carving
+                                                                .waiting_casting
                                                         ? Colors.orange
                                                         : order.workflowStatus ==
                                                             OrderWorkflowStatus
-                                                                .carving
+                                                                .casting
                                                         ? Colors.blue
                                                         : onProgressStatuses
                                                             .contains(
@@ -1054,10 +1055,9 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
                                           ).push(
                                             MaterialPageRoute(
                                               builder:
-                                                  (context) =>
-                                                      CarverDetailScreen(
-                                                        order: order,
-                                                      ),
+                                                  (context) => CarverDetailScreen(
+                                                    order: order,
+                                                  ),
                                             ),
                                           );
                                           if (result == true) _fetchOrders();

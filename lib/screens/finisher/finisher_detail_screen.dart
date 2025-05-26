@@ -34,7 +34,7 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
   Future<void> _submitToNext() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waiting_finishing,
+      workflowStatus: OrderWorkflowStatus.waiting_inventory, 
       finishingWorkChecklist: checkedTodos,
     );
     await OrderService().updateOrder(updatedOrder);
@@ -220,39 +220,6 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
                         : null,
                 child: const Text('Submit ke Inventory'),
               ),
-
-              // Progress Cor hanya saat finishing
-              if (_order.finishingWorkChecklist != null &&
-                  _order.finishingWorkChecklist!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Progress Cor:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      ...todoList.map(
-                        (name) => Row(
-                          children: [
-                            Icon(
-                              _order.finishingWorkChecklist!.contains(name)
-                                  ? Icons.check_box
-                                  : Icons.check_box_outline_blank,
-                              color: _order.finishingWorkChecklist!.contains(name)
-                                  ? Colors.green
-                                  : Colors.grey,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(name),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
             ],
           ],
         ),

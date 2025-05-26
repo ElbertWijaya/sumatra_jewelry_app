@@ -15,18 +15,18 @@ class CarverDetailScreen extends StatefulWidget {
 class _CarverDetailScreenState extends State<CarverDetailScreen> {
   late Order _order;
   bool _isProcessing = false;
-  final List<String> todoList = ["Bom", "Polish", "Getar", "Kasih ke Olivia"];
+  final List<String> todoList = ["Susun lilin", "Terima emas", "Cor"];
   List<String> checkedTodos = [];
 
   @override
   void initState() {
     super.initState();
     _order = widget.order;
-    checkedTodos = List<String>.from(_order.castingWorkChecklist ?? []);
+    checkedTodos = List<String>.from(_order.carvingWorkChecklist ?? []);
   }
 
   Future<void> _saveChecklist() async {
-    final updatedOrder = _order.copyWith(castingWorkChecklist: checkedTodos);
+    final updatedOrder = _order.copyWith(carvingWorkChecklist: checkedTodos);
     await OrderService().updateOrder(updatedOrder);
     setState(() => _order = updatedOrder);
   }
@@ -34,8 +34,8 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
   Future<void> _submitToNext() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waiting_diamond_setting,
-      castingWorkChecklist: checkedTodos,
+      workflowStatus: OrderWorkflowStatus.waiting_carving,
+      carvingWorkChecklist: checkedTodos,
     );
     await OrderService().updateOrder(updatedOrder);
     setState(() {
@@ -49,7 +49,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
       workflowStatus: OrderWorkflowStatus.carving,
-      assignedCaster: _order.assignedCaster ?? 'Nama Carver',
+      assignedCaster: _order.assignedCaster ?? 'Nama Carver: ',
     );
     await OrderService().updateOrder(updatedOrder);
     setState(() {
@@ -91,12 +91,11 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('Status order: ${_order.workflowStatus}');
-    bool isWorking = _order.workflowStatus == OrderWorkflowStatus.carving;
+    bool isWorking = _order.workflowStatus == OrderWorkflowStatus.casting;
     bool isWaiting =
-        _order.workflowStatus == OrderWorkflowStatus.waiting_carving;
+        _order.workflowStatus == OrderWorkflowStatus.waiting_casting;
     return Scaffold(
-      appBar: AppBar(title: const Text('Detail Pesanan Carver')),
+      appBar: AppBar(title: const Text('Detail Pesanan Cor')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -152,6 +151,47 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
             _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
             _buildDisplayField('Status', _order.workflowStatus.label),
             const SizedBox(height: 24),
+            // Progress bar: tampilkan jika status sudah masuk tahap on progress
+            if ({
+              OrderWorkflowStatus.waiting_carving,
+              OrderWorkflowStatus.carving,
+              OrderWorkflowStatus.waiting_diamond_setting,
+              OrderWorkflowStatus.stoneSetting,
+              OrderWorkflowStatus.waiting_finishing,
+              OrderWorkflowStatus.finishing,
+              OrderWorkflowStatus.waiting_inventory,
+              OrderWorkflowStatus.inventory,
+              OrderWorkflowStatus.waiting_sales_completion,
+            }.contains(_order.workflowStatus))
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Status Pengerjaan',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: LinearProgressIndicator(
+                        value: getOrderProgress(_order),
+                        minHeight: 8,
+                        backgroundColor: Colors.grey[200],
+                        color: Colors.amber[700],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    Text(
+                      '${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if (isWaiting)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
@@ -177,50 +217,19 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                         checkedTodos.remove(task);
                       }
                     });
+                    print('checkedTodos: $checkedTodos');
+                    print('todoList: $todoList');
                     await _saveChecklist();
                   },
                 ),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed:
-                    todoList.every((item) => checkedTodos.contains(item)) &&
-                            !_isProcessing
-                        ? _submitToNext
-                        : null,
-                child: const Text('Submit ke Diamond Setter'),
+                onPressed: checkedTodos.length == todoList.length && !_isProcessing
+                    ? _submitToNext
+                    : null,
+                child: const Text('Submit ke Carver'),
               ),
-              if ({
-                OrderWorkflowStatus.waiting_diamond_setting,
-                OrderWorkflowStatus.stoneSetting,
-                OrderWorkflowStatus.waiting_finishing,
-                OrderWorkflowStatus.finishing,
-                OrderWorkflowStatus.waiting_inventory,
-                OrderWorkflowStatus.inventory,
-                OrderWorkflowStatus.waiting_sales_completion,
-              }.contains(_order.workflowStatus))
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Status Pengerjaan',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: LinearProgressIndicator(
-                          value: getOrderProgress(_order),
-                          minHeight: 8,
-                          backgroundColor: Colors.grey[200],
-                          color: Colors.amber[700],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
             ],
           ],
         ),

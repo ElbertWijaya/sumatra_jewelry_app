@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
+import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
 
 class CorDetailScreen extends StatefulWidget {
@@ -81,6 +82,13 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
   String showField(String? value) =>
       (value == null || value.trim().isEmpty) ? 'Belum diisi' : value;
 
+  double getOrderProgress(Order order) {
+    final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
+    final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
+    if (idx < 0) return 0.0;
+    return idx / maxIdx;
+  }
+
   @override
   Widget build(BuildContext context) {
     bool isWorking = _order.workflowStatus == OrderWorkflowStatus.casting;
@@ -143,6 +151,7 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
             _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
             _buildDisplayField('Status', _order.workflowStatus.label),
             const SizedBox(height: 24),
+            // Tombol "Terima & Mulai Kerjakan Pesanan" hanya saat waiting_casting
             if (isWaiting)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
@@ -151,6 +160,7 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
                   child: const Text('Terima & Mulai Kerjakan Pesanan'),
                 ),
               ),
+            // Checklist dan tombol submit hanya saat status casting
             if (isWorking) ...[
               Text(
                 'To Do Work',
@@ -174,41 +184,48 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed:
-                    checkedTodos.length == todoList.length && !_isProcessing
-                        ? _submitToNext
-                        : null,
+                onPressed: checkedTodos.length == todoList.length && !_isProcessing
+                    ? _submitToNext
+                    : null,
                 child: const Text('Submit ke Carver'),
               ),
             ],
-            if (_order.castingWorkChecklist != null &&
-                _order.castingWorkChecklist!.isNotEmpty &&
-                !isWorking)
+            // Progress bar & persentase hanya untuk status "On Progress" (bukan waiting/casting)
+            if ({
+              OrderWorkflowStatus.waiting_carving,
+              OrderWorkflowStatus.carving,
+              OrderWorkflowStatus.waiting_diamond_setting,
+              OrderWorkflowStatus.stoneSetting,
+              OrderWorkflowStatus.waiting_finishing,
+              OrderWorkflowStatus.finishing,
+              OrderWorkflowStatus.waiting_inventory,
+              OrderWorkflowStatus.inventory,
+              OrderWorkflowStatus.waiting_sales_completion,
+            }.contains(_order.workflowStatus))
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Progress Cor:',
+                      'Status Pengerjaan',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    ...todoList.map(
-                      (name) => Row(
-                        children: [
-                          Icon(
-                            _order.castingWorkChecklist!.contains(name)
-                                ? Icons.check_box
-                                : Icons.check_box_outline_blank,
-                            color:
-                                _order.castingWorkChecklist!.contains(name)
-                                    ? Colors.green
-                                    : Colors.grey,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(name),
-                        ],
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: LinearProgressIndicator(
+                        value: getOrderProgress(_order),
+                        minHeight: 8,
+                        backgroundColor: Colors.grey[200],
+                        color: Colors.amber[700],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    Text(
+                      '${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
                   ],
