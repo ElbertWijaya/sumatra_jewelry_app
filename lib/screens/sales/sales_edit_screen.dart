@@ -7,7 +7,6 @@ import '../../models/order.dart';
 import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 import '../../services/order_service.dart';
 
-import '../../models/order.dart';
 
 class SalesEditScreen extends StatefulWidget {
   final Order order;
@@ -41,7 +40,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
   DateTime? _pickupDate;
   late List<String> _images = [];
   bool _isSaving = false;
-  bool _isInit = false;
+  final bool _isInit = false;
 
   double get _hargaBarang {
     return double.tryParse(
