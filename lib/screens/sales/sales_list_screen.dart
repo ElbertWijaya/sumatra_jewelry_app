@@ -41,13 +41,17 @@ class _SalesListScreenState extends State<SalesListScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal memuat daftar pesanan: $e')),
       );
+    } finally {
+      setState(() => _isLoading = false);
     }
-    setState(() => _isLoading = false);
   }
 
   void _goToDetail(Order order) {
     Navigator.of(context).pushNamed('/sales/detail', arguments: order);
   }
+
+  String showField(String? value) =>
+      (value == null || value.trim().isEmpty) ? '-' : value;
 
   @override
   Widget build(BuildContext context) {
@@ -77,11 +81,27 @@ class _SalesListScreenState extends State<SalesListScreen> {
                         horizontal: 0,
                       ),
                       child: ListTile(
-                        title: Text(order.customerName),
-                        subtitle: Text(
-                          '${order.jewelryType} • ${order.customerContact}\n${order.address}',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                        title: Text(showField(order.customerName)),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${showField(order.jewelryType)} • ${showField(order.customerContact)}\n${showField(order.address)}',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (order.finalPrice != null || order.dp != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4.0),
+                                child: Text(
+                                  'Harga: ${order.finalPrice != null ? order.finalPrice!.toStringAsFixed(0) : '-'}  |  DP: ${order.dp != null ? order.dp!.toStringAsFixed(0) : '-'}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                         trailing: Text(
                           order.workflowStatus.label,

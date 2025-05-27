@@ -1,5 +1,11 @@
+import 'dart:io';
+import 'package:intl/intl.dart';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../models/order.dart';
+import '../../models/order_workflow.dart';
+import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 import '../../services/order_service.dart';
 
 class SalesCreateScreen extends StatefulWidget {
@@ -11,22 +17,47 @@ class SalesCreateScreen extends StatefulWidget {
 
 class _SalesCreateScreenState extends State<SalesCreateScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _contactController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _stoneSizeController = TextEditingController();
-  final _ringSizeController = TextEditingController();
-  final _notesController = TextEditingController();
-  final _goldPriceController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
+
+  // Form fields
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _contactController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _stoneSizeController = TextEditingController();
+  final TextEditingController _ringSizeController = TextEditingController();
+  final TextEditingController _notesController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _hargaController = TextEditingController();
+  final TextEditingController _dpController = TextEditingController();
 
   String? _jewelryType;
   String? _goldColor;
   String? _goldType;
   String? _stoneType;
   DateTime? _readyDate;
-  final List<String> _images = [];
-
+  List<String> _images = [];
   bool _isSaving = false;
+
+  double get _hargaBarang {
+    return double.tryParse(
+          toNumericString(_hargaController.text, allowPeriod: false),
+        ) ??
+        0;
+  }
+
+  double get _dp {
+    return double.tryParse(
+          toNumericString(_dpController.text, allowPeriod: false),
+        ) ??
+        0;
+  }
+
+  double get _sisaLunas {
+    final harga = _hargaBarang;
+    final dp = _dp;
+    final sisa = harga - dp;
+    return sisa < 0 ? 0 : sisa;
+  }
 
   final List<String> jewelryTypes = [
     "ring",
@@ -52,6 +83,12 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
     "Diamond",
   ];
 
+  final _rupiahFormat = NumberFormat.currency(
+    locale: 'id',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -60,8 +97,31 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
     _stoneSizeController.dispose();
     _ringSizeController.dispose();
     _notesController.dispose();
-    _goldPriceController.dispose();
+    _dateController.dispose();
+    _hargaController.dispose();
+    _dpController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImages() async {
+    try {
+      final List<XFile> images = await _picker.pickMultiImage();
+      if (images.isNotEmpty) {
+        setState(() {
+          _images.addAll(images.map((x) => x.path));
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal memilih gambar: $e')));
+    }
+  }
+
+  void _removeImage(int idx) {
+    setState(() {
+      _images.removeAt(idx);
+    });
   }
 
   Future<void> _saveOrder() async {
@@ -73,7 +133,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
       customerName: _nameController.text,
       customerContact: _contactController.text,
       address: _addressController.text,
-      jewelryType: _jewelryType ?? "",
+      jewelryType: _jewelryType ?? '',
       goldColor: _goldColor,
       goldType: _goldType,
       stoneType: _stoneType,
@@ -81,21 +141,25 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
           _stoneSizeController.text.isEmpty ? null : _stoneSizeController.text,
       ringSize:
           _ringSizeController.text.isEmpty ? null : _ringSizeController.text,
-      goldPricePerGram: double.tryParse(_goldPriceController.text),
+      goldPricePerGram: null,
+      finalPrice: _hargaBarang,
+      dp: _dp,
+      sisaLunas: _sisaLunas,
       notes: _notesController.text.isEmpty ? null : _notesController.text,
       readyDate: _readyDate,
       imagePaths: _images,
       workflowStatus: OrderWorkflowStatus.waiting_sales_check,
       createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     );
 
     try {
       await OrderService().addOrder(order);
       if (!mounted) return;
-      Navigator.of(context).pop(true);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Pesanan berhasil dibuat!')));
+      Navigator.of(context).pop(true);
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -107,7 +171,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Buat Pesanan')),
+      appBar: AppBar(title: const Text('Buat Pesanan Baru')),
       body:
           _isSaving
               ? const Center(child: CircularProgressIndicator())
@@ -118,6 +182,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Nama Pelanggan
                       TextFormField(
                         controller: _nameController,
                         decoration: const InputDecoration(
@@ -126,23 +191,27 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                         validator:
                             (v) =>
                                 (v == null || v.trim().isEmpty)
-                                    ? 'Wajib diisi'
+                                    ? 'Nama wajib diisi'
                                     : null,
                       ),
-                      const SizedBox(height: 12),
+                      // Nomor Telepon
                       TextFormField(
                         controller: _contactController,
                         decoration: const InputDecoration(
                           labelText: 'Nomor Telepon *',
                         ),
                         keyboardType: TextInputType.phone,
-                        validator:
-                            (v) =>
-                                (v == null || v.trim().isEmpty)
-                                    ? 'Wajib diisi'
-                                    : null,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Nomor telepon wajib diisi';
+                          }
+                          if (v.length < 8) {
+                            return 'Nomor telepon minimal 8 digit';
+                          }
+                          return null;
+                        },
                       ),
-                      const SizedBox(height: 12),
+                      // Alamat
                       TextFormField(
                         controller: _addressController,
                         decoration: const InputDecoration(
@@ -151,15 +220,12 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                         validator:
                             (v) =>
                                 (v == null || v.trim().isEmpty)
-                                    ? 'Wajib diisi'
+                                    ? 'Alamat wajib diisi'
                                     : null,
                       ),
-                      const SizedBox(height: 12),
+                      // Jenis Perhiasan
                       DropdownButtonFormField<String>(
                         value: _jewelryType,
-                        decoration: const InputDecoration(
-                          labelText: 'Jenis Perhiasan *',
-                        ),
                         items:
                             jewelryTypes
                                 .map(
@@ -169,134 +235,308 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                                   ),
                                 )
                                 .toList(),
+                        onChanged: (v) => setState(() => _jewelryType = v),
+                        decoration: const InputDecoration(
+                          labelText: 'Jenis Perhiasan *',
+                        ),
                         validator:
                             (v) =>
-                                (v == null || v.isEmpty)
-                                    ? 'Pilih salah satu'
+                                v == null || v.isEmpty
+                                    ? 'Pilih jenis perhiasan'
                                     : null,
-                        onChanged: (val) => setState(() => _jewelryType = val),
                       ),
-                      const SizedBox(height: 12),
+                      // Warna Emas
                       DropdownButtonFormField<String>(
                         value: _goldColor,
+                        items:
+                            goldColors
+                                .map(
+                                  (color) => DropdownMenuItem(
+                                    value: color,
+                                    child: Text(color),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (v) => setState(() => _goldColor = v),
                         decoration: const InputDecoration(
-                          labelText: 'Warna Emas',
+                          labelText: 'Warna Emas *',
                         ),
-                        items: [
-                          const DropdownMenuItem(value: null, child: Text('-')),
-                          ...goldColors
-                              .map(
-                                (color) => DropdownMenuItem(
-                                  value: color,
-                                  child: Text(color),
-                                ),
-                              )
-                              ,
-                        ],
-                        onChanged: (val) => setState(() => _goldColor = val),
+                        validator:
+                            (v) =>
+                                v == null || v.isEmpty
+                                    ? 'Pilih warna emas'
+                                    : null,
                       ),
-                      const SizedBox(height: 12),
+                      // Jenis Emas
                       DropdownButtonFormField<String>(
                         value: _goldType,
+                        items:
+                            goldTypes
+                                .map(
+                                  (type) => DropdownMenuItem(
+                                    value: type,
+                                    child: Text(type),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (v) => setState(() => _goldType = v),
                         decoration: const InputDecoration(
-                          labelText: 'Jenis Emas',
+                          labelText: 'Jenis Emas *',
                         ),
-                        items: [
-                          const DropdownMenuItem(value: null, child: Text('-')),
-                          ...goldTypes
-                              .map(
-                                (type) => DropdownMenuItem(
-                                  value: type,
-                                  child: Text(type),
-                                ),
-                              )
-                              ,
-                        ],
-                        onChanged: (val) => setState(() => _goldType = val),
+                        validator:
+                            (v) =>
+                                v == null || v.isEmpty
+                                    ? 'Pilih jenis emas'
+                                    : null,
                       ),
-                      const SizedBox(height: 12),
+                      // Jenis Batu
                       DropdownButtonFormField<String>(
                         value: _stoneType,
+                        items:
+                            stoneTypes
+                                .map(
+                                  (type) => DropdownMenuItem(
+                                    value: type,
+                                    child: Text(type),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (v) => setState(() => _stoneType = v),
                         decoration: const InputDecoration(
                           labelText: 'Jenis Batu',
                         ),
-                        items: [
-                          const DropdownMenuItem(value: null, child: Text('-')),
-                          ...stoneTypes
-                              .map(
-                                (type) => DropdownMenuItem(
-                                  value: type,
-                                  child: Text(type),
-                                ),
-                              )
-                              ,
-                        ],
-                        onChanged: (val) => setState(() => _stoneType = val),
                       ),
-                      const SizedBox(height: 12),
+                      // Ukuran Batu
                       TextFormField(
                         controller: _stoneSizeController,
                         decoration: const InputDecoration(
                           labelText: 'Ukuran Batu',
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      // Ukuran Cincin
                       TextFormField(
                         controller: _ringSizeController,
                         decoration: const InputDecoration(
                           labelText: 'Ukuran Cincin',
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      // Harga Barang / Perkiraan
                       TextFormField(
-                        controller: _goldPriceController,
+                        controller: _hargaController,
                         decoration: const InputDecoration(
-                          labelText: 'Harga Emas/Gram',
+                          labelText: 'Harga Barang / Perkiraan *',
                         ),
                         keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _notesController,
-                        decoration: const InputDecoration(
-                          labelText: 'Catatan Tambahan',
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _readyDate == null
-                                  ? 'Tanggal Siap (opsional)'
-                                  : 'Tanggal Siap: ${_readyDate?.day}/${_readyDate?.month}/${_readyDate?.year}',
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.calendar_today),
-                            onPressed: () async {
-                              final picked = await showDatePicker(
-                                context: context,
-                                initialDate: _readyDate ?? DateTime.now(),
-                                firstDate: DateTime(2020),
-                                lastDate: DateTime(2100),
-                              );
-                              if (picked != null) {
-                                setState(() {
-                                  _readyDate = picked;
-                                });
-                              }
-                            },
+                        inputFormatters: [
+                          MoneyInputFormatter(
+                            thousandSeparator: ThousandSeparator.Period,
+                            mantissaLength: 0,
                           ),
                         ],
+                        validator: (v) {
+                          if (v == null || v.isEmpty)
+                            return 'Harga wajib diisi';
+                          if (toNumericString(v, allowPeriod: false).isEmpty)
+                            return 'Masukkan angka yang valid';
+                          return null;
+                        },
+                        onChanged: (_) => setState(() {}),
                       ),
-                      // Gambar bisa kamu tambahkan di sini (opsional)
+                      // Jumlah DP
+                      TextFormField(
+                        controller: _dpController,
+                        decoration: const InputDecoration(
+                          labelText: 'Jumlah DP',
+                        ),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          MoneyInputFormatter(
+                            thousandSeparator: ThousandSeparator.Period,
+                            mantissaLength: 0,
+                          ),
+                        ],
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      // Sisa harga untuk lunas (readonly)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          children: [
+                            const Text(
+                              'Sisa harga untuk lunas: ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              _rupiahFormat.format(_sisaLunas),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Catatan Tambahan sebagai notes besar (multiline)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Catatan Tambahan',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.yellow[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.amber,
+                                  width: 1,
+                                ),
+                              ),
+                              child: TextFormField(
+                                controller: _notesController,
+                                maxLines: 6,
+                                minLines: 4,
+                                decoration: const InputDecoration(
+                                  hintText: 'Tulis catatan tambahan di sini...',
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.all(16),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Tanggal Siap
+                      TextFormField(
+                        controller: _dateController,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Tanggal Siap',
+                        ),
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _readyDate ?? DateTime.now(),
+                            firstDate: DateTime.now().subtract(
+                              const Duration(days: 365),
+                            ),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 365 * 2),
+                            ),
+                          );
+                          if (picked != null) {
+                            setState(() {
+                              _readyDate = picked;
+                              _dateController.text =
+                                  "${picked.day}/${picked.month}/${picked.year}";
+                            });
+                          }
+                        },
+                      ),
+                      // Gambar referensi
+                      const SizedBox(height: 12),
+                      Text(
+                        'Gambar Referensi',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 110,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _images.length + 1,
+                          itemBuilder: (context, idx) {
+                            if (idx == _images.length) {
+                              return GestureDetector(
+                                onTap: _pickImages,
+                                child: Container(
+                                  width: 110,
+                                  height: 110,
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.add_a_photo,
+                                    size: 40,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              );
+                            }
+                            return Stack(
+                              children: [
+                                Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.file(
+                                      File(_images[idx]),
+                                      width: 110,
+                                      height: 110,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (c, e, s) => Container(
+                                            width: 110,
+                                            height: 110,
+                                            color: Colors.grey[200],
+                                            child: const Icon(
+                                              Icons.broken_image,
+                                              size: 40,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 2,
+                                  right: 2,
+                                  child: GestureDetector(
+                                    onTap: () => _removeImage(idx),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.black54,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(
+                                        Icons.close,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: _isSaving ? null : _saveOrder,
-                          child: const Text('Simpan'),
+                          child:
+                              _isSaving
+                                  ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                  : const Text('Simpan Pesanan'),
                         ),
                       ),
                     ],

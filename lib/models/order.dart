@@ -156,7 +156,9 @@ class Order {
   final DateTime? readyDate;
   final DateTime? pickupDate;
   final double? goldPricePerGram;
-  final double? finalPrice;
+  final double? finalPrice; // untuk harga barang/perkiraan
+  final double? dp;
+  final double? sisaLunas;
   final String? notes;
   final OrderWorkflowStatus workflowStatus;
 
@@ -193,6 +195,8 @@ class Order {
     this.pickupDate,
     this.goldPricePerGram,
     this.finalPrice,
+    this.dp,
+    this.sisaLunas,
     this.notes,
     this.workflowStatus = OrderWorkflowStatus.pending,
     this.designerWorkChecklist,
@@ -230,6 +234,8 @@ class Order {
     DateTime? pickupDate,
     double? goldPricePerGram,
     double? finalPrice,
+    double? dp,
+    double? sisaLunas,
     String? notes,
     OrderWorkflowStatus? workflowStatus,
     List<String>? designerWorkChecklist,
@@ -262,6 +268,8 @@ class Order {
       pickupDate: pickupDate ?? this.pickupDate,
       goldPricePerGram: goldPricePerGram ?? this.goldPricePerGram,
       finalPrice: finalPrice ?? this.finalPrice,
+      dp: dp ?? this.dp,
+      sisaLunas: sisaLunas ?? this.sisaLunas,
       notes: notes ?? this.notes,
       workflowStatus: workflowStatus ?? this.workflowStatus,
       designerWorkChecklist:
@@ -308,6 +316,8 @@ class Order {
               : null,
       goldPricePerGram: (json['goldPricePerGram'] as num?)?.toDouble(),
       finalPrice: (json['finalPrice'] as num?)?.toDouble(),
+      dp: (json['dp'] as num?)?.toDouble(),
+      sisaLunas: (json['sisaLunas'] as num?)?.toDouble(),
       notes: json['notes'] as String?,
       workflowStatus: OrderWorkflowStatusX.fromString(
         json['workflowStatus'] as String?,
@@ -366,6 +376,8 @@ class Order {
     'pickupDate': pickupDate?.toIso8601String(),
     'goldPricePerGram': goldPricePerGram,
     'finalPrice': finalPrice,
+    'dp': dp,
+    'sisaLunas': sisaLunas,
     'notes': notes,
     'workflowStatus': workflowStatus.name,
     'designerWorkChecklist': designerWorkChecklist,

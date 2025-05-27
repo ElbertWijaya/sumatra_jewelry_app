@@ -1,7 +1,6 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import '../../models/order.dart';
 import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
@@ -16,21 +15,22 @@ class SalesDetailScreen extends StatefulWidget {
 
 class _SalesDetailScreenState extends State<SalesDetailScreen> {
   late Order _order;
-  final _formKey = GlobalKey<FormState>();
+  late List<String> _images;
+  bool _isEditing = false;
+  bool _isSaving = false;
+  bool _isDeleting = false;
+  DateTime? _readyDate;
+
+  // Controllers
   late TextEditingController _nameController;
   late TextEditingController _contactController;
   late TextEditingController _addressController;
   late TextEditingController _stoneSizeController;
   late TextEditingController _ringSizeController;
   late TextEditingController _notesController;
-  late TextEditingController _goldPriceController;
   late TextEditingController _dateController;
-
-  late List<String> _images;
-  bool _isEditing = false;
-  bool _isSaving = false;
-  bool _isDeleting = false;
-  DateTime? _readyDate;
+  late TextEditingController _finalPriceController;
+  late TextEditingController _dpController;
 
   // Dropdown values
   String? _jewelryType;
@@ -38,39 +38,11 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
   String? _goldType;
   String? _stoneType;
 
-  final ImagePicker _picker = ImagePicker();
-  
-  double getOrderProgress(Order order) {
-  final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
-  final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
-  if (idx < 0) return 0.0;
-  return idx / maxIdx;
-}
-
-  // Pilihan dropdown (gunakan sama dengan SalesCreateScreen)
-  final List<String> jewelryTypes = [
-    "ring",
-    "bangle",
-    "earring",
-    "pendant",
-    "hairpin",
-    "pin",
-    "men ring",
-    "women ring",
-    "engagement ring",
-    "custom",
-  ];
-  final List<String> goldColors = ["White Gold", "Rose Gold", "Yellow Gold"];
-  final List<String> goldTypes = ["19K", "18K", "14K", "9K"];
-  final List<String> stoneTypes = [
-    "Opal",
-    "Sapphire",
-    "Jade",
-    "Emerald",
-    "Ruby",
-    "Amethyst",
-    "Diamond",
-  ];
+  final _rupiahFormat = NumberFormat.currency(
+    locale: 'id',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
 
   @override
   void initState() {
@@ -82,10 +54,19 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
     _addressController = TextEditingController(text: _order.address);
     _stoneSizeController = TextEditingController(text: _order.stoneSize ?? "");
     _ringSizeController = TextEditingController(text: _order.ringSize ?? "");
-    _goldPriceController = TextEditingController(
-      text: _order.goldPricePerGram?.toString() ?? "",
-    );
     _notesController = TextEditingController(text: _order.notes ?? "");
+    _finalPriceController = TextEditingController(
+      text:
+          _order.finalPrice != null && _order.finalPrice != 0
+              ? _rupiahFormat.format(_order.finalPrice)
+              : '',
+    );
+    _dpController = TextEditingController(
+      text:
+          _order.dp != null && _order.dp != 0
+              ? _rupiahFormat.format(_order.dp)
+              : '',
+    );
     _readyDate = _order.readyDate;
     _dateController = TextEditingController(
       text:
@@ -93,8 +74,6 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
               ? ""
               : "${_readyDate!.day}/${_readyDate!.month}/${_readyDate!.year}",
     );
-
-    // Dropdown values
     _jewelryType = _order.jewelryType.isNotEmpty ? _order.jewelryType : null;
     _goldColor = _order.goldColor;
     _goldType = _order.goldType;
@@ -108,213 +87,17 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
     _addressController.dispose();
     _stoneSizeController.dispose();
     _ringSizeController.dispose();
-    _goldPriceController.dispose();
     _notesController.dispose();
     _dateController.dispose();
+    _finalPriceController.dispose();
+    _dpController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickImages() async {
-    final List<XFile> images = await _picker.pickMultiImage();
-    if (images.isNotEmpty) {
-      setState(() {
-        _images.addAll(images.map((x) => x.path));
-      });
-    }
-  }
-
-  void _removeImage(int idx) {
-    setState(() {
-      _images.removeAt(idx);
-    });
-  }
-
-  Future<void> _saveEdit() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _isSaving = true);
-
-    final updatedOrder = _order.copyWith(
-      customerName: _nameController.text,
-      customerContact: _contactController.text,
-      address: _addressController.text,
-      jewelryType: _jewelryType ?? '',
-      goldColor: _goldColor,
-      goldType: _goldType,
-      stoneType: _stoneType,
-      stoneSize:
-          _stoneSizeController.text.isEmpty ? null : _stoneSizeController.text,
-      ringSize:
-          _ringSizeController.text.isEmpty ? null : _ringSizeController.text,
-      goldPricePerGram: double.tryParse(_goldPriceController.text),
-      notes: _notesController.text.isEmpty ? null : _notesController.text,
-      readyDate: _readyDate,
-      imagePaths: _images,
-    );
-
-    try {
-      await OrderService().updateOrder(updatedOrder);
-      if (!mounted) return;
-      setState(() {
-        _isEditing = false;
-        _order = updatedOrder;
-        // Sync dropdowns after update
-        _jewelryType =
-            updatedOrder.jewelryType.isNotEmpty
-                ? updatedOrder.jewelryType
-                : null;
-        _goldColor = updatedOrder.goldColor;
-        _goldType = updatedOrder.goldType;
-        _stoneType = updatedOrder.stoneType;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pesanan berhasil diperbarui!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Gagal update pesanan: $e')));
-    }
-    setState(() => _isSaving = false);
-  }
-
-  Future<void> _deleteOrder() async {
-    setState(() => _isDeleting = true);
-    try {
-      await OrderService().deleteOrder(_order.id);
-      if (!mounted) return;
-      Navigator.of(context).pop(true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pesanan berhasil dihapus!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Gagal menghapus pesanan: $e')));
-    }
-    setState(() => _isDeleting = false);
-  }
-
-  void _showDeleteConfirmationDialog() {
-    bool checked = false;
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              title: const Text('Hapus Pesanan'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Apakah kamu yakin untuk menghapus pesanan ini?',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: checked,
-                        onChanged: (v) {
-                          setStateDialog(() {
-                            checked = v ?? false;
-                          });
-                        },
-                      ),
-                      const Expanded(
-                        child: Text(
-                          'Saya yakin ingin menghapus pesanan ini',
-                          style: TextStyle(fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed:
-                      _isDeleting ? null : () => Navigator.of(context).pop(),
-                  child: const Text('Batal'),
-                ),
-                ElevatedButton(
-                  onPressed:
-                      checked && !_isDeleting
-                          ? () async {
-                            Navigator.of(context).pop();
-                            await _deleteOrder();
-                          }
-                          : null,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  child:
-                      _isDeleting
-                          ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                          : const Text('Iya'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Future<void> _selesaikanPesanan() async {
-    setState(() => _isSaving = true);
-    final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.done,
-    );
-    try {
-      await OrderService().updateOrder(updatedOrder);
-      if (!mounted) return;
-      setState(() {
-        _order = updatedOrder;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pesanan berhasil diselesaikan!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyelesaikan pesanan: $e')),
-      );
-    }
-    setState(() => _isSaving = false);
-  }
-
-  Future<void> _submitToDesigner() async {
-    setState(() => _isSaving = true);
-    final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waiting_designer,
-    );
-    try {
-      await OrderService().updateOrder(updatedOrder);
-      if (!mounted) return;
-      setState(() {
-        _order = updatedOrder;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pesanan berhasil dikirim ke designer!')),
-      );
-      Navigator.of(context).pop(true); // Refresh dashboard
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Gagal submit ke designer: $e')));
-    }
-    setState(() => _isSaving = false);
   }
 
   String showField(String? value) =>
       (value == null || value.trim().isEmpty) ? 'Belum diisi' : value;
   String showDouble(double? value) =>
-      value == null ? 'Belum diisi' : value.toString();
+      value == null ? 'Belum diisi' : _rupiahFormat.format(value);
   String showDate(DateTime? date) =>
       date == null ? 'Belum diisi' : "${date.day}/${date.month}/${date.year}";
 
@@ -338,236 +121,83 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
     );
   }
 
-  // Helper to build checklist progress section for each step
-  Widget buildChecklistSection(
-    String title,
-    List<String> todoList,
-    List<String>? checkedList,
-  ) {
-    if (checkedList == null || checkedList.isEmpty) return const SizedBox();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$title Progress:',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          ...todoList.map(
-            (name) => Row(
-              children: [
-                Icon(
-                  checkedList.contains(name)
-                      ? Icons.check_box
-                      : Icons.check_box_outline_blank,
-                  color:
-                      checkedList.contains(name) ? Colors.green : Colors.grey,
-                  size: 18,
-                ),
-                const SizedBox(width: 4),
-                Text(name),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Define each role's todoList sesuai implementasi di detail screen masing-masing role
-    const designerTodo = [
-      "Design",
-      "Print",
-      "Pengecekan",
-    ]; // Sesuaikan dengan checklist designer
-    const corTodo = [
-      "Susun lilin",
-      "Terima emas",
-      "Cor",
-    ]; // Checklist cor/casting
-    const carverTodo = [
-      "Bom",
-      "Polish",
-      "Getar",
-      "Kasih ke Olivia",
-    ]; // Checklist carver
-    const diamondSetterTodo = [
-      "Pilih batu",
-      "Pasang batu",
-      "Kasih ke Olivia",
-    ]; // Checklist diamond setter
-    const finisherTodo = ["Finishing"]; // Checklist finisher
-
-  return Scaffold(
-    appBar: AppBar(
-      title: const Text('Detail Pesanan'),
-      actions: [
-        (!_isEditing &&
-                _order.workflowStatus == OrderWorkflowStatus.waiting_sales_check)
-            ? IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () => setState(() => _isEditing = true),
-              )
-            : !_isEditing
-                ? null
-                : IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => setState(() => _isEditing = false),
-                  ),
-      ].whereType<Widget>().toList(),
-    ),
-    body: _isSaving
-        ? const Center(child: CircularProgressIndicator())
-        : SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: !_isEditing
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Gambar referensi
-                      if (_images.isNotEmpty)
-                        SizedBox(
+    return Scaffold(
+      appBar: AppBar(title: const Text('Detail Pesanan')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_images.isNotEmpty)
+              SizedBox(
+                height: 110,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _images.length,
+                  itemBuilder: (context, idx) {
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          File(_images[idx]),
+                          width: 110,
                           height: 110,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _images.length,
-                            itemBuilder: (context, idx) {
-                              return Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.file(
-                                    File(_images[idx]),
-                                    width: 110,
-                                    height: 110,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (c, e, s) => Container(
-                                      width: 110,
-                                      height: 110,
-                                      color: Colors.grey[200],
-                                      child: const Icon(
-                                        Icons.broken_image,
-                                        size: 40,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ),
+                          fit: BoxFit.cover,
+                          errorBuilder:
+                              (c, e, s) => Container(
+                                width: 110,
+                                height: 110,
+                                color: Colors.grey[200],
+                                child: const Icon(
+                                  Icons.broken_image,
+                                  size: 40,
+                                  color: Colors.grey,
                                 ),
-                              );
-                            },
-                          ),
+                              ),
                         ),
-                      const SizedBox(height: 16),
-                      _buildDisplayField('Nama Pelanggan', showField(_order.customerName)),
-                      _buildDisplayField('Nomor Telepon', showField(_order.customerContact)),
-                      _buildDisplayField('Alamat', showField(_order.address)),
-                      _buildDisplayField('Jenis Perhiasan', showField(_order.jewelryType)),
-                      _buildDisplayField('Warna Emas', showField(_order.goldColor)),
-                      _buildDisplayField('Jenis Emas', showField(_order.goldType)),
-                      _buildDisplayField('Jenis Batu', showField(_order.stoneType)),
-                      _buildDisplayField('Ukuran Batu', showField(_order.stoneSize)),
-                      _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
-                      _buildDisplayField('Harga Emas/Gram', showDouble(_order.goldPricePerGram)),
-                      _buildDisplayField('Catatan Tambahan', showField(_order.notes)),
-                      _buildDisplayField('Tanggal Siap', showDate(_order.readyDate)),
-                      _buildDisplayField('Status', _order.workflowStatus.label),
-                      // Progress section for each process
-                      buildChecklistSection("Designer", designerTodo, _order.designerWorkChecklist),
-                      buildChecklistSection("Cor", corTodo, _order.castingWorkChecklist),
-                      buildChecklistSection("Carver", carverTodo, _order.carvingWorkChecklist),
-                      buildChecklistSection("Diamond Setter", diamondSetterTodo, _order.stoneSettingWorkChecklist),
-                      buildChecklistSection("Finisher", finisherTodo, _order.finishingWorkChecklist),
-                      _buildDisplayField('Designer', showField(_order.assignedDesigner)),
-                      _buildDisplayField('Caster', showField(_order.assignedCaster)),
-                      _buildDisplayField('Carver', showField(_order.assignedCarver)),
-                      _buildDisplayField('Diamond Setter', showField(_order.assignedDiamondSetter)),
-                      _buildDisplayField('Finisher', showField(_order.assignedFinisher)),
-                      _buildDisplayField('Inventory', showField(_order.assignedInventory)),
-                      const SizedBox(height: 24),
-                      if (_order.workflowStatus == OrderWorkflowStatus.waiting_sales_check)
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _isSaving ? null : _submitToDesigner,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                            child: const Text(
-                              'Submit ke Designer',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                      if (_order.workflowStatus == OrderWorkflowStatus.waiting_sales_completion)
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _isSaving ? null : _selesaikanPesanan,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                            child: const Text(
-                              'Selesaikan Pesanan',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                      const SizedBox(height: 12),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                        onPressed: _isDeleting ? null : _showDeleteConfirmationDialog,
-                        icon: const Icon(Icons.delete, color: Colors.white),
-                        label: const Text('Hapus', style: TextStyle(color: Colors.white)),
                       ),
-                      const SizedBox(height: 24),
-                      // Progress bar & persentase hanya untuk status selain waiting_sales_check
-                      if (_order.workflowStatus != OrderWorkflowStatus.waiting_sales_check)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Progress Pesanan',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                child: LinearProgressIndicator(
-                                  value: getOrderProgress(_order),
-                                  minHeight: 8,
-                                  backgroundColor: Colors.grey[200],
-                                  color: Colors.amber[700],
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              Text(
-                                '${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  )
-                : Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ...form widgets di sini jika ada...
-                      ],
-                    ),
-                  ),
-          ),
+                    );
+                  },
+                ),
+              ),
+            const SizedBox(height: 16),
+            _buildDisplayField(
+              'Nama Pelanggan',
+              showField(_order.customerName),
+            ),
+            _buildDisplayField(
+              'Nomor Telepon',
+              showField(_order.customerContact),
+            ),
+            _buildDisplayField('Alamat', showField(_order.address)),
+            _buildDisplayField(
+              'Jenis Perhiasan',
+              showField(_order.jewelryType),
+            ),
+            _buildDisplayField('Warna Emas', showField(_order.goldColor)),
+            _buildDisplayField('Jenis Emas', showField(_order.goldType)),
+            _buildDisplayField('Jenis Batu', showField(_order.stoneType)),
+            _buildDisplayField('Ukuran Batu', showField(_order.stoneSize)),
+            _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
+            _buildDisplayField(
+              'Harga Barang / Perkiraan',
+              showDouble(_order.finalPrice),
+            ),
+            _buildDisplayField('Jumlah DP', showDouble(_order.dp)),
+            _buildDisplayField(
+              'Sisa harga untuk lunas',
+              showDouble(_order.sisaLunas),
+            ),
+            _buildDisplayField('Catatan Tambahan', showField(_order.notes)),
+            _buildDisplayField('Tanggal Siap', showDate(_order.readyDate)),
+            _buildDisplayField('Status', _order.workflowStatus.label),
+            // ...lanjutkan dengan checklist dan tombol aksi sesuai kebutuhan...
+          ],
+        ),
+      ),
     );
   }
 }

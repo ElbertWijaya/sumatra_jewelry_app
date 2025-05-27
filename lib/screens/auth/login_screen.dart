@@ -145,34 +145,60 @@ class _LoginScreenState extends State<LoginScreen> {
                       decoration: InputDecoration(
                         labelText: 'Username',
                         hintText: 'Masukkan username Anda',
-                        prefixIcon: const Icon(Icons.person, color: Colors.white70),
+                        prefixIcon: const Icon(
+                          Icons.person,
+                          color: Colors.white70,
+                        ),
                         labelStyle: const TextStyle(color: Colors.white70),
                         hintStyle: const TextStyle(color: Colors.white54),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.amber, width: 1.5),
+                          borderSide: const BorderSide(
+                            color: Colors.amber,
+                            width: 1.5,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.amberAccent, width: 2.5),
+                          borderSide: const BorderSide(
+                            color: Colors.amberAccent,
+                            width: 2.5,
+                          ),
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                          borderSide: const BorderSide(
+                            color: Colors.red,
+                            width: 1.5,
+                          ),
                         ),
                         focusedErrorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.redAccent, width: 2.5),
+                          borderSide: const BorderSide(
+                            color: Colors.redAccent,
+                            width: 2.5,
+                          ),
                         ),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.1),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 20,
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Username tidak boleh kosong';
                         }
+                        if (value.length < 4) {
+                          return 'Username minimal 4 karakter';
+                        }
                         return null;
+                      },
+                      onChanged: (_) {
+                        if (_errorMessage.isNotEmpty) {
+                          setState(() => _errorMessage = '');
+                        }
                       },
                     ),
                     const SizedBox(height: 20),
@@ -183,34 +209,60 @@ class _LoginScreenState extends State<LoginScreen> {
                       decoration: InputDecoration(
                         labelText: 'Password',
                         hintText: 'Masukkan password Anda',
-                        prefixIcon: const Icon(Icons.lock, color: Colors.white70),
+                        prefixIcon: const Icon(
+                          Icons.lock,
+                          color: Colors.white70,
+                        ),
                         labelStyle: const TextStyle(color: Colors.white70),
                         hintStyle: const TextStyle(color: Colors.white54),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.amber, width: 1.5),
+                          borderSide: const BorderSide(
+                            color: Colors.amber,
+                            width: 1.5,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.amberAccent, width: 2.5),
+                          borderSide: const BorderSide(
+                            color: Colors.amberAccent,
+                            width: 2.5,
+                          ),
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                          borderSide: const BorderSide(
+                            color: Colors.red,
+                            width: 1.5,
+                          ),
                         ),
                         focusedErrorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.redAccent, width: 2.5),
+                          borderSide: const BorderSide(
+                            color: Colors.redAccent,
+                            width: 2.5,
+                          ),
                         ),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.1),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 20,
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Password tidak boleh kosong';
                         }
+                        if (value.length < 6) {
+                          return 'Password minimal 6 karakter';
+                        }
                         return null;
+                      },
+                      onChanged: (_) {
+                        if (_errorMessage.isNotEmpty) {
+                          setState(() => _errorMessage = '');
+                        }
                       },
                     ),
                     const SizedBox(height: 30),
@@ -219,34 +271,25 @@ class _LoginScreenState extends State<LoginScreen> {
                         padding: const EdgeInsets.only(bottom: 20.0),
                         child: Text(
                           _errorMessage,
-                          style: const TextStyle(color: Colors.red, fontSize: 14),
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 14,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ),
                     SizedBox(
                       width: double.infinity,
                       height: 50,
-                      child: _isLoading
-                          ? const Center(child: CircularProgressIndicator(color: Colors.amber))
-                          : ElevatedButton(
-                              onPressed: _login,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.amber,
-                                foregroundColor: Colors.black87,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  side: const BorderSide(color: Colors.amberAccent, width: 2),
-                                ),
-                                elevation: 8,
-                              ),
-                              child: const Text(
-                                'Login',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _login,
+                        child:
+                            _isLoading
+                                ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                                : const Text('Login'),
+                      ),
                     ),
                     const SizedBox(height: 50),
                     Align(

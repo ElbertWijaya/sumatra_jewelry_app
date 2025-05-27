@@ -30,12 +30,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   List<String> selectedStoneTypes = [];
   double? priceMin;
   double? priceMax;
-  double getOrderProgress(Order order) {
-    final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
-    final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
-    if (idx < 0) return 0.0;
-    return idx / maxIdx;
-  }
   String? ringSize;
 
   // Random category display
@@ -71,7 +65,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
 
   final List<String> categories = ['Progress', 'Jenis', 'Harga'];
 
-  // Daftar pilihan filter
   final List<String> jewelryTypes = [
     "ring",
     "bangle",
@@ -96,7 +89,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     "Diamond",
   ];
 
-  // Warna untuk kategori dan filter sheet
   static const Color categoryActiveBgColor = Color(0xFFFAF5E0);
   static const Color categoryInactiveBgColor = Colors.white;
   static const Color categoryInactiveTextColor = Color(0xFF656359);
@@ -124,7 +116,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       _randomCategoryFilters = allOptions.take(5).toList();
       _isRandomCategoryActive = true;
       _selectedCategoryFilter = null;
-      // Reset juga filter sheet jika perlu
       selectedJewelryTypes.clear();
       selectedGoldColors.clear();
       selectedGoldTypes.clear();
@@ -145,7 +136,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       setState(() {
         _orders = fetchedOrders;
       });
-      _generateRandomCategoryFilters(); // Generate random categories on refresh
+      _generateRandomCategoryFilters();
     } catch (e) {
       setState(() {
         _errorMessage =
@@ -188,7 +179,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
             .where((order) => activeStatuses.contains(order.workflowStatus))
             .toList();
 
-    // Filter kategori (jika ada dipilih & bukan Progress/Jenis/Harga)
     if (_selectedCategoryFilter != null &&
         _selectedCategoryFilter!.isNotEmpty &&
         !_isDefaultCategory(_selectedCategoryFilter!)) {
@@ -200,7 +190,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
           }).toList();
     }
 
-    // Filter dari filter sheet (jika diisi)
     if (selectedJewelryTypes.isNotEmpty) {
       filtered =
           filtered.where((order) {
@@ -257,7 +246,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     }
 
     if (_selectedStatusFilter == null) {
-      // Tampilkan semua status aktif saja
+      // Semua status aktif
     } else if (_selectedStatusFilter == 'waiting') {
       filtered =
           filtered
@@ -670,7 +659,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                     ),
                   ),
                 ),
-                // Tombol Reset di pojok kanan atas
                 Positioned(
                   right: 0,
                   top: 0,
@@ -691,10 +679,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     );
   }
 
-  Future<void> handleOrderCompletionOrCancellation(Order order) async {
-    await _fetchOrders();
-  }
-
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
@@ -704,9 +688,15 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     }
   }
 
+  double getOrderProgress(Order order) {
+    final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
+    final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
+    if (idx < 0) return 0.0;
+    return idx / maxIdx;
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Siapkan data kategori yang ditampilkan
     List<String> categoryToShow;
     if (_isRandomCategoryActive) {
       categoryToShow = _randomCategoryFilters;
@@ -718,7 +708,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
         ...selectedStoneTypes,
         if (ringSize != null && ringSize!.isNotEmpty) 'Ring Size: $ringSize',
       ];
-      // Jika tidak memilih filter apapun, tetap kembalikan random
       if (categoryToShow.every((e) => e.isEmpty) || categoryToShow.isEmpty) {
         categoryToShow = _randomCategoryFilters;
         _isRandomCategoryActive = true;
@@ -995,7 +984,8 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                           ),
                                         ),
                                         subtitle: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text('Jenis: ${order.jewelryType}'),
                                             Text(
@@ -1021,51 +1011,76 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                                         : Colors.blue,
                                               ),
                                             ),
-                                            // Progress bar + persentase
-                                            if (order.workflowStatus != OrderWorkflowStatus.waiting_sales_check &&
-                                                order.workflowStatus != OrderWorkflowStatus.done &&
-                                                order.workflowStatus != OrderWorkflowStatus.cancelled)
+                                            if (order.workflowStatus !=
+                                                    OrderWorkflowStatus
+                                                        .waiting_sales_check &&
+                                                order.workflowStatus !=
+                                                    OrderWorkflowStatus.done &&
+                                                order.workflowStatus !=
+                                                    OrderWorkflowStatus
+                                                        .cancelled)
                                               Padding(
-                                                padding: const EdgeInsets.only(top: 6.0, bottom: 2.0),
+                                                padding: const EdgeInsets.only(
+                                                  top: 6.0,
+                                                  bottom: 2.0,
+                                                ),
                                                 child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
                                                   children: [
-                                                    // Tampilkan persentase di atas progress bar
                                                     Text(
                                                       '${(getOrderProgress(order) * 100).toStringAsFixed(0)}%',
                                                       style: const TextStyle(
                                                         fontSize: 12,
-                                                        fontWeight: FontWeight.bold,
+                                                        fontWeight:
+                                                            FontWeight.bold,
                                                         color: Colors.black87,
                                                       ),
                                                     ),
                                                     const SizedBox(height: 2),
                                                     LinearProgressIndicator(
-                                                      value: getOrderProgress(order),
+                                                      value: getOrderProgress(
+                                                        order,
+                                                      ),
                                                       minHeight: 6,
-                                                      backgroundColor: Colors.grey[200],
+                                                      backgroundColor:
+                                                          Colors.grey[200],
                                                       color: Colors.amber[700],
-                                                      borderRadius: BorderRadius.circular(8),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
                                                     ),
                                                   ],
                                                 ),
                                               ),
-                                            // Info On Monitoring
-                                            if (order.workflowStatus != OrderWorkflowStatus.waiting_sales_check &&
-                                                order.workflowStatus != OrderWorkflowStatus.done &&
-                                                order.workflowStatus != OrderWorkflowStatus.cancelled)
+                                            if (order.workflowStatus !=
+                                                    OrderWorkflowStatus
+                                                        .waiting_sales_check &&
+                                                order.workflowStatus !=
+                                                    OrderWorkflowStatus.done &&
+                                                order.workflowStatus !=
+                                                    OrderWorkflowStatus
+                                                        .cancelled)
                                               Padding(
-                                                padding: const EdgeInsets.only(top: 2.0),
+                                                padding: const EdgeInsets.only(
+                                                  top: 2.0,
+                                                ),
                                                 child: Row(
                                                   children: const [
-                                                    Icon(Icons.visibility, color: Colors.blue, size: 16),
+                                                    Icon(
+                                                      Icons.visibility,
+                                                      color: Colors.blue,
+                                                      size: 16,
+                                                    ),
                                                     SizedBox(width: 4),
                                                     Text(
                                                       'On Monitoring',
                                                       style: TextStyle(
                                                         color: Colors.blue,
                                                         fontSize: 12,
-                                                        fontWeight: FontWeight.w600,
+                                                        fontWeight:
+                                                            FontWeight.w600,
                                                       ),
                                                     ),
                                                   ],
@@ -1093,8 +1108,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                         },
                                       ),
                                     );
-
-
                                   },
                                 ),
                       ),
