@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/order_service.dart';
 import '../../models/order.dart';
+import '../../models/order_workflow.dart';
 
 class DesignerDetailScreen extends StatefulWidget {
   final Order order;
@@ -10,40 +11,6 @@ class DesignerDetailScreen extends StatefulWidget {
 
   @override
   State<DesignerDetailScreen> createState() => _DesignerDetailScreenState();
-}
-
-final List<OrderWorkflowStatus> fullWorkflowStatuses = [
-  OrderWorkflowStatus.waitingSalesCheck,
-  OrderWorkflowStatus.waitingDesigner,
-  OrderWorkflowStatus.pending,
-  OrderWorkflowStatus.designing,
-  OrderWorkflowStatus.waitingCasting,
-  OrderWorkflowStatus.readyForCasting,
-  OrderWorkflowStatus.casting,
-  OrderWorkflowStatus.waitingCarving,
-  OrderWorkflowStatus.readyForCarving,
-  OrderWorkflowStatus.carving,
-  OrderWorkflowStatus.waitingDiamondSetting,
-  OrderWorkflowStatus.readyForStoneSetting,
-  OrderWorkflowStatus.stoneSetting,
-  OrderWorkflowStatus.waitingFinishing,
-  OrderWorkflowStatus.readyForFinishing,
-  OrderWorkflowStatus.finishing,
-  OrderWorkflowStatus.waitingInventory,
-  OrderWorkflowStatus.readyForInventory,
-  OrderWorkflowStatus.inventory,
-  OrderWorkflowStatus.waitingSalesCompletion,
-  OrderWorkflowStatus.done,
-  OrderWorkflowStatus.cancelled,
-  OrderWorkflowStatus.unknown,
-  OrderWorkflowStatus.debut,
-];
-
-double getOrderProgress(Order order) {
-  final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
-  final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
-  if (idx < 0) return 0.0;
-  return idx / maxIdx;
 }
 
 class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
@@ -71,33 +38,42 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _order = widget.order;
-    _images = List<String>.from(_order.imagePaths ?? []);
-    _nameController = TextEditingController(text: _order.customerName);
-    _contactController = TextEditingController(text: _order.customerContact);
-    _addressController = TextEditingController(text: _order.address);
-    _stoneSizeController = TextEditingController(text: _order.stoneSize ?? "");
-    _ringSizeController = TextEditingController(text: _order.ringSize ?? "");
-    _notesController = TextEditingController(text: _order.notes ?? "");
-    _finalPriceController = TextEditingController(
-      text:
-          _order.finalPrice != null && _order.finalPrice != 0
-              ? _rupiahFormat.format(_order.finalPrice)
-              : '',
-    );
-    _dpController = TextEditingController(
-      text:
-          _order.dp != null && _order.dp != 0
-              ? _rupiahFormat.format(_order.dp)
-              : '',
-    );
-    _readyDate = _order.readyDate;
-    _dateController = TextEditingController(
-      text:
-          _readyDate == null
-              ? ""
-              : "${_readyDate!.day}/${_readyDate!.month}/${_readyDate!.year}",
-    );
+    _fetchOrder();
+  }
+
+  Future<void> _fetchOrder() async {
+    final latestOrder = await OrderService().getOrderById(widget.order.id);
+    if (latestOrder == null) return; // atau tampilkan error/snackbar
+    setState(() {
+      _order = latestOrder;
+      checkedTodos = List<String>.from(_order.designerWorkChecklist ?? []);
+      _images = List<String>.from(_order.imagePaths ?? []);
+      _nameController = TextEditingController(text: _order.customerName);
+      _contactController = TextEditingController(text: _order.customerContact);
+      _addressController = TextEditingController(text: _order.address);
+      _stoneSizeController = TextEditingController(text: _order.stoneSize ?? "");
+      _ringSizeController = TextEditingController(text: _order.ringSize ?? "");
+      _notesController = TextEditingController(text: _order.notes ?? "");
+      _finalPriceController = TextEditingController(
+        text:
+            _order.finalPrice != null && _order.finalPrice != 0
+                ? _rupiahFormat.format(_order.finalPrice)
+                : '',
+      );
+      _dpController = TextEditingController(
+        text:
+            _order.dp != null && _order.dp != 0
+                ? _rupiahFormat.format(_order.dp)
+                : '',
+      );
+      _readyDate = _order.readyDate;
+      _dateController = TextEditingController(
+        text:
+            _readyDate == null
+                ? ""
+                : "${_readyDate!.day}/${_readyDate!.month}/${_readyDate!.year}",
+      );
+    });
   }
 
   @override
@@ -138,50 +114,6 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
           Expanded(child: Text(value)),
         ],
       ),
-    );
-  }
-
-  // Dialog konfirmasi hapus dengan checkbox persetujuan
-  Future<bool?> _showDeleteConfirmationDialog() async {
-    bool isAgreed = false;
-    return showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder:
-              (context, setState) => AlertDialog(
-                title: const Text('Konfirmasi Hapus'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('Yakin ingin menghapus pesanan ini?'),
-                    const SizedBox(height: 12),
-                    CheckboxListTile(
-                      value: isAgreed,
-                      onChanged:
-                          (val) => setState(() => isAgreed = val ?? false),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      title: const Text('Saya setuju dengan ketentuan ini'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(dialogContext, false),
-                    child: const Text('Batal'),
-                  ),
-                  TextButton(
-                    onPressed:
-                        isAgreed
-                            ? () => Navigator.pop(dialogContext, true)
-                            : null,
-                    child: const Text('Hapus'),
-                  ),
-                ],
-              ),
-        );
-      },
     );
   }
 
@@ -226,6 +158,61 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
         );
       },
     );
+  }
+
+  bool _isProcessing = false;
+  final List<String> designerTodoList = [
+    'Designing',
+    '3D Printing',
+    'Pengecekan',
+  ];
+  List<String> checkedTodos = [];
+
+  Future<void> _saveChecklist() async {
+    // Simpan checklist ke database atau server
+    // Misal: await OrderService().updateOrderChecklist(_order.id, checkedTodos);
+  }
+
+  Future<void> _acceptOrder() async {
+    setState(() {
+      _isProcessing = true;
+    });
+    try {
+      final updatedOrder = _order.copyWith(
+        workflowStatus: OrderWorkflowStatus.designing,
+        updatedAt: DateTime.now(),
+      );
+      await OrderService().updateOrder(updatedOrder);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      // Handle error
+    } finally {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
+  }
+
+  Future<void> _submitToNext() async {
+    setState(() {
+      _isProcessing = true;
+    });
+    try {
+      final updatedOrder = _order.copyWith(
+        workflowStatus: OrderWorkflowStatus.waitingCasting,
+        updatedAt: DateTime.now(),
+      );
+      await OrderService().updateOrder(updatedOrder);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      // Handle error
+    } finally {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
   }
 
   @override
@@ -325,87 +312,94 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
                   ],
                 ),
               ),
-            if (_order.workflowStatus == OrderWorkflowStatus.waitingSalesCheck)
+            // Tombol terima pesanan (Waiting)
+            if (_order.workflowStatus == OrderWorkflowStatus.waitingDesigner)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: ElevatedButton(
+                  onPressed: _isProcessing ? null : _acceptOrder,
+                  child: const Text('Terima & Mulai Kerjakan Pesanan'),
+                ),
+              ),
+
+            // Checklist dan tombol submit (Working)
+            if (_order.workflowStatus == OrderWorkflowStatus.designing) ...[
+              Text(
+                'To Do Work',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              ...designerTodoList.map(
+                (task) => CheckboxListTile(
+                  title: Text(task),
+                  value: checkedTodos.contains(task),
+                  onChanged: (val) async {
+                    setState(() {
+                      if (val == true && !checkedTodos.contains(task)) {
+                        checkedTodos.add(task);
+                      } else if (val == false && checkedTodos.contains(task)) {
+                        checkedTodos.remove(task);
+                      }
+                    });
+                    // Simpan checklist ke backend secara real-time
+                    await OrderService().updateOrder(_order.copyWith(
+                      designerWorkChecklist: checkedTodos,
+                    ));
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: checkedTodos.length == designerTodoList.length && !_isProcessing
+                    ? _submitToNext
+                    : null,
+                child: const Text('Submit ke Casting'),
+              ),
+            ],
+
+            // Progress bar & persentase (On Progress)
+            if ({
+              OrderWorkflowStatus.waitingCasting,
+              OrderWorkflowStatus.casting,
+              OrderWorkflowStatus.waitingCarving,
+              OrderWorkflowStatus.carving,
+              OrderWorkflowStatus.waitingDiamondSetting,
+              OrderWorkflowStatus.stoneSetting,
+              OrderWorkflowStatus.waitingFinishing,
+              OrderWorkflowStatus.finishing,
+              OrderWorkflowStatus.waitingInventory,
+              OrderWorkflowStatus.inventory,
+              OrderWorkflowStatus.waitingSalesCompletion,
+            }.contains(_order.workflowStatus))
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.edit),
-                        label: const Text('Edit'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                        ),
-                        onPressed: () async {
-                          final result = await Navigator.of(
-                            context,
-                          ).pushNamed('/sales/edit', arguments: _order);
-                          if (!mounted) return;
-                          if (result == true) {
-                            Navigator.of(
-                              context,
-                            ).pop(true); // Refresh dashboard setelah edit
-                          }
-                        },
+                    const Text(
+                      'Progress Pesanan',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: LinearProgressIndicator(
+                        value: getOrderProgress(_order),
+                        minHeight: 8,
+                        backgroundColor: Colors.grey[200],
+                        color: Colors.amber[700],
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.delete),
-                        label: const Text('Hapus'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                        ),
-                        onPressed: () async {
-                          final confirm = await _showDeleteConfirmationDialog();
-                          if (!mounted) return;
-                          if (confirm == true) {
-                            await OrderService().deleteOrder(_order.id);
-                            if (!mounted) return;
-                            Navigator.of(context).pop(true);
-                          }
-                        },
+                    Text(
+                      '${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
                   ],
                 ),
               ),
-            if (_order.workflowStatus == OrderWorkflowStatus.waitingSalesCheck)
-              const SizedBox(height: 16),
-            if (_order.workflowStatus == OrderWorkflowStatus.waitingSalesCheck)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.send),
-                  label: const Text('Submit untuk Designer'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    textStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  onPressed: () async {
-                    final confirm = await _showSubmitConfirmationDialog();
-                    if (!mounted) return;
-                    if (confirm == true) {
-                      final updatedOrder = _order.copyWith(
-                        workflowStatus: OrderWorkflowStatus.waitingDesigner,
-                        updatedAt: DateTime.now(),
-                      );
-                      await OrderService().updateOrder(updatedOrder);
-                      if (!mounted) return;
-                      Navigator.of(context).pop(true);
-                    }
-                  },
-                ),
-              ),
+            // Tombol submit untuk carver sudah dihilangkan
           ],
         ),
       ),

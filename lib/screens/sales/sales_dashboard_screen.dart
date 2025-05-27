@@ -30,12 +30,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   List<String> selectedStoneTypes = [];
   double? priceMin;
   double? priceMax;
-  double getOrderProgress(Order order) {
-    final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
-    final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
-    if (idx < 0) return 0.0;
-    return idx / maxIdx;
-  }
   String? ringSize;
 
   // Random category display
@@ -43,31 +37,26 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   bool _isRandomCategoryActive = true;
 
   final List<OrderWorkflowStatus> waitingStatuses = [
-    OrderWorkflowStatus.waiting_sales_check,
-    OrderWorkflowStatus.waiting_sales_completion,
+    OrderWorkflowStatus.waitingSalesCheck,
+    OrderWorkflowStatus.waitingSalesCompletion,
   ];
 
   final List<OrderWorkflowStatus> activeStatuses = [
-    OrderWorkflowStatus.waiting_sales_check,
-    OrderWorkflowStatus.waiting_designer,
-    OrderWorkflowStatus.pending,
+    OrderWorkflowStatus.waitingSalesCheck,
+    OrderWorkflowStatus.waitingDesigner,
     OrderWorkflowStatus.designing,
-    OrderWorkflowStatus.waiting_casting,
-    OrderWorkflowStatus.readyForCasting,
+    OrderWorkflowStatus.waitingCasting,
     OrderWorkflowStatus.casting,
-    OrderWorkflowStatus.waiting_carving,
+    OrderWorkflowStatus.waitingCarving,
     OrderWorkflowStatus.readyForCarving,
     OrderWorkflowStatus.carving,
-    OrderWorkflowStatus.waiting_diamond_setting,
-    OrderWorkflowStatus.readyForStoneSetting,
+    OrderWorkflowStatus.waitingDiamondSetting,
     OrderWorkflowStatus.stoneSetting,
-    OrderWorkflowStatus.waiting_finishing,
-    OrderWorkflowStatus.readyForFinishing,
+    OrderWorkflowStatus.waitingFinishing,
     OrderWorkflowStatus.finishing,
-    OrderWorkflowStatus.waiting_inventory,
-    OrderWorkflowStatus.readyForInventory,
+    OrderWorkflowStatus.waitingInventory,
     OrderWorkflowStatus.inventory,
-    OrderWorkflowStatus.waiting_sales_completion,
+    OrderWorkflowStatus.waitingSalesCompletion,
   ];
 
   final List<String> categories = ['Progress', 'Jenis', 'Harga'];
@@ -1005,7 +994,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                                 color:
                                                     order.workflowStatus ==
                                                             OrderWorkflowStatus
-                                                                .waiting_sales_check
+                                                                .waitingSalesCheck
                                                         ? Colors.orange
                                                         : order.workflowStatus ==
                                                             OrderWorkflowStatus
@@ -1017,13 +1006,13 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                                         ? Colors.red
                                                         : order.workflowStatus ==
                                                             OrderWorkflowStatus
-                                                                .waiting_sales_completion
+                                                                .waitingSalesCompletion
                                                         ? Colors.orange
                                                         : Colors.blue,
                                               ),
                                             ),
                                             // Progress bar + persentase
-                                            if (order.workflowStatus != OrderWorkflowStatus.waiting_sales_check &&
+                                            if (order.workflowStatus != OrderWorkflowStatus.waitingSalesCheck &&
                                                 order.workflowStatus != OrderWorkflowStatus.done &&
                                                 order.workflowStatus != OrderWorkflowStatus.cancelled)
                                               Padding(
@@ -1052,7 +1041,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                                 ),
                                               ),
                                             // Info On Monitoring
-                                            if (order.workflowStatus != OrderWorkflowStatus.waiting_sales_check &&
+                                            if (order.workflowStatus != OrderWorkflowStatus.waitingSalesCheck &&
                                                 order.workflowStatus != OrderWorkflowStatus.done &&
                                                 order.workflowStatus != OrderWorkflowStatus.cancelled)
                                               Padding(

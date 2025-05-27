@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/order_service.dart';
 import '../../models/order.dart';
+import '../../models/order_workflow.dart';
 
 class SalesDetailScreen extends StatefulWidget {
   final Order order;
@@ -10,40 +11,6 @@ class SalesDetailScreen extends StatefulWidget {
 
   @override
   State<SalesDetailScreen> createState() => _SalesDetailScreenState();
-}
-
-final List<OrderWorkflowStatus> fullWorkflowStatuses = [
-  OrderWorkflowStatus.waitingSalesCheck,
-  OrderWorkflowStatus.waitingDesigner,
-  OrderWorkflowStatus.pending,
-  OrderWorkflowStatus.designing,
-  OrderWorkflowStatus.waitingCasting,
-  OrderWorkflowStatus.readyForCasting,
-  OrderWorkflowStatus.casting,
-  OrderWorkflowStatus.waitingCarving,
-  OrderWorkflowStatus.readyForCarving,
-  OrderWorkflowStatus.carving,
-  OrderWorkflowStatus.waitingDiamondSetting,
-  OrderWorkflowStatus.readyForStoneSetting,
-  OrderWorkflowStatus.stoneSetting,
-  OrderWorkflowStatus.waitingFinishing,
-  OrderWorkflowStatus.readyForFinishing,
-  OrderWorkflowStatus.finishing,
-  OrderWorkflowStatus.waitingInventory,
-  OrderWorkflowStatus.readyForInventory,
-  OrderWorkflowStatus.inventory,
-  OrderWorkflowStatus.waitingSalesCompletion,
-  OrderWorkflowStatus.done,
-  OrderWorkflowStatus.cancelled,
-  OrderWorkflowStatus.unknown,
-  OrderWorkflowStatus.debut,
-];
-
-double getOrderProgress(Order order) {
-  final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
-  final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
-  if (idx < 0) return 0.0;
-  return idx / maxIdx;
 }
 
 class _SalesDetailScreenState extends State<SalesDetailScreen> {
@@ -405,6 +372,14 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                     }
                   },
                 ),
+              ),
+            if (_order.designerWorkChecklist != null && _order.designerWorkChecklist!.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Checklist Designer:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ..._order.designerWorkChecklist!.map((item) => Text('• $item')),
+                ],
               ),
           ],
         ),
