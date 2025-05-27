@@ -857,29 +857,181 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                               child: SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: Row(
-                                  children: List.generate(
-                                    categoryToShow.length,
-                                    (index) {
-                                      final cat = categoryToShow[index];
-                                      final isSelected = false;
+                                  children: () {
+                                    // Gabungkan filter terpilih dan random, urutkan terpilih di kiri
+                                    final selectedFilters =
+                                        [
+                                          ...selectedJewelryTypes,
+                                          ...selectedGoldColors,
+                                          ...selectedGoldTypes,
+                                          ...selectedStoneTypes,
+                                          if (ringSize != null &&
+                                              ringSize!.isNotEmpty)
+                                            'Ring Size: $ringSize',
+                                          if (priceMin != null)
+                                            'Min: ${priceMin!.toStringAsFixed(0)}',
+                                          if (priceMax != null)
+                                            'Max: ${priceMax!.toStringAsFixed(0)}',
+                                        ].where((e) => e.isNotEmpty).toList();
+
+                                    final List<String> sortedCategoryToShow = [
+                                      ...selectedFilters,
+                                      ..._randomCategoryFilters.where(
+                                        (e) => !selectedFilters.contains(e),
+                                      ),
+                                    ];
+
+                                    return sortedCategoryToShow.map((cat) {
+                                      final isSelected =
+                                          selectedJewelryTypes.contains(cat) ||
+                                          selectedGoldColors.contains(cat) ||
+                                          selectedGoldTypes.contains(cat) ||
+                                          selectedStoneTypes.contains(cat) ||
+                                          (cat.startsWith('Ring Size:') &&
+                                              ringSize != null &&
+                                              cat == 'Ring Size: $ringSize') ||
+                                          (cat.startsWith('Min:') &&
+                                              priceMin != null &&
+                                              cat ==
+                                                  'Min: ${priceMin!.toStringAsFixed(0)}') ||
+                                          (cat.startsWith('Max:') &&
+                                              priceMax != null &&
+                                              cat ==
+                                                  'Max: ${priceMax!.toStringAsFixed(0)}');
                                       return Padding(
                                         padding: const EdgeInsets.only(
                                           right: 4.0,
                                         ),
-                                        child: ChoiceChip(
+                                        child: InputChip(
                                           label: Text(
                                             cat,
                                             style: TextStyle(
-                                              color: categoryInactiveTextColor,
+                                              color:
+                                                  isSelected
+                                                      ? Colors.white
+                                                      : categoryInactiveTextColor,
                                             ),
                                           ),
                                           selected: isSelected,
-                                          onSelected: (_) {},
+                                          showCheckmark: false,
+                                          onSelected: (selected) {
+                                            setState(() {
+                                              if (selected) {
+                                                if (jewelryTypes.contains(
+                                                  cat,
+                                                )) {
+                                                  if (!selectedJewelryTypes
+                                                      .contains(cat)) {
+                                                    selectedJewelryTypes.add(
+                                                      cat,
+                                                    );
+                                                  }
+                                                } else if (goldColors.contains(
+                                                  cat,
+                                                )) {
+                                                  if (!selectedGoldColors
+                                                      .contains(cat)) {
+                                                    selectedGoldColors.add(cat);
+                                                  }
+                                                } else if (goldTypes.contains(
+                                                  cat,
+                                                )) {
+                                                  if (!selectedGoldTypes
+                                                      .contains(cat)) {
+                                                    selectedGoldTypes.add(cat);
+                                                  }
+                                                } else if (stoneTypes.contains(
+                                                  cat,
+                                                )) {
+                                                  if (!selectedStoneTypes
+                                                      .contains(cat)) {
+                                                    selectedStoneTypes.add(cat);
+                                                  }
+                                                } else if (cat.startsWith(
+                                                  'Ring Size:',
+                                                )) {
+                                                  final size =
+                                                      cat
+                                                          .split(':')
+                                                          .last
+                                                          .trim();
+                                                  ringSize = size;
+                                                } else if (cat.startsWith(
+                                                  'Min:',
+                                                )) {
+                                                  // Sudah terpilih
+                                                } else if (cat.startsWith(
+                                                  'Max:',
+                                                )) {
+                                                  // Sudah terpilih
+                                                }
+                                                _isRandomCategoryActive = false;
+                                              }
+                                            });
+                                          },
+                                          onDeleted:
+                                              isSelected
+                                                  ? () {
+                                                    setState(() {
+                                                      if (jewelryTypes.contains(
+                                                        cat,
+                                                      )) {
+                                                        selectedJewelryTypes
+                                                            .remove(cat);
+                                                      } else if (goldColors
+                                                          .contains(cat)) {
+                                                        selectedGoldColors
+                                                            .remove(cat);
+                                                      } else if (goldTypes
+                                                          .contains(cat)) {
+                                                        selectedGoldTypes
+                                                            .remove(cat);
+                                                      } else if (stoneTypes
+                                                          .contains(cat)) {
+                                                        selectedStoneTypes
+                                                            .remove(cat);
+                                                      } else if (cat.startsWith(
+                                                        'Ring Size:',
+                                                      )) {
+                                                        ringSize = null;
+                                                      } else if (cat.startsWith(
+                                                        'Min:',
+                                                      )) {
+                                                        priceMin = null;
+                                                      } else if (cat.startsWith(
+                                                        'Max:',
+                                                      )) {
+                                                        priceMax = null;
+                                                      }
+                                                      if (selectedJewelryTypes
+                                                              .isEmpty &&
+                                                          selectedGoldColors
+                                                              .isEmpty &&
+                                                          selectedGoldTypes
+                                                              .isEmpty &&
+                                                          selectedStoneTypes
+                                                              .isEmpty &&
+                                                          (ringSize == null ||
+                                                              ringSize!
+                                                                  .isEmpty) &&
+                                                          priceMin == null &&
+                                                          priceMax == null) {
+                                                        _isRandomCategoryActive =
+                                                            true;
+                                                      }
+                                                    });
+                                                  }
+                                                  : null,
                                           backgroundColor:
-                                              categoryInactiveBgColor,
+                                              isSelected
+                                                  ? categoryActiveBgColor
+                                                  : categoryInactiveBgColor,
                                           selectedColor: categoryActiveBgColor,
                                           labelStyle: TextStyle(
-                                            color: categoryInactiveTextColor,
+                                            color:
+                                                isSelected
+                                                    ? Colors.white
+                                                    : categoryInactiveTextColor,
                                           ),
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(
@@ -887,12 +1039,23 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                             ),
                                           ),
                                           side: BorderSide(
-                                            color: categoryInactiveBgColor,
+                                            color:
+                                                isSelected
+                                                    ? Colors.amber
+                                                    : categoryInactiveBgColor,
                                           ),
+                                          deleteIcon:
+                                              isSelected
+                                                  ? const Icon(
+                                                    Icons.close,
+                                                    size: 16,
+                                                    color: Colors.white,
+                                                  )
+                                                  : null,
                                         ),
                                       );
-                                    },
-                                  ),
+                                    }).toList();
+                                  }(),
                                 ),
                               ),
                             ),

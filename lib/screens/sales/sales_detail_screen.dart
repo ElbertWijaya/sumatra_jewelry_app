@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../services/order_service.dart';
 import '../../models/order.dart';
 
 class SalesDetailScreen extends StatefulWidget {
@@ -9,6 +10,40 @@ class SalesDetailScreen extends StatefulWidget {
 
   @override
   State<SalesDetailScreen> createState() => _SalesDetailScreenState();
+}
+
+final List<OrderWorkflowStatus> fullWorkflowStatuses = [
+  OrderWorkflowStatus.waitingSalesCheck,
+  OrderWorkflowStatus.waitingDesigner,
+  OrderWorkflowStatus.pending,
+  OrderWorkflowStatus.designing,
+  OrderWorkflowStatus.waitingCasting,
+  OrderWorkflowStatus.readyForCasting,
+  OrderWorkflowStatus.casting,
+  OrderWorkflowStatus.waitingCarving,
+  OrderWorkflowStatus.readyForCarving,
+  OrderWorkflowStatus.carving,
+  OrderWorkflowStatus.waitingDiamondSetting,
+  OrderWorkflowStatus.readyForStoneSetting,
+  OrderWorkflowStatus.stoneSetting,
+  OrderWorkflowStatus.waitingFinishing,
+  OrderWorkflowStatus.readyForFinishing,
+  OrderWorkflowStatus.finishing,
+  OrderWorkflowStatus.waitingInventory,
+  OrderWorkflowStatus.readyForInventory,
+  OrderWorkflowStatus.inventory,
+  OrderWorkflowStatus.waitingSalesCompletion,
+  OrderWorkflowStatus.done,
+  OrderWorkflowStatus.cancelled,
+  OrderWorkflowStatus.unknown,
+  OrderWorkflowStatus.debut,
+];
+
+double getOrderProgress(Order order) {
+  final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
+  final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
+  if (idx < 0) return 0.0;
+  return idx / maxIdx;
 }
 
 class _SalesDetailScreenState extends State<SalesDetailScreen> {
@@ -106,6 +141,93 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
     );
   }
 
+  // Dialog konfirmasi hapus dengan checkbox persetujuan
+  Future<bool?> _showDeleteConfirmationDialog() async {
+    bool isAgreed = false;
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder:
+              (context, setState) => AlertDialog(
+                title: const Text('Konfirmasi Hapus'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Yakin ingin menghapus pesanan ini?'),
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
+                      value: isAgreed,
+                      onChanged:
+                          (val) => setState(() => isAgreed = val ?? false),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: const Text('Saya setuju dengan ketentuan ini'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext, false),
+                    child: const Text('Batal'),
+                  ),
+                  TextButton(
+                    onPressed:
+                        isAgreed
+                            ? () => Navigator.pop(dialogContext, true)
+                            : null,
+                    child: const Text('Hapus'),
+                  ),
+                ],
+              ),
+        );
+      },
+    );
+  }
+
+  // Dialog konfirmasi submit dengan checkbox persetujuan
+  Future<bool?> _showSubmitConfirmationDialog() async {
+    bool isAgreed = false;
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder:
+              (context, setState) => AlertDialog(
+                title: const Text('Konfirmasi Submit'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Yakin ingin submit pesanan ke Designer? Setelah submit, data tidak bisa diedit lagi.',
+                    ),
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
+                      value: isAgreed,
+                      onChanged:
+                          (val) => setState(() => isAgreed = val ?? false),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: const Text('Saya setuju dengan ketentuan ini'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('Batal'),
+                  ),
+                  TextButton(
+                    onPressed: isAgreed ? () => Navigator.pop(ctx, true) : null,
+                    child: const Text('Submit'),
+                  ),
+                ],
+              ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -179,7 +301,111 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
             _buildDisplayField('Catatan Tambahan', showField(_order.notes)),
             _buildDisplayField('Tanggal Siap', showDate(_order.readyDate)),
             _buildDisplayField('Status', _order.workflowStatus.label),
-            // ...lanjutkan dengan checklist dan tombol aksi sesuai kebutuhan...
+            if (_order.workflowStatus != OrderWorkflowStatus.done &&
+                _order.workflowStatus != OrderWorkflowStatus.cancelled)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    LinearProgressIndicator(
+                      value: getOrderProgress(_order),
+                      minHeight: 10,
+                      backgroundColor: Colors.grey[300],
+                      color: Colors.blue,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Progress: ${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (_order.workflowStatus == OrderWorkflowStatus.waitingSalesCheck)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.edit),
+                        label: const Text('Edit'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () async {
+                          final result = await Navigator.of(
+                            context,
+                          ).pushNamed('/sales/edit', arguments: _order);
+                          if (!mounted) return;
+                          if (result == true) {
+                            Navigator.of(
+                              context,
+                            ).pop(true); // Refresh dashboard setelah edit
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.delete),
+                        label: const Text('Hapus'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () async {
+                          final confirm = await _showDeleteConfirmationDialog();
+                          if (!mounted) return;
+                          if (confirm == true) {
+                            await OrderService().deleteOrder(_order.id);
+                            if (!mounted) return;
+                            Navigator.of(context).pop(true);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (_order.workflowStatus == OrderWorkflowStatus.waitingSalesCheck)
+              const SizedBox(height: 16),
+            if (_order.workflowStatus == OrderWorkflowStatus.waitingSalesCheck)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.send),
+                  label: const Text('Submit untuk Designer'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  onPressed: () async {
+                    final confirm = await _showSubmitConfirmationDialog();
+                    if (!mounted) return;
+                    if (confirm == true) {
+                      final updatedOrder = _order.copyWith(
+                        workflowStatus: OrderWorkflowStatus.waitingDesigner,
+                        updatedAt: DateTime.now(),
+                      );
+                      await OrderService().updateOrder(updatedOrder);
+                      if (!mounted) return;
+                      Navigator.of(context).pop(true);
+                    }
+                  },
+                ),
+              ),
           ],
         ),
       ),

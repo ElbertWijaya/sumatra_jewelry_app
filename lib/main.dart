@@ -27,6 +27,7 @@ class MyApp extends StatelessWidget {
       home: const SplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
+        '/sales/edit': (context) => const SalesCreateScreen(),
         '/sales/dashboard': (context) => const SalesDashboardScreen(),
         '/sales/create': (context) => const SalesCreateScreen(),
         '/boss/dashboard': (context) => const BossDashboardScreen(),
@@ -34,7 +35,8 @@ class MyApp extends StatelessWidget {
         '/designer/dashboard': (context) => const DesignerDashboardScreen(),
         '/cor/dashboard': (context) => const CorDashboardScreen(),
         '/carver/dashboard': (context) => const CarverDashboardScreen(),
-        '/diamond_setter/dashboard': (context) => const DiamondSetterDashboardScreen(),
+        '/diamond_setter/dashboard':
+            (context) => const DiamondSetterDashboardScreen(),
         '/inventory/dashboard': (context) => const InventoryDashboardScreen(),
       },
     );

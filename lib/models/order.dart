@@ -31,46 +31,46 @@ enum OrderWorkflowStatus {
 /// Extension parsing OrderWorkflowStatus dari string dan label
 extension OrderWorkflowStatusX on OrderWorkflowStatus {
   static OrderWorkflowStatus fromString(String? status) {
-    switch ((status ?? '').toLowerCase()) {
-      case 'waitingSalesCheck':
+    switch ((status ?? '').replaceAll('_', '').toLowerCase()) {
+      case 'waitingsalescheck':
         return OrderWorkflowStatus.waitingSalesCheck;
-      case 'waitingDesigner':
+      case 'waitingdesigner':
         return OrderWorkflowStatus.waitingDesigner;
       case 'pending':
         return OrderWorkflowStatus.pending;
       case 'designing':
         return OrderWorkflowStatus.designing;
-      case 'waitingCasting':
+      case 'waitingcasting':
         return OrderWorkflowStatus.waitingCasting;
       case 'readyforcasting':
         return OrderWorkflowStatus.readyForCasting;
       case 'casting':
         return OrderWorkflowStatus.casting;
-      case 'waitingCarving':
+      case 'waitingcarving':
         return OrderWorkflowStatus.waitingCarving;
       case 'readyforcarving':
         return OrderWorkflowStatus.readyForCarving;
       case 'carving':
         return OrderWorkflowStatus.carving;
-      case 'waitingDiamondSetting':
+      case 'waitingdiamondsetting':
         return OrderWorkflowStatus.waitingDiamondSetting;
       case 'readyforstonesetting':
         return OrderWorkflowStatus.readyForStoneSetting;
       case 'stonesetting':
         return OrderWorkflowStatus.stoneSetting;
-      case 'waitingFinishing':
+      case 'waitingfinishing':
         return OrderWorkflowStatus.waitingFinishing;
       case 'readyforfinishing':
         return OrderWorkflowStatus.readyForFinishing;
       case 'finishing':
         return OrderWorkflowStatus.finishing;
-      case 'waitingInventory':
+      case 'waitinginventory':
         return OrderWorkflowStatus.waitingInventory;
       case 'readyforinventory':
         return OrderWorkflowStatus.readyForInventory;
       case 'inventory':
         return OrderWorkflowStatus.inventory;
-      case 'waitingSalesCompletion':
+      case 'waitingsalescompletion':
         return OrderWorkflowStatus.waitingSalesCompletion;
       case 'done':
         return OrderWorkflowStatus.done;

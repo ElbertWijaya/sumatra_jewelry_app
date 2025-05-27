@@ -34,7 +34,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
   String? _goldType;
   String? _stoneType;
   DateTime? _readyDate;
-  List<String> _images = [];
+  final List<String> _images = [];
   bool _isSaving = false;
 
   double get _hargaBarang {
@@ -59,16 +59,16 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
   }
 
   final List<String> jewelryTypes = [
-    "ring",
-    "bangle",
-    "earring",
-    "pendant",
-    "hairpin",
-    "pin",
-    "men ring",
-    "women ring",
-    "engagement ring",
-    "custom",
+    "Ring",
+    "Bangle",
+    "Earring",
+    "Pendant",
+    "Hairpin",
+    "Pin",
+    "Men ring",
+    "Women ring",
+    "Engagement ring",
+    "Custom",
   ];
   final List<String> goldColors = ["White Gold", "Rose Gold", "Yellow Gold"];
   final List<String> goldTypes = ["19K", "18K", "14K", "9K"];

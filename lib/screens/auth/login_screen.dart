@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     final username = _usernameController.text.trim();
-    final password = _passwordController.text.trim();
+    // final password = _passwordController.text.trim(); // Hapus jika tidak digunakan
 
     await Future.delayed(const Duration(seconds: 1));
 
@@ -94,6 +94,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     await _setLoginStatus(true, role: role);
 
+    if (!mounted) return; // Perbaikan use_build_context_synchronously
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => nextScreen!),
@@ -122,7 +124,9 @@ class _LoginScreenState extends State<LoginScreen> {
               'assets/images/toko_sumatra.jpg',
               fit: BoxFit.cover,
               colorBlendMode: BlendMode.darken,
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.black.withAlpha(
+                (255 * 0.4).toInt(),
+              ), // Ganti withOpacity
             ),
           ),
           Center(
@@ -180,7 +184,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         filled: true,
-                        fillColor: Colors.white.withOpacity(0.1),
+                        fillColor: Colors.white.withAlpha(
+                          (255 * 0.1).toInt(),
+                        ), // Ganti withOpacity
                         contentPadding: const EdgeInsets.symmetric(
                           vertical: 16,
                           horizontal: 20,
@@ -244,7 +250,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         filled: true,
-                        fillColor: Colors.white.withOpacity(0.1),
+                        fillColor: Colors.white.withAlpha(
+                          (255 * 0.1).toInt(),
+                        ), // Ganti withOpacity
                         contentPadding: const EdgeInsets.symmetric(
                           vertical: 16,
                           horizontal: 20,
@@ -297,7 +305,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Text(
                         'Made by Elbert Wijaya',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withAlpha(
+                            (255 * 0.7).toInt(),
+                          ), // Ganti withOpacity
                           fontSize: 14,
                         ),
                       ),

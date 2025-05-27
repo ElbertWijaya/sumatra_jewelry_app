@@ -132,6 +132,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final order = ModalRoute.of(context)?.settings.arguments as Order?;
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Pesanan')),
       body:
