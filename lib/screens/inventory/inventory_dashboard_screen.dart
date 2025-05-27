@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
@@ -14,18 +15,100 @@ class InventoryDashboardScreen extends StatefulWidget {
       _InventoryDashboardScreenState();
 }
 
-class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
+class _InventoryDashboardScreenState
+    extends State<InventoryDashboardScreen> {
   final OrderService _orderService = OrderService();
   List<Order> _orders = [];
   bool _isLoading = true;
   String _errorMessage = '';
   String _searchQuery = '';
-  List<OrderWorkflowStatus>? _selectedStatusFilter;
+  Object? _selectedStatusFilter = 'waiting';
+
+  // Untuk filter sheet
+  List<String> selectedJewelryTypes = [];
+  List<String> selectedGoldColors = [];
+  List<String> selectedGoldTypes = [];
+  List<String> selectedStoneTypes = [];
+  double? priceMin;
+  double? priceMax;
+  String? ringSize;
+
+  // Random category display
+  List<String> _randomCategoryFilters = [];
+  bool _isRandomCategoryActive = true;
+
+  // Statuses
+  final List<OrderWorkflowStatus> waitingStatuses = [
+    OrderWorkflowStatus.waitingInventory,
+  ];
+
+  final List<OrderWorkflowStatus> workingStatuses = [
+    OrderWorkflowStatus.inventory,
+  ];
+
+  final List<OrderWorkflowStatus> onProgressStatuses = [
+    OrderWorkflowStatus.waitingSalesCompletion,
+  ];
+
+  // Daftar pilihan filter
+  final List<String> jewelryTypes = [
+    "ring",
+    "bangle",
+    "earring",
+    "pendant",
+    "hairpin",
+    "pin",
+    "men ring",
+    "women ring",
+    "engagement ring",
+    "custom",
+  ];
+  final List<String> goldColors = ["White Gold", "Rose Gold", "Yellow Gold"];
+  final List<String> goldTypes = ["19K", "18K", "14K", "9K"];
+  final List<String> stoneTypes = [
+    "Opal",
+    "Sapphire",
+    "Jade",
+    "Emerald",
+    "Ruby",
+    "Amethyst",
+    "Diamond",
+  ];
+
+  static const Color categoryActiveBgColor = Color(0xFFFAF5E0);
+  static const Color categoryInactiveBgColor = Colors.white;
+  static const Color categoryInactiveTextColor = Color(0xFF656359);
 
   @override
   void initState() {
     super.initState();
     _fetchOrders();
+  }
+
+  void _generateRandomCategoryFilters() {
+    final allOptions = [
+      ...jewelryTypes,
+      ...goldColors,
+      ...goldTypes,
+      ...stoneTypes,
+      'Ring Size: 13',
+      'Ring Size: 10',
+      'Ring Size: 12',
+      'Ring Size: 7',
+      'Ring Size: 5',
+    ];
+    allOptions.shuffle(Random());
+    setState(() {
+      _randomCategoryFilters = allOptions.take(5).toList();
+      _isRandomCategoryActive = true;
+      selectedJewelryTypes.clear();
+      selectedGoldColors.clear();
+      selectedGoldTypes.clear();
+      selectedStoneTypes.clear();
+      priceMin = null;
+      priceMax = null;
+      ringSize = null;
+    });
   }
 
   Future<void> _fetchOrders() async {
@@ -38,6 +121,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
       setState(() {
         _orders = fetchedOrders;
       });
+      _generateRandomCategoryFilters();
     } catch (e) {
       setState(() {
         _errorMessage =
@@ -50,66 +134,209 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     }
   }
 
+  String orderFullText(Order order) {
+    return [
+      order.customerName,
+      order.customerContact,
+      order.address,
+      order.jewelryType,
+      order.stoneType ?? '',
+      order.stoneSize ?? '',
+      order.ringSize ?? '',
+      order.readyDate?.toIso8601String() ?? '',
+      order.pickupDate?.toIso8601String() ?? '',
+      order.goldPricePerGram?.toString() ?? '',
+      order.finalPrice?.toString() ?? '',
+      order.notes ?? '',
+      order.workflowStatus.label,
+      order.assignedDesigner ?? '',
+      order.assignedCaster ?? '',
+      order.assignedCarver ?? '',
+      order.assignedDiamondSetter ?? '',
+      order.assignedFinisher ?? '',
+      order.assignedInventory ?? '',
+    ].join(' ').toLowerCase();
+  }
+
   List<Order> get _filteredOrders {
-    List<Order> filtered = _orders;
-    if (_selectedStatusFilter != null && _selectedStatusFilter!.isNotEmpty) {
+    List<Order> filtered =
+        _orders
+            .where(
+              (order) =>
+                  waitingStatuses.contains(order.workflowStatus) ||
+                  workingStatuses.contains(order.workflowStatus) ||
+                  onProgressStatuses.contains(order.workflowStatus),
+            )
+            .toList();
+
+    // Filter kategori (random/category)
+    String? selectedCategory;
+    if (_isRandomCategoryActive && _randomCategoryFilters.isNotEmpty) {
+      selectedCategory = null;
+    } else {
+      final cat =
+          [
+            ...selectedJewelryTypes,
+            ...selectedGoldColors,
+            ...selectedGoldTypes,
+            ...selectedStoneTypes,
+            if (ringSize != null && ringSize!.isNotEmpty)
+              'Ring Size: $ringSize',
+          ].where((e) => e.isNotEmpty).toList();
+      if (cat.isNotEmpty) {
+        selectedCategory = cat.first;
+      }
+    }
+    if (selectedCategory != null && selectedCategory.isNotEmpty) {
+      filtered =
+          filtered
+              .where(
+                (order) => orderFullText(
+                  order,
+                ).contains(selectedCategory!.toLowerCase()),
+              )
+              .toList();
+    }
+
+    // Filter dari filter sheet (jika diisi)
+    if (selectedJewelryTypes.isNotEmpty) {
+      filtered =
+          filtered
+              .where(
+                (order) => selectedJewelryTypes.any(
+                  (t) => (order.jewelryType.toLowerCase()).contains(
+                    t.toLowerCase(),
+                  ),
+                ),
+              )
+              .toList();
+    }
+    if (selectedGoldColors.isNotEmpty) {
+      filtered =
+          filtered.where((order) {
+            final info = orderFullText(order);
+            return selectedGoldColors.any(
+              (gold) => info.contains(gold.toLowerCase()),
+            );
+          }).toList();
+    }
+    if (selectedGoldTypes.isNotEmpty) {
+      filtered =
+          filtered.where((order) {
+            final info = orderFullText(order);
+            return selectedGoldTypes.any((t) => info.contains(t.toLowerCase()));
+          }).toList();
+    }
+    if (selectedStoneTypes.isNotEmpty) {
+      filtered =
+          filtered.where((order) {
+            final stones = (order.stoneType ?? '').toLowerCase();
+            return selectedStoneTypes.any(
+              (stone) => stones.contains(stone.toLowerCase()),
+            );
+          }).toList();
+    }
+    if (priceMin != null) {
+      filtered =
+          filtered
+              .where((order) => (order.finalPrice ?? 0) >= priceMin!)
+              .toList();
+    }
+    if (priceMax != null) {
+      filtered =
+          filtered
+              .where((order) => (order.finalPrice ?? 0) <= priceMax!)
+              .toList();
+    }
+    if (ringSize != null && ringSize!.isNotEmpty) {
+      filtered =
+          filtered
+              .where(
+                (order) => (order.ringSize ?? '').toLowerCase().contains(
+                  ringSize!.toLowerCase(),
+                ),
+              )
+              .toList();
+    }
+
+    // Tab status filter
+    if (_selectedStatusFilter == 'waiting') {
+      filtered =
+          filtered
+              .where((order) => waitingStatuses.contains(order.workflowStatus))
+              .toList();
+    } else if (_selectedStatusFilter == 'working') {
+      filtered =
+          filtered
+              .where((order) => workingStatuses.contains(order.workflowStatus))
+              .toList();
+    } else if (_selectedStatusFilter == 'onprogress') {
+      filtered =
+          filtered
+              .where(
+                (order) => onProgressStatuses.contains(order.workflowStatus),
+              )
+              .toList();
+    }
+
+    // Search
+    if (_searchQuery.isNotEmpty) {
       filtered =
           filtered
               .where(
                 (order) =>
-                    _selectedStatusFilter!.contains(order.workflowStatus),
+                    orderFullText(order).contains(_searchQuery.toLowerCase()),
               )
               .toList();
     }
-    if (_searchQuery.isNotEmpty) {
-      filtered =
-          filtered.where((order) {
-            final query = _searchQuery.toLowerCase();
-            return order.customerName.toLowerCase().contains(query) ||
-                order.jewelryType.toLowerCase().contains(query) ||
-                order.workflowStatus.label.toLowerCase().contains(query);
-          }).toList();
-    }
+
     return filtered;
   }
 
   Widget _buildStatusFilterButton(
     String label,
-    List<OrderWorkflowStatus> filterStatuses,
+    String filterValue,
     Color color,
   ) {
-    int count =
-        filterStatuses.isEmpty
-            ? _orders.length
-            : _orders
-                .where((order) => filterStatuses.contains(order.workflowStatus))
-                .length;
-    final isSelected =
-        _selectedStatusFilter == filterStatuses ||
-        (_selectedStatusFilter != null &&
-            _selectedStatusFilter!.length == filterStatuses.length &&
-            _selectedStatusFilter!.every(
-              (element) => filterStatuses.contains(element),
-            ));
+    int count = 0;
+    if (filterValue == 'waiting') {
+      count =
+          _orders
+              .where((order) => waitingStatuses.contains(order.workflowStatus))
+              .length;
+    } else if (filterValue == 'working') {
+      count =
+          _orders
+              .where((order) => workingStatuses.contains(order.workflowStatus))
+              .length;
+    } else if (filterValue == 'onprogress') {
+      count =
+          _orders
+              .where(
+                (order) => onProgressStatuses.contains(order.workflowStatus),
+              )
+              .length;
+    }
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4.0),
         child: InkWell(
           onTap: () {
             setState(() {
-              _selectedStatusFilter = filterStatuses;
+              _selectedStatusFilter = filterValue;
             });
           },
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
             decoration: BoxDecoration(
               color:
-                  isSelected
-                      ? color.withAlpha((255 * 0.8).round())
+                  _selectedStatusFilter == filterValue
+                      ? color.withOpacity(0.8)
                       : Colors.grey[200],
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: isSelected ? color : Colors.grey,
+                color:
+                    _selectedStatusFilter == filterValue ? color : Colors.grey,
                 width: 1.5,
               ),
             ),
@@ -120,20 +347,29 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: isSelected ? Colors.white : Colors.black87,
+                    color:
+                        _selectedStatusFilter == filterValue
+                            ? Colors.white
+                            : Colors.black87,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.white : color,
+                    color:
+                        _selectedStatusFilter == filterValue
+                            ? Colors.white
+                            : color,
                     shape: BoxShape.circle,
                   ),
                   child: Text(
                     '$count',
                     style: TextStyle(
-                      color: isSelected ? color : Colors.white,
+                      color:
+                          _selectedStatusFilter == filterValue
+                              ? color
+                              : Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -147,6 +383,310 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     );
   }
 
+  void _resetCategoryFilter() {
+    setState(() {
+      _generateRandomCategoryFilters();
+    });
+  }
+
+  void _openFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Stack(
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 24,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Jenis Perhiasan
+                        Text(
+                          "Jenis Perhiasan",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Wrap(
+                          spacing: 8,
+                          children:
+                              jewelryTypes
+                                  .map(
+                                    (type) => FilterChip(
+                                      label: Text(
+                                        type,
+                                        style: const TextStyle(
+                                          color: categoryInactiveTextColor,
+                                        ),
+                                      ),
+                                      selected: selectedJewelryTypes.contains(
+                                        type,
+                                      ),
+                                      showCheckmark: false,
+                                      backgroundColor: categoryInactiveBgColor,
+                                      selectedColor: categoryActiveBgColor,
+                                      side: BorderSide(
+                                        color:
+                                            selectedJewelryTypes.contains(type)
+                                                ? categoryActiveBgColor
+                                                : categoryInactiveBgColor,
+                                      ),
+                                      labelStyle: TextStyle(
+                                        color: categoryInactiveTextColor,
+                                      ),
+                                      onSelected: (selected) {
+                                        setModalState(() {
+                                          selected
+                                              ? selectedJewelryTypes.add(type)
+                                              : selectedJewelryTypes.remove(
+                                                  type,
+                                                );
+                                        });
+                                      },
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        // Warna Emas
+                        Text(
+                          "Warna Emas",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Wrap(
+                          spacing: 8,
+                          children:
+                              goldColors
+                                  .map(
+                                    (color) => FilterChip(
+                                      label: Text(
+                                        color,
+                                        style: const TextStyle(
+                                          color: categoryInactiveTextColor,
+                                        ),
+                                      ),
+                                      selected: selectedGoldColors.contains(
+                                        color,
+                                      ),
+                                      showCheckmark: false,
+                                      backgroundColor: categoryInactiveBgColor,
+                                      selectedColor: categoryActiveBgColor,
+                                      side: BorderSide(
+                                        color:
+                                            selectedGoldColors.contains(color)
+                                                ? categoryActiveBgColor
+                                                : categoryInactiveBgColor,
+                                      ),
+                                      labelStyle: TextStyle(
+                                        color: categoryInactiveTextColor,
+                                      ),
+                                      onSelected: (selected) {
+                                        setModalState(() {
+                                          selected
+                                              ? selectedGoldColors.add(color)
+                                              : selectedGoldColors.remove(
+                                                color,
+                                              );
+                                        });
+                                      },
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        // Jenis Emas
+                        Text(
+                          "Jenis Emas",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Wrap(
+                          spacing: 8,
+                          children:
+                              goldTypes
+                                  .map(
+                                    (type) => FilterChip(
+                                      label: Text(
+                                        type,
+                                        style: const TextStyle(
+                                          color: categoryInactiveTextColor,
+                                        ),
+                                      ),
+                                      selected: selectedGoldTypes.contains(
+                                        type,
+                                      ),
+                                      showCheckmark: false,
+                                      backgroundColor: categoryInactiveBgColor,
+                                      selectedColor: categoryActiveBgColor,
+                                      side: BorderSide(
+                                        color:
+                                            selectedGoldTypes.contains(type)
+                                                ? categoryActiveBgColor
+                                                : categoryInactiveBgColor,
+                                      ),
+                                      labelStyle: TextStyle(
+                                        color: categoryInactiveTextColor,
+                                      ),
+                                      onSelected: (selected) {
+                                        setModalState(() {
+                                          selected
+                                              ? selectedGoldTypes.add(type)
+                                              : selectedGoldTypes.remove(type);
+                                        });
+                                      },
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        // Jenis Batu
+                        Text(
+                          "Jenis Batu",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Wrap(
+                          spacing: 8,
+                          children:
+                              stoneTypes
+                                  .map(
+                                    (type) => FilterChip(
+                                      label: Text(
+                                        type,
+                                        style: const TextStyle(
+                                          color: categoryInactiveTextColor,
+                                        ),
+                                      ),
+                                      selected: selectedStoneTypes.contains(
+                                        type,
+                                      ),
+                                      showCheckmark: false,
+                                      backgroundColor: categoryInactiveBgColor,
+                                      selectedColor: categoryActiveBgColor,
+                                      side: BorderSide(
+                                        color:
+                                            selectedStoneTypes.contains(type)
+                                                ? categoryActiveBgColor
+                                                : categoryInactiveBgColor,
+                                      ),
+                                      labelStyle: TextStyle(
+                                        color: categoryInactiveTextColor,
+                                      ),
+                                      onSelected: (selected) {
+                                        setModalState(() {
+                                          selected
+                                              ? selectedStoneTypes.add(type)
+                                              : selectedStoneTypes.remove(type);
+                                        });
+                                      },
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        // Harga Min - Max
+                        Text(
+                          "Harga Min - Max",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  hintText: "Min",
+                                ),
+                                onChanged: (v) {
+                                  setModalState(() {
+                                    priceMin = double.tryParse(v);
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  hintText: "Max",
+                                ),
+                                onChanged: (v) {
+                                  setModalState(() {
+                                    priceMax = double.tryParse(v);
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Ring Size
+                        Text(
+                          "Ring Size",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        TextField(
+                          keyboardType: TextInputType.text,
+                          decoration: const InputDecoration(
+                            hintText: "Ring Size",
+                          ),
+                          onChanged: (v) {
+                            setModalState(() {
+                              ringSize = v;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  setState(() {
+                                    _isRandomCategoryActive = false;
+                                  });
+                                },
+                                child: const Text("Terapkan Filter"),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Tombol Reset di pojok kanan atas
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: IconButton(
+                    icon: const Icon(Icons.refresh, color: Colors.redAccent),
+                    tooltip: "Reset Category",
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _resetCategoryFilter();
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
@@ -156,56 +696,35 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     }
   }
 
-  double getOrderProgress(Order order) {
-    final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
-    final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
-    if (idx < 0) return 0.0;
-    return idx / maxIdx;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final allStatuses = OrderWorkflowStatus.values;
-    final waitingStatus = [OrderWorkflowStatus.waitingInventory];
-    final workingStatus = [OrderWorkflowStatus.inventory];
-    // On Progress = semua status selain tahap inventory/waitingInventory dan status yang sudah selesai/dibatalkan
-    final onProgressStatuses =
-        allStatuses
-            .where(
-              (s) =>
-                  s != OrderWorkflowStatus.pending &&
-                  s != OrderWorkflowStatus.designing &&
-                  s != OrderWorkflowStatus.waitingCasting &&
-                  s != OrderWorkflowStatus.casting &&
-                  s != OrderWorkflowStatus.waitingCarving &&
-                  s != OrderWorkflowStatus.carving &&
-                  s != OrderWorkflowStatus.waitingDiamondSetting &&
-                  s != OrderWorkflowStatus.stoneSetting &&
-                  s != OrderWorkflowStatus.waitingFinishing &&
-                  s != OrderWorkflowStatus.finishing &&
-                  s != OrderWorkflowStatus.waitingInventory &&
-                  s != OrderWorkflowStatus.inventory &&
-                  s != OrderWorkflowStatus.done && // pastikan done tidak masuk!
-                  s != OrderWorkflowStatus.cancelled &&
-                  s != OrderWorkflowStatus.unknown,
-            )
-            .toList();
+    // Siapkan data kategori yang ditampilkan
+    List<String> categoryToShow;
+    if (_isRandomCategoryActive) {
+      categoryToShow = _randomCategoryFilters;
+    } else {
+      categoryToShow = [
+        ...selectedJewelryTypes,
+        ...selectedGoldColors,
+        ...selectedGoldTypes,
+        ...selectedStoneTypes,
+        if (ringSize != null && ringSize!.isNotEmpty) 'Ring Size: $ringSize',
+      ];
+      if (categoryToShow.every((e) => e.isEmpty) || categoryToShow.isEmpty) {
+        categoryToShow = _randomCategoryFilters;
+        _isRandomCategoryActive = true;
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inventory Dashboard'),
+        title: const Text('Finisher Dashboard'),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
           IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/login');
-            },
-          ),
         ],
       ),
       extendBodyBehindAppBar: true,
@@ -217,7 +736,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
               'assets/images/toko_sumatra.jpg',
               fit: BoxFit.cover,
               colorBlendMode: BlendMode.darken,
-              color: Colors.black.withAlpha((255 * 0.9).round()),
+              color: Colors.black.withOpacity(0.3),
             ),
           ),
           _isLoading
@@ -292,18 +811,78 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                           children: [
                             _buildStatusFilterButton(
                               'Waiting',
-                              waitingStatus,
+                              'waiting',
                               Colors.orange,
                             ),
                             _buildStatusFilterButton(
                               'Working',
-                              workingStatus,
+                              'working',
                               Colors.blue,
                             ),
                             _buildStatusFilterButton(
                               'On Progress',
-                              onProgressStatuses,
+                              'onprogress',
                               Colors.green,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: List.generate(
+                                    categoryToShow.length,
+                                    (index) {
+                                      final cat = categoryToShow[index];
+                                      final isSelected = false;
+                                      return Padding(
+                                        padding: const EdgeInsets.only(
+                                          right: 4.0,
+                                        ),
+                                        child: ChoiceChip(
+                                          label: Text(
+                                            cat,
+                                            style: TextStyle(
+                                              color: categoryInactiveTextColor,
+                                            ),
+                                          ),
+                                          selected: isSelected,
+                                          onSelected: (_) {},
+                                          backgroundColor:
+                                              categoryInactiveBgColor,
+                                          selectedColor: categoryActiveBgColor,
+                                          labelStyle: TextStyle(
+                                            color: categoryInactiveTextColor,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
+                                          ),
+                                          side: BorderSide(
+                                            color: categoryInactiveBgColor,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.filter_list,
+                                color: Colors.white70,
+                              ),
+                              onPressed: _openFilterSheet,
                             ),
                           ],
                         ),
@@ -327,7 +906,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                   child: Text(
                                     _searchQuery.isNotEmpty
                                         ? 'Tidak ada pesanan cocok dengan pencarian Anda.'
-                                        : 'Tidak ada pesanan.',
+                                        : 'Tidak ada pesanan aktif.',
                                     style: const TextStyle(
                                       color: Colors.white70,
                                     ),
@@ -412,44 +991,80 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                                             OrderWorkflowStatus
                                                                 .inventory
                                                         ? Colors.blue
-                                                        : Colors.green,
+                                                        : onProgressStatuses
+                                                            .contains(
+                                                              order
+                                                                  .workflowStatus,
+                                                            )
+                                                        ? Colors.green
+                                                        : Colors.grey,
                                               ),
                                             ),
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                top: 6.0,
-                                                bottom: 2.0,
-                                              ),
-                                              child: LinearProgressIndicator(
-                                                value: getOrderProgress(order),
-                                                minHeight: 6,
-                                                backgroundColor:
-                                                    Colors.grey[200],
-                                                color: Colors.amber[700],
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                            ),
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                top: 2.0,
-                                                bottom: 6.0,
-                                              ),
-                                              child: Text(
-                                                '${(getOrderProgress(order) * 100).toStringAsFixed(0)}%',
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
+                                            Text(
+                                              'Tanggal Order: ${order.createdAt!.day}/${order.createdAt!.month}/${order.createdAt!.year}',
+                                              style: const TextStyle(
                                                   fontSize: 12,
-                                                  color: Colors.black87,
+                                                  color: Colors.lightGreen),
+                                            ),
+                                            if (order.readyDate != null)
+                                              Text(
+                                                'Tanggal Siap: ${order.readyDate!.day}/${order.readyDate!.month}/${order.readyDate!.year}',
+                                                style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.redAccent,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            // Progress bar & persentase hanya jika status "Waiting" atau "On Progress"
+                                            if (waitingStatuses.contains(
+                                                  order.workflowStatus,
+                                                ) ||
+                                                onProgressStatuses.contains(
+                                                  order.workflowStatus,
+                                                ))
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                  top: 6.0,
+                                                  bottom: 2.0,
+                                                ),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      '${(getOrderProgress(order) * 100).toStringAsFixed(0)}%',
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.black87,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 2),
+                                                    LinearProgressIndicator(
+                                                      value: getOrderProgress(
+                                                        order,
+                                                      ),
+                                                      minHeight: 6,
+                                                      backgroundColor:
+                                                          Colors.grey[200],
+                                                      color: Colors.amber[700],
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
-                                            ),
                                             // Info On Monitoring
                                             if (order.workflowStatus !=
                                                     OrderWorkflowStatus.done &&
                                                 order.workflowStatus !=
                                                     OrderWorkflowStatus
-                                                        .cancelled)
+                                                        .cancelled &&
+                                                _selectedStatusFilter !=
+                                                    'working')
                                               Padding(
                                                 padding: const EdgeInsets.only(
                                                   top: 2.0,
@@ -492,9 +1107,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                                       ),
                                             ),
                                           );
-                                          if (result == true) {
-                                            _fetchOrders();
-                                          }
+                                          if (result == true) _fetchOrders();
                                         },
                                       ),
                                     );
@@ -509,4 +1122,11 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
       ),
     );
   }
+}
+
+double getOrderProgress(Order order) {
+  final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
+  final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
+  if (idx < 0) return 0.0;
+  return idx / maxIdx;
 }

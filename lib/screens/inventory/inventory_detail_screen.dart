@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // Import for date formatting
 import '../../models/order.dart';
 import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
@@ -15,98 +16,172 @@ class InventoryDetailScreen extends StatefulWidget {
 
 class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
   late Order _order;
-  bool _isSaving = false;
-  bool _savedToTokoSumatra = false;
+  bool _isProcessing = false; // Renamed from _isSaving for clarity
+  bool _dataSaved = false; // Track if inventory data is saved
 
   final TextEditingController _kodeBarangController = TextEditingController();
+  final TextEditingController _namaProdukController = TextEditingController(); // New controller
   final TextEditingController _lokasiRakController = TextEditingController();
   final TextEditingController _catatanController = TextEditingController();
+
+  final _dateFormat = DateFormat('dd/MM/yyyy'); // Date formatter
 
   @override
   void initState() {
     super.initState();
     _order = widget.order;
+    // Load existing inventory data if available
+    _kodeBarangController.text = _order.inventoryProductCode ?? '';
+    _namaProdukController.text = _order.inventoryProductName ?? ''; // Load new field
+    _lokasiRakController.text = _order.inventoryShelfLocation ?? '';
+    _catatanController.text = _order.inventoryNotes ?? '';
+
+    // Check if data was already saved (e.g., if revisiting the screen)
+    _dataSaved = _order.inventoryProductCode != null &&
+        _order.inventoryProductName != null &&
+        _order.inventoryShelfLocation != null; // Check required fields
+
     // Listen to changes to trigger rebuild for button enable/disable
     _kodeBarangController.addListener(_onFormChanged);
+    _namaProdukController.addListener(_onFormChanged); // Listen to new controller
     _lokasiRakController.addListener(_onFormChanged);
     _catatanController.addListener(_onFormChanged);
-    // TODO: Load inventory data from order if available and set controllers & _savedToTokoSumatra
   }
 
   @override
   void dispose() {
     _kodeBarangController.removeListener(_onFormChanged);
+    _namaProdukController.removeListener(_onFormChanged); // Remove listener
     _lokasiRakController.removeListener(_onFormChanged);
     _catatanController.removeListener(_onFormChanged);
     _kodeBarangController.dispose();
+    _namaProdukController.dispose(); // Dispose new controller
     _lokasiRakController.dispose();
     _catatanController.dispose();
     super.dispose();
   }
 
   void _onFormChanged() {
-    setState(() {}); // rebuild UI for button enable/disable
+    // Trigger rebuild only if the status is currently inventory (input phase)
+    if (_order.workflowStatus == OrderWorkflowStatus.inventory) {
+      setState(() {});
+    }
   }
 
-  Future<void> _mulaiInventory() async {
-    setState(() => _isSaving = true);
+  // Helper to show field value or 'Belum diisi'
+  String showField(String? value) =>
+      (value == null || value.trim().isEmpty) ? 'Belum diisi' : value;
+
+  // Helper to show date value or 'Belum diisi'
+  String showDate(DateTime? date) =>
+      date == null ? 'Belum diisi' : _dateFormat.format(date);
+
+
+  Future<void> _mulaiInputInventory() async {
+    setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
       workflowStatus: OrderWorkflowStatus.inventory,
+      updatedAt: DateTime.now(),
     );
     try {
       await OrderService().updateOrder(updatedOrder);
+      // Update local order state and trigger rebuild
+      setState(() {
+        _order = updatedOrder;
+        _isProcessing = false;
+      });
       if (!mounted) return;
-      Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pesanan masuk proses Inventory!')),
       );
     } catch (e) {
+      setState(() => _isProcessing = false);
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Gagal update pesanan: $e')));
     }
-    setState(() => _isSaving = false);
   }
 
-  Future<void> _simpanKeTokoSumatra() async {
-    setState(() => _isSaving = true);
-    // TODO: Simpan data inventory ke backend/local database jika perlu
-    await Future.delayed(const Duration(milliseconds: 800)); // simulasi saving
-    setState(() {
-      _isSaving = false;
-      _savedToTokoSumatra = true;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Data berhasil disimpan ke data Toko Sumatra!'),
-      ),
+  Future<void> _simpanDataInventory() async {
+    setState(() => _isProcessing = true);
+
+    // Create updated order with data from controllers
+    final updatedOrder = _order.copyWith(
+      inventoryProductCode: _kodeBarangController.text.trim(),
+      inventoryProductName: _namaProdukController.text.trim(), // Save new field
+      inventoryShelfLocation: _lokasiRakController.text.trim(),
+      inventoryNotes: _catatanController.text.trim(),
+      updatedAt: DateTime.now(),
+      // TODO: If other details like Jenis Perhiasan, etc., are re-inputted,
+      // save them to appropriate fields in the Order model here.
+      // Example: inventoryJewelryType: _jenisPerhiasanController.text.trim(),
     );
+
+    try {
+      await OrderService().updateOrder(updatedOrder);
+      // Update local order state and trigger rebuild
+      setState(() {
+        _order = updatedOrder;
+        _dataSaved = true; // Mark data as saved
+        _isProcessing = false;
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Data Inventory berhasil disimpan!'),
+        ),
+      );
+    } catch (e) {
+      setState(() => _isProcessing = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal menyimpan data: $e')));
+    }
   }
 
   Future<void> _submitKeSales() async {
-    setState(() => _isSaving = true);
+    setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
       workflowStatus: OrderWorkflowStatus.waitingSalesCompletion,
-      // Tambahkan field untuk data inventory jika ada properti di Order
+      updatedAt: DateTime.now(),
+      // Ensure the latest inventory data is included if not saved previously
+      inventoryProductCode: _kodeBarangController.text.trim(),
+      inventoryProductName: _namaProdukController.text.trim(),
+      inventoryShelfLocation: _lokasiRakController.text.trim(),
+      inventoryNotes: _catatanController.text.trim(),
     );
+
     try {
       await OrderService().updateOrder(updatedOrder);
       if (!mounted) return;
-      Navigator.of(context).pop(true);
+      Navigator.of(context).pop(true); // Pop with true to indicate success/change
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pesanan diteruskan ke Sales!')),
       );
     } catch (e) {
+      setState(() => _isProcessing = false);
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Gagal update pesanan: $e')));
     }
-    setState(() => _isSaving = false);
   }
 
+  // Check if required input fields are filled
   bool get _isFormValid =>
       _kodeBarangController.text.trim().isNotEmpty &&
+      _namaProdukController.text.trim().isNotEmpty && // Nama Produk is required
       _lokasiRakController.text.trim().isNotEmpty;
+
+  double getOrderProgress(Order order) {
+    // Pastikan fullWorkflowStatuses sudah diimport dari order_workflow.dart
+    final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
+    final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
+    if (idx < 0 || maxIdx <= 0) return 0.0;
+    return idx / maxIdx;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +189,7 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Pesanan - Inventory')),
       body:
-          _isSaving
+          _isProcessing
               ? const Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
@@ -158,65 +233,73 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text('Nama Pelanggan: ${_order.customerName}'),
-                    Text('Nomor Telepon: ${_order.customerContact}'),
-                    Text('Alamat: ${_order.address}'),
-                    Text('Jenis Perhiasan: ${_order.jewelryType}'),
-                    if (_order.stoneType != null &&
-                        _order.stoneType!.isNotEmpty)
-                      Text('Jenis Batu: ${_order.stoneType}'),
-                    if (_order.stoneSize != null &&
-                        _order.stoneSize!.isNotEmpty)
-                      Text('Ukuran Batu: ${_order.stoneSize}'),
-                    if (_order.ringSize != null && _order.ringSize!.isNotEmpty)
-                      Text('Ukuran Cincin: ${_order.ringSize}'),
-                    if (_order.goldPricePerGram != null)
-                      Text('Harga Emas/Gram: ${_order.goldPricePerGram}'),
-                    if (_order.notes != null && _order.notes!.isNotEmpty)
-                      Text('Catatan Tambahan: ${_order.notes}'),
-                    if (_order.readyDate != null)
-                      Text(
-                        'Tanggal Siap: ${_order.readyDate!.day}/${_order.readyDate!.month}/${_order.readyDate!.year}',
-                      ),
+                    // Display initial order details
+                    Text(
+                      'Nama Pelanggan: ${showField(_order.customerName)}',
+                    ),
+                    Text(
+                      'Nomor Telepon: ${showField(_order.customerContact)}',
+                    ),
+                    Text('Alamat: ${showField(_order.address)}'),
+                    Text(
+                      'Jenis Perhiasan: ${showField(_order.jewelryType)}',
+                    ),
+                    Text('Warna Emas: ${showField(_order.goldColor)}'),
+                    Text('Jenis Emas: ${showField(_order.goldType)}'),
+                    Text('Jenis Batu: ${showField(_order.stoneType)}'),
+                    Text('Ukuran Batu: ${showField(_order.stoneSize)}'),
+                    Text('Ukuran Cincin: ${showField(_order.ringSize)}'),
+                    Text('Catatan Awal: ${showField(_order.notes)}'),
+                    Text('Tanggal Siap: ${showDate(_order.readyDate)}'),
                     const SizedBox(height: 24),
+
+                    // --- Workflow Logic ---
+
+                    // State: Waiting for Inventory to start
                     if (_order.workflowStatus ==
                         OrderWorkflowStatus.waitingInventory)
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _isSaving ? null : _mulaiInventory,
+                          onPressed: _isProcessing ? null : _mulaiInputInventory,
                           child: const Text('Mulai Input Inventory'),
                         ),
                       ),
+
+                    // State: Inventory is inputting data
                     if (_order.workflowStatus == OrderWorkflowStatus.inventory)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Data Inventory',
+                            'Input Data Inventory',
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
+                          const SizedBox(height: 8),
                           InventoryTaskScreen(
                             kodeBarangController: _kodeBarangController,
+                            namaProdukController: _namaProdukController, // Pass new controller
                             lokasiRakController: _lokasiRakController,
                             catatanController: _catatanController,
-                            enabled: !_savedToTokoSumatra && !_isSaving,
+                            enabled: !_dataSaved && !_isProcessing, // Disable fields after saving
                           ),
                           const SizedBox(height: 16),
-                          if (!_savedToTokoSumatra)
+                          // Show Save button if data is not yet saved
+                          if (!_dataSaved)
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
                                 onPressed:
-                                    _isFormValid && !_isSaving
-                                        ? _simpanKeTokoSumatra
+                                    _isFormValid && !_isProcessing
+                                        ? _simpanDataInventory
                                         : null,
                                 child: const Text(
-                                  'Simpan ke data Toko Sumatra',
+                                  'Simpan Data Inventory',
                                 ),
                               ),
                             ),
-                          if (_savedToTokoSumatra)
+                          // Show Submit button if data is saved
+                          if (_dataSaved)
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
@@ -232,7 +315,7 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
                                     border: Border.all(color: Colors.green),
                                   ),
                                   child: const Text(
-                                    'Data telah disimpan ke Toko Sumatra. Silakan submit ke Sales untuk penyelesaian pesanan.',
+                                    'Data Inventory telah disimpan. Silakan submit ke Sales.',
                                     style: TextStyle(
                                       color: Colors.green,
                                       fontWeight: FontWeight.w600,
@@ -243,7 +326,7 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
                                   width: double.infinity,
                                   child: ElevatedButton(
                                     onPressed:
-                                        !_isSaving ? _submitKeSales : null,
+                                        !_isProcessing ? _submitKeSales : null,
                                     child: const Text('Submit ke Sales'),
                                   ),
                                 ),
@@ -251,8 +334,40 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
                             ),
                         ],
                       ),
-                    if (_order.workflowStatus ==
-                        OrderWorkflowStatus.waitingSalesCompletion)
+
+                    // State: Data already inputted and submitted (or in later stages)
+                    // Display the saved inventory data
+                    if (_order.workflowStatus !=
+                            OrderWorkflowStatus.waitingInventory &&
+                        _order.workflowStatus != OrderWorkflowStatus.inventory)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Data Inventory yang Diinput:',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Kode Produk: ${showField(_order.inventoryProductCode)}',
+                          ),
+                          Text(
+                            'Nama Produk: ${showField(_order.inventoryProductName)}', // Display new field
+                          ),
+                          Text(
+                            'Lokasi Rak: ${showField(_order.inventoryShelfLocation)}',
+                          ),
+                          Text(
+                            'Catatan Inventory: ${showField(_order.inventoryNotes)}',
+                          ),
+                          // TODO: Display other re-inputted details if you added fields for them
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+
+                    // Always show progress bar if not done or cancelled
+                    if (_order.workflowStatus != OrderWorkflowStatus.done &&
+                        _order.workflowStatus != OrderWorkflowStatus.cancelled)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
                         child: Column(
@@ -291,6 +406,7 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
   }
 }
 
+// Ensure this helper function is accessible or defined here if not global
 double getOrderProgress(Order order) {
   // Pastikan fullWorkflowStatuses sudah diimport dari order_workflow.dart
   final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);

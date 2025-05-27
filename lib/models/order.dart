@@ -164,6 +164,12 @@ class Order {
   final List<String>? finishingWorkChecklist;
   final List<String>? inventoryWorkChecklist;
 
+  String? inventoryProductName;
+  String? inventoryProductCode;
+  String? inventoryLocation;
+  String? inventoryNotes;
+  String? inventoryShelfLocation;
+
   final String? assignedDesigner;
   final String? assignedCaster;
   final String? assignedCarver;

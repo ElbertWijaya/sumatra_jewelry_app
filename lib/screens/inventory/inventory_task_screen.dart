@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class InventoryTaskScreen extends StatelessWidget {
   final TextEditingController kodeBarangController;
+  final TextEditingController namaProdukController; // New controller
   final TextEditingController lokasiRakController;
   final TextEditingController catatanController;
   final bool enabled;
@@ -9,6 +10,7 @@ class InventoryTaskScreen extends StatelessWidget {
   const InventoryTaskScreen({
     super.key,
     required this.kodeBarangController,
+    required this.namaProdukController, // Required
     required this.lokasiRakController,
     required this.catatanController,
     this.enabled = true,
@@ -21,7 +23,16 @@ class InventoryTaskScreen extends StatelessWidget {
         TextField(
           controller: kodeBarangController,
           decoration: const InputDecoration(
-            labelText: 'Kode Barang',
+            labelText: 'Kode Produk', // Changed label
+            border: OutlineInputBorder(),
+          ),
+          enabled: enabled,
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: namaProdukController, // New TextField
+          decoration: const InputDecoration(
+            labelText: 'Nama Produk',
             border: OutlineInputBorder(),
           ),
           enabled: enabled,

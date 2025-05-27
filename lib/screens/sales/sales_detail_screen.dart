@@ -21,7 +21,7 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
   late List<String> _carvingChecklist;
   late List<String> _diamondSetterChecklist;
   late List<String> _finishingChecklist;
-  late List<String> _inventoryChecklist;
+
   DateTime? _readyDate;
 
   // Controllers
@@ -73,7 +73,7 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
     _carvingChecklist = List<String>.from(_order.carvingWorkChecklist ?? []);
     _diamondSetterChecklist = List<String>.from(_order.stoneSettingWorkChecklist ?? []);
     _finishingChecklist = List<String>.from(_order.finishingWorkChecklist ?? []);
-    _inventoryChecklist = List<String>.from(_order.inventoryWorkChecklist ?? []);
+
   }
 
   @override
@@ -508,7 +508,7 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
               showSubmit: _order.workflowStatus == OrderWorkflowStatus.waitingFinishing,
             ),
             _buildWorkerChecklist(
-              title: 'Checklist Inventory',
+              title: 'Data Inventaris',
               todoList: inventoryTodoList,
               checklist: _inventoryChecklist,
               canEdit: _order.workflowStatus == OrderWorkflowStatus.waitingInventory,
