@@ -163,34 +163,6 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
 
             // Progress bar, persentase, checklist, dan "Progress Cor" hanya saat status finishing
             if (isWorking) ...[
-              Text(
-                'Progress Pesanan',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Expanded(
-                    child: LinearProgressIndicator(
-                      value: getOrderProgress(_order),
-                      minHeight: 8,
-                      backgroundColor: Colors.grey[200],
-                      color: Colors.amber[700],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    '${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
               // Checklist Finishing
               Text(
                 'To Do Work',
@@ -221,6 +193,43 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
                 child: const Text('Submit ke Inventory'),
               ),
             ],
+
+            // Progress bar & persentase hanya untuk status "On Progress"
+            if ({
+              OrderWorkflowStatus.waiting_inventory,
+              OrderWorkflowStatus.inventory,
+              OrderWorkflowStatus.waiting_sales_completion,
+              // tambahkan status lain jika perlu
+            }.contains(_order.workflowStatus))
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Progress Pesanan',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: LinearProgressIndicator(
+                        value: getOrderProgress(_order),
+                        minHeight: 8,
+                        backgroundColor: Colors.grey[200],
+                        color: Colors.amber[700],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    Text(
+                      '${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

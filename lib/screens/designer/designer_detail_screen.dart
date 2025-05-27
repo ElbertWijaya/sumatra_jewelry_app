@@ -243,6 +243,14 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen>
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
+                    // Tambahkan ini:
+                    Text(
+                      '${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
                   ],
                 ),
               ),

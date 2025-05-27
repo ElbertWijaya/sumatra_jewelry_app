@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/order.dart';
+import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
 
 class SalesDetailScreen extends StatefulWidget {
@@ -38,6 +39,13 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
   String? _stoneType;
 
   final ImagePicker _picker = ImagePicker();
+  
+  double getOrderProgress(Order order) {
+  final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
+  final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
+  if (idx < 0) return 0.0;
+  return idx / maxIdx;
+}
 
   // Pilihan dropdown (gunakan sama dengan SalesCreateScreen)
   final List<String> jewelryTypes = [
@@ -393,581 +401,173 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
     ]; // Checklist diamond setter
     const finisherTodo = ["Finishing"]; // Checklist finisher
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detail Pesanan'),
-        actions:
-            [
-              (!_isEditing &&
-                      _order.workflowStatus ==
-                          OrderWorkflowStatus.waiting_sales_check)
-                  ? IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () => setState(() => _isEditing = true),
-                  )
-                  : !_isEditing
-                  ? null
-                  : IconButton(
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Detail Pesanan'),
+      actions: [
+        (!_isEditing &&
+                _order.workflowStatus == OrderWorkflowStatus.waiting_sales_check)
+            ? IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () => setState(() => _isEditing = true),
+              )
+            : !_isEditing
+                ? null
+                : IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => setState(() => _isEditing = false),
                   ),
-            ].whereType<Widget>().toList(),
-      ),
-      body:
-          _isSaving
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child:
-                    !_isEditing
-                        ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Gambar referensi
-                            if (_images.isNotEmpty)
-                              SizedBox(
-                                height: 110,
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: _images.length,
-                                  itemBuilder: (context, idx) {
-                                    return Container(
-                                      margin: const EdgeInsets.symmetric(
-                                        horizontal: 4,
+      ].whereType<Widget>().toList(),
+    ),
+    body: _isSaving
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: !_isEditing
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Gambar referensi
+                      if (_images.isNotEmpty)
+                        SizedBox(
+                          height: 110,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _images.length,
+                            itemBuilder: (context, idx) {
+                              return Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.file(
+                                    File(_images[idx]),
+                                    width: 110,
+                                    height: 110,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (c, e, s) => Container(
+                                      width: 110,
+                                      height: 110,
+                                      color: Colors.grey[200],
+                                      child: const Icon(
+                                        Icons.broken_image,
+                                        size: 40,
+                                        color: Colors.grey,
                                       ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Image.file(
-                                          File(_images[idx]),
-                                          width: 110,
-                                          height: 110,
-                                          fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (c, e, s) => Container(
-                                                width: 110,
-                                                height: 110,
-                                                color: Colors.grey[200],
-                                                child: const Icon(
-                                                  Icons.broken_image,
-                                                  size: 40,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            const SizedBox(height: 16),
-                            _buildDisplayField(
-                              'Nama Pelanggan',
-                              showField(_order.customerName),
-                            ),
-                            _buildDisplayField(
-                              'Nomor Telepon',
-                              showField(_order.customerContact),
-                            ),
-                            _buildDisplayField(
-                              'Alamat',
-                              showField(_order.address),
-                            ),
-                            _buildDisplayField(
-                              'Jenis Perhiasan',
-                              showField(_order.jewelryType),
-                            ),
-                            _buildDisplayField(
-                              'Warna Emas',
-                              showField(_order.goldColor),
-                            ),
-                            _buildDisplayField(
-                              'Jenis Emas',
-                              showField(_order.goldType),
-                            ),
-                            _buildDisplayField(
-                              'Jenis Batu',
-                              showField(_order.stoneType),
-                            ),
-                            _buildDisplayField(
-                              'Ukuran Batu',
-                              showField(_order.stoneSize),
-                            ),
-                            _buildDisplayField(
-                              'Ukuran Cincin',
-                              showField(_order.ringSize),
-                            ),
-                            _buildDisplayField(
-                              'Harga Emas/Gram',
-                              showDouble(_order.goldPricePerGram),
-                            ),
-                            _buildDisplayField(
-                              'Catatan Tambahan',
-                              showField(_order.notes),
-                            ),
-                            _buildDisplayField(
-                              'Tanggal Siap',
-                              showDate(_order.readyDate),
-                            ),
-                            _buildDisplayField(
-                              'Status',
-                              _order.workflowStatus.label,
-                            ),
-                            // Progress section for each process
-                            buildChecklistSection(
-                              "Designer",
-                              designerTodo,
-                              _order.designerWorkChecklist,
-                            ),
-                            buildChecklistSection(
-                              "Cor",
-                              corTodo,
-                              _order.castingWorkChecklist,
-                            ),
-                            buildChecklistSection(
-                              "Carver",
-                              carverTodo,
-                              _order.carvingWorkChecklist,
-                            ),
-                            buildChecklistSection(
-                              "Diamond Setter",
-                              diamondSetterTodo,
-                              _order.stoneSettingWorkChecklist,
-                            ),
-                            buildChecklistSection(
-                              "Finisher",
-                              finisherTodo,
-                              _order.finishingWorkChecklist,
-                            ),
-                            _buildDisplayField(
-                              'Designer',
-                              showField(_order.assignedDesigner),
-                            ),
-                            _buildDisplayField(
-                              'Caster',
-                              showField(_order.assignedCaster),
-                            ),
-                            _buildDisplayField(
-                              'Carver',
-                              showField(_order.assignedCarver),
-                            ),
-                            _buildDisplayField(
-                              'Diamond Setter',
-                              showField(_order.assignedDiamondSetter),
-                            ),
-                            _buildDisplayField(
-                              'Finisher',
-                              showField(_order.assignedFinisher),
-                            ),
-                            _buildDisplayField(
-                              'Inventory',
-                              showField(_order.assignedInventory),
-                            ),
-                            const SizedBox(height: 24),
-                            if (_order.workflowStatus ==
-                                OrderWorkflowStatus.waiting_sales_check)
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed:
-                                      _isSaving ? null : _submitToDesigner,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Submit ke Designer',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ),
-                              ),
-                            if (_order.workflowStatus ==
-                                OrderWorkflowStatus.waiting_sales_completion)
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed:
-                                      _isSaving ? null : _selesaikanPesanan,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Selesaikan Pesanan',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            const SizedBox(height: 12),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                              ),
-                              onPressed:
-                                  _isDeleting
-                                      ? null
-                                      : _showDeleteConfirmationDialog,
-                              icon: const Icon(
-                                Icons.delete,
-                                color: Colors.white,
-                              ),
-                              label: const Text(
-                                'Hapus',
-                                style: TextStyle(color: Colors.white),
-                              ),
+                              );
+                            },
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+                      _buildDisplayField('Nama Pelanggan', showField(_order.customerName)),
+                      _buildDisplayField('Nomor Telepon', showField(_order.customerContact)),
+                      _buildDisplayField('Alamat', showField(_order.address)),
+                      _buildDisplayField('Jenis Perhiasan', showField(_order.jewelryType)),
+                      _buildDisplayField('Warna Emas', showField(_order.goldColor)),
+                      _buildDisplayField('Jenis Emas', showField(_order.goldType)),
+                      _buildDisplayField('Jenis Batu', showField(_order.stoneType)),
+                      _buildDisplayField('Ukuran Batu', showField(_order.stoneSize)),
+                      _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
+                      _buildDisplayField('Harga Emas/Gram', showDouble(_order.goldPricePerGram)),
+                      _buildDisplayField('Catatan Tambahan', showField(_order.notes)),
+                      _buildDisplayField('Tanggal Siap', showDate(_order.readyDate)),
+                      _buildDisplayField('Status', _order.workflowStatus.label),
+                      // Progress section for each process
+                      buildChecklistSection("Designer", designerTodo, _order.designerWorkChecklist),
+                      buildChecklistSection("Cor", corTodo, _order.castingWorkChecklist),
+                      buildChecklistSection("Carver", carverTodo, _order.carvingWorkChecklist),
+                      buildChecklistSection("Diamond Setter", diamondSetterTodo, _order.stoneSettingWorkChecklist),
+                      buildChecklistSection("Finisher", finisherTodo, _order.finishingWorkChecklist),
+                      _buildDisplayField('Designer', showField(_order.assignedDesigner)),
+                      _buildDisplayField('Caster', showField(_order.assignedCaster)),
+                      _buildDisplayField('Carver', showField(_order.assignedCarver)),
+                      _buildDisplayField('Diamond Setter', showField(_order.assignedDiamondSetter)),
+                      _buildDisplayField('Finisher', showField(_order.assignedFinisher)),
+                      _buildDisplayField('Inventory', showField(_order.assignedInventory)),
+                      const SizedBox(height: 24),
+                      if (_order.workflowStatus == OrderWorkflowStatus.waiting_sales_check)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isSaving ? null : _submitToDesigner,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                             ),
-                          ],
-                        )
-                        : Form(
-                          key: _formKey,
+                            child: const Text(
+                              'Submit ke Designer',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      if (_order.workflowStatus == OrderWorkflowStatus.waiting_sales_completion)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isSaving ? null : _selesaikanPesanan,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            child: const Text(
+                              'Selesaikan Pesanan',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                        onPressed: _isDeleting ? null : _showDeleteConfirmationDialog,
+                        icon: const Icon(Icons.delete, color: Colors.white),
+                        label: const Text('Hapus', style: TextStyle(color: Colors.white)),
+                      ),
+                      const SizedBox(height: 24),
+                      // Progress bar & persentase hanya untuk status selain waiting_sales_check
+                      if (_order.workflowStatus != OrderWorkflowStatus.waiting_sales_check)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  'Referensi Gambar',
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
+                              const Text(
+                                'Progress Pesanan',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                child: LinearProgressIndicator(
+                                  value: getOrderProgress(_order),
+                                  minHeight: 8,
+                                  backgroundColor: Colors.grey[200],
+                                  color: Colors.amber[700],
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              SizedBox(
-                                height: 110,
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: _images.length + 1,
-                                  itemBuilder: (context, idx) {
-                                    if (idx == _images.length) {
-                                      return Container(
-                                        width: 110,
-                                        margin: const EdgeInsets.symmetric(
-                                          horizontal: 4,
-                                        ),
-                                        child: OutlinedButton(
-                                          onPressed: _pickImages,
-                                          style: OutlinedButton.styleFrom(
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                          child: const Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(Icons.add_a_photo, size: 32),
-                                              SizedBox(height: 8),
-                                              Text(
-                                                'Tambah\nGambar',
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(fontSize: 12),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                    return Stack(
-                                      children: [
-                                        Container(
-                                          margin: const EdgeInsets.symmetric(
-                                            horizontal: 4,
-                                          ),
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            child: Image.file(
-                                              File(_images[idx]),
-                                              width: 110,
-                                              height: 110,
-                                              fit: BoxFit.cover,
-                                              errorBuilder:
-                                                  (c, e, s) => Container(
-                                                    width: 110,
-                                                    height: 110,
-                                                    color: Colors.grey[200],
-                                                    child: const Icon(
-                                                      Icons.broken_image,
-                                                      size: 40,
-                                                      color: Colors.grey,
-                                                    ),
-                                                  ),
-                                            ),
-                                          ),
-                                        ),
-                                        Positioned(
-                                          top: 2,
-                                          right: 2,
-                                          child: GestureDetector(
-                                            onTap: () => _removeImage(idx),
-                                            child: Container(
-                                              decoration: const BoxDecoration(
-                                                color: Colors.black54,
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: const Icon(
-                                                Icons.close,
-                                                color: Colors.white,
-                                                size: 20,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  },
+                              Text(
+                                '${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
                                 ),
-                              ),
-                              const SizedBox(height: 16),
-                              TextFormField(
-                                controller: _nameController,
-                                enabled: _isEditing,
-                                decoration: const InputDecoration(
-                                  labelText: 'Nama Pelanggan',
-                                ),
-                                validator:
-                                    (v) =>
-                                        (v == null || v.isEmpty)
-                                            ? 'Wajib diisi'
-                                            : null,
-                              ),
-                              TextFormField(
-                                controller: _contactController,
-                                enabled: _isEditing,
-                                decoration: const InputDecoration(
-                                  labelText: 'Nomor Telepon',
-                                ),
-                                keyboardType: TextInputType.phone,
-                                validator:
-                                    (v) =>
-                                        (v == null || v.isEmpty)
-                                            ? 'Wajib diisi'
-                                            : null,
-                              ),
-                              TextFormField(
-                                controller: _addressController,
-                                enabled: _isEditing,
-                                decoration: const InputDecoration(
-                                  labelText: 'Alamat',
-                                ),
-                                validator:
-                                    (v) =>
-                                        (v == null || v.isEmpty)
-                                            ? 'Wajib diisi'
-                                            : null,
-                              ),
-                              DropdownButtonFormField<String>(
-                                value: _jewelryType,
-                                decoration: const InputDecoration(
-                                  labelText: "Jenis Perhiasan *",
-                                ),
-                                items:
-                                    jewelryTypes
-                                        .map(
-                                          (type) => DropdownMenuItem(
-                                            value: type,
-                                            child: Text(type),
-                                          ),
-                                        )
-                                        .toList(),
-                                validator:
-                                    (v) =>
-                                        (v == null || v.isEmpty)
-                                            ? 'Wajib dipilih'
-                                            : null,
-                                onChanged:
-                                    _isEditing
-                                        ? (val) =>
-                                            setState(() => _jewelryType = val)
-                                        : null,
-                              ),
-                              DropdownButtonFormField<String>(
-                                value: _goldColor,
-                                decoration: const InputDecoration(
-                                  labelText: "Warna Emas",
-                                ),
-                                items:
-                                    goldColors
-                                        .map(
-                                          (color) => DropdownMenuItem(
-                                            value: color,
-                                            child: Text(color),
-                                          ),
-                                        )
-                                        .toList(),
-                                onChanged:
-                                    _isEditing
-                                        ? (val) =>
-                                            setState(() => _goldColor = val)
-                                        : null,
-                              ),
-                              DropdownButtonFormField<String>(
-                                value: _goldType,
-                                decoration: const InputDecoration(
-                                  labelText: "Jenis Emas",
-                                ),
-                                items:
-                                    goldTypes
-                                        .map(
-                                          (type) => DropdownMenuItem(
-                                            value: type,
-                                            child: Text(type),
-                                          ),
-                                        )
-                                        .toList(),
-                                onChanged:
-                                    _isEditing
-                                        ? (val) =>
-                                            setState(() => _goldType = val)
-                                        : null,
-                              ),
-                              DropdownButtonFormField<String>(
-                                value: _stoneType,
-                                decoration: const InputDecoration(
-                                  labelText: "Jenis Batu",
-                                ),
-                                items:
-                                    stoneTypes
-                                        .map(
-                                          (type) => DropdownMenuItem(
-                                            value: type,
-                                            child: Text(type),
-                                          ),
-                                        )
-                                        .toList(),
-                                onChanged:
-                                    _isEditing
-                                        ? (val) =>
-                                            setState(() => _stoneType = val)
-                                        : null,
-                              ),
-                              TextFormField(
-                                controller: _stoneSizeController,
-                                enabled: _isEditing,
-                                decoration: const InputDecoration(
-                                  labelText: 'Ukuran Batu',
-                                ),
-                              ),
-                              TextFormField(
-                                controller: _ringSizeController,
-                                enabled: _isEditing,
-                                decoration: const InputDecoration(
-                                  labelText: 'Ukuran Cincin',
-                                ),
-                              ),
-                              TextFormField(
-                                controller: _goldPriceController,
-                                enabled: _isEditing,
-                                decoration: const InputDecoration(
-                                  labelText: 'Harga Emas/Gram',
-                                ),
-                                keyboardType: TextInputType.number,
-                              ),
-                              TextFormField(
-                                controller: _notesController,
-                                enabled: _isEditing,
-                                decoration: const InputDecoration(
-                                  labelText: 'Catatan Tambahan',
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              TextFormField(
-                                controller: _dateController,
-                                enabled: false,
-                                readOnly: true,
-                                decoration: InputDecoration(
-                                  labelText: 'Tanggal Siap',
-                                  suffixIcon:
-                                      _isEditing
-                                          ? IconButton(
-                                            icon: const Icon(
-                                              Icons.calendar_today,
-                                            ),
-                                            onPressed: () async {
-                                              final picked =
-                                                  await showDatePicker(
-                                                    context: context,
-                                                    initialDate:
-                                                        _readyDate ??
-                                                        DateTime.now(),
-                                                    firstDate: DateTime(2020),
-                                                    lastDate: DateTime(2100),
-                                                  );
-                                              if (picked != null) {
-                                                setState(() {
-                                                  _readyDate = picked;
-                                                  _dateController.text =
-                                                      "${picked.day}/${picked.month}/${picked.year}";
-                                                });
-                                              }
-                                            },
-                                          )
-                                          : const Icon(Icons.calendar_today),
-                                ),
-                                onTap:
-                                    !_isEditing
-                                        ? null
-                                        : () async {
-                                          final picked = await showDatePicker(
-                                            context: context,
-                                            initialDate:
-                                                _readyDate ?? DateTime.now(),
-                                            firstDate: DateTime(2020),
-                                            lastDate: DateTime(2100),
-                                          );
-                                          if (picked != null) {
-                                            setState(() {
-                                              _readyDate = picked;
-                                              _dateController.text =
-                                                  "${picked.day}/${picked.month}/${picked.year}";
-                                            });
-                                          }
-                                        },
-                              ),
-                              const SizedBox(height: 24),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: ElevatedButton(
-                                      onPressed: _isSaving ? null : _saveEdit,
-                                      child: const Text('Simpan Perubahan'),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  ElevatedButton.icon(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                    ),
-                                    onPressed:
-                                        _isDeleting
-                                            ? null
-                                            : _showDeleteConfirmationDialog,
-                                    icon: const Icon(
-                                      Icons.delete,
-                                      color: Colors.white,
-                                    ),
-                                    label: const Text(
-                                      'Hapus',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                ],
                               ),
                             ],
                           ),
                         ),
-              ),
+                    ],
+                  )
+                : Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ...form widgets di sini jika ada...
+                      ],
+                    ),
+                  ),
+          ),
     );
   }
 }

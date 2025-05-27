@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
+import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
 import 'inventory_task_screen.dart';
 
@@ -229,9 +230,47 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
                           ),
                       ],
                     ),
+                  if (_order.workflowStatus == OrderWorkflowStatus.waiting_sales_completion)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Progress Pesanan',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: LinearProgressIndicator(
+                              value: getOrderProgress(_order),
+                              minHeight: 8,
+                              backgroundColor: Colors.grey[200],
+                              color: Colors.amber[700],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          Text(
+                            '${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
     );
   }
+}
+
+double getOrderProgress(Order order) {
+  // Pastikan fullWorkflowStatuses sudah diimport dari order_workflow.dart
+  final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
+  final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
+  if (idx < 0 || maxIdx <= 0) return 0.0;
+  return idx / maxIdx;
 }

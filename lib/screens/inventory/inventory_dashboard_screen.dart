@@ -412,7 +412,6 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                                         : Colors.green,
                                               ),
                                             ),
-                                            // Progress bar
                                             Padding(
                                               padding: const EdgeInsets.only(top: 6.0, bottom: 2.0),
                                               child: LinearProgressIndicator(
@@ -421,6 +420,17 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                                 backgroundColor: Colors.grey[200],
                                                 color: Colors.amber[700],
                                                 borderRadius: BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 2.0, bottom: 6.0),
+                                              child: Text(
+                                                '${(getOrderProgress(order) * 100).toStringAsFixed(0)}%',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                  color: Colors.black87,
+                                                ),
                                               ),
                                             ),
                                             // Info On Monitoring

@@ -15,7 +15,7 @@ class CarverDetailScreen extends StatefulWidget {
 class _CarverDetailScreenState extends State<CarverDetailScreen> {
   late Order _order;
   bool _isProcessing = false;
-  final List<String> todoList = ["Susun lilin", "Terima emas", "Cor"];
+  final List<String> todoList = ["Bom", "Polish","Getar", "Kasih ke Olivia"];
   List<String> checkedTodos = [];
 
   @override
@@ -34,7 +34,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
   Future<void> _submitToNext() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waiting_carving,
+      workflowStatus: OrderWorkflowStatus.waiting_diamond_setting,
       carvingWorkChecklist: checkedTodos,
     );
     await OrderService().updateOrder(updatedOrder);
@@ -91,9 +91,8 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    bool isWorking = _order.workflowStatus == OrderWorkflowStatus.casting;
-    bool isWaiting =
-        _order.workflowStatus == OrderWorkflowStatus.waiting_casting;
+    bool isWorking = _order.workflowStatus == OrderWorkflowStatus.carving;
+    bool isWaiting = _order.workflowStatus == OrderWorkflowStatus.waiting_carving;
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Pesanan Cor')),
       body: SingleChildScrollView(
@@ -153,8 +152,6 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
             const SizedBox(height: 24),
             // Progress bar: tampilkan jika status sudah masuk tahap on progress
             if ({
-              OrderWorkflowStatus.waiting_carving,
-              OrderWorkflowStatus.carving,
               OrderWorkflowStatus.waiting_diamond_setting,
               OrderWorkflowStatus.stoneSetting,
               OrderWorkflowStatus.waiting_finishing,
