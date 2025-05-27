@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:math';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
 import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
@@ -15,7 +15,8 @@ class FinisherDashboardScreen extends StatefulWidget {
       _FinisherDashboardScreenState();
 }
 
-class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
+class _FinisherDashboardScreenState
+    extends State<FinisherDashboardScreen> {
   final OrderService _orderService = OrderService();
   List<Order> _orders = [];
   bool _isLoading = true;
@@ -23,7 +24,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
   String _searchQuery = '';
   Object? _selectedStatusFilter = 'waiting';
 
-  // Filter sheet
+  // Untuk filter sheet
   List<String> selectedJewelryTypes = [];
   List<String> selectedGoldColors = [];
   List<String> selectedGoldTypes = [];
@@ -32,9 +33,11 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
   double? priceMax;
   String? ringSize;
 
+  // Random category display
   List<String> _randomCategoryFilters = [];
   bool _isRandomCategoryActive = true;
 
+  // Statuses
   final List<OrderWorkflowStatus> waitingStatuses = [
     OrderWorkflowStatus.waitingFinishing,
   ];
@@ -49,7 +52,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
     OrderWorkflowStatus.waitingSalesCompletion,
   ];
 
-  // Filter options
+  // Daftar pilihan filter
   final List<String> jewelryTypes = [
     "ring",
     "bangle",
@@ -121,10 +124,6 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
         _orders = fetchedOrders;
       });
       _generateRandomCategoryFilters();
-      print('Fetched orders:');
-      for (var o in fetchedOrders) {
-        print('${o.customerName} - ${o.workflowStatus}');
-      }
     } catch (e) {
       setState(() {
         _errorMessage =
@@ -172,7 +171,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
             )
             .toList();
 
-    // Category, filters, search (copy from designer logic)
+    // Filter kategori (random/category)
     String? selectedCategory;
     if (_isRandomCategoryActive && _randomCategoryFilters.isNotEmpty) {
       selectedCategory = null;
@@ -186,7 +185,9 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
             if (ringSize != null && ringSize!.isNotEmpty)
               'Ring Size: $ringSize',
           ].where((e) => e.isNotEmpty).toList();
-      if (cat.isNotEmpty) selectedCategory = cat.first;
+      if (cat.isNotEmpty) {
+        selectedCategory = cat.first;
+      }
     }
     if (selectedCategory != null && selectedCategory.isNotEmpty) {
       filtered =
@@ -198,6 +199,8 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
               )
               .toList();
     }
+
+    // Filter dari filter sheet (jika diisi)
     if (selectedJewelryTypes.isNotEmpty) {
       filtered =
           filtered
@@ -257,6 +260,8 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
               )
               .toList();
     }
+
+    // Tab status filter
     if (_selectedStatusFilter == 'waiting') {
       filtered =
           filtered
@@ -275,6 +280,8 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
               )
               .toList();
     }
+
+    // Search
     if (_searchQuery.isNotEmpty) {
       filtered =
           filtered
@@ -284,6 +291,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
               )
               .toList();
     }
+
     return filtered;
   }
 
@@ -444,8 +452,8 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                           selected
                                               ? selectedJewelryTypes.add(type)
                                               : selectedJewelryTypes.remove(
-                                                type,
-                                              );
+                                                  type,
+                                                );
                                         });
                                       },
                                     ),
@@ -497,43 +505,6 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                     ),
                                   )
                                   .toList(),
-                        ),
-                        const SizedBox(height: 16),
-                        // Harga Min - Max
-                        Text(
-                          "Harga Min - Max",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Row(
-                          children: [
-                            Flexible(
-                              child: TextField(
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  hintText: "Min",
-                                ),
-                                onChanged: (v) {
-                                  setModalState(() {
-                                    priceMin = double.tryParse(v);
-                                  });
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: TextField(
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  hintText: "Max",
-                                ),
-                                onChanged: (v) {
-                                  setModalState(() {
-                                    priceMax = double.tryParse(v);
-                                  });
-                                },
-                              ),
-                            ),
-                          ],
                         ),
                         const SizedBox(height: 16),
                         // Jenis Emas
@@ -624,6 +595,43 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                   .toList(),
                         ),
                         const SizedBox(height: 16),
+                        // Harga Min - Max
+                        Text(
+                          "Harga Min - Max",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  hintText: "Min",
+                                ),
+                                onChanged: (v) {
+                                  setModalState(() {
+                                    priceMin = double.tryParse(v);
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  hintText: "Max",
+                                ),
+                                onChanged: (v) {
+                                  setModalState(() {
+                                    priceMax = double.tryParse(v);
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
                         // Ring Size
                         Text(
                           "Ring Size",
@@ -660,6 +668,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                     ),
                   ),
                 ),
+                // Tombol Reset di pojok kanan atas
                 Positioned(
                   right: 0,
                   top: 0,
@@ -689,15 +698,9 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
     }
   }
 
-  double getOrderProgress(Order order) {
-    final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
-    final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
-    if (idx < 0) return 0.0;
-    return idx / maxIdx;
-  }
-
   @override
   Widget build(BuildContext context) {
+    // Siapkan data kategori yang ditampilkan
     List<String> categoryToShow;
     if (_isRandomCategoryActive) {
       categoryToShow = _randomCategoryFilters;
@@ -714,6 +717,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
         _isRandomCategoryActive = true;
       }
     }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Finisher Dashboard'),
@@ -917,6 +921,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                   itemCount: _filteredOrders.length,
                                   itemBuilder: (context, index) {
                                     final order = _filteredOrders[index];
+
                                     Widget leadingWidget;
                                     if (order.imagePaths != null &&
                                         order.imagePaths!.isNotEmpty &&
@@ -951,7 +956,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                         ),
                                       );
                                     }
-                                    print(order.workflowStatus);
+
                                     return Card(
                                       margin: const EdgeInsets.symmetric(
                                         vertical: 8.0,
@@ -997,6 +1002,21 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                                         : Colors.grey,
                                               ),
                                             ),
+                                            Text(
+                                              'Tanggal Order: ${order.createdAt!.day}/${order.createdAt!.month}/${order.createdAt!.year}',
+                                              style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.lightGreen),
+                                            ),
+                                            if (order.readyDate != null)
+                                              Text(
+                                                'Tanggal Siap: ${order.readyDate!.day}/${order.readyDate!.month}/${order.readyDate!.year}',
+                                                style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.redAccent,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
                                             // Progress bar & persentase hanya jika status "Waiting" atau "On Progress"
                                             if (waitingStatuses.contains(
                                                   order.workflowStatus,
@@ -1104,4 +1124,11 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
       ),
     );
   }
+}
+
+double getOrderProgress(Order order) {
+  final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
+  final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
+  if (idx < 0) return 0.0;
+  return idx / maxIdx;
 }

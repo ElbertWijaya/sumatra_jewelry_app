@@ -15,7 +15,12 @@ class CarverDetailScreen extends StatefulWidget {
 class _CarverDetailScreenState extends State<CarverDetailScreen> {
   late Order _order;
   bool _isProcessing = false;
-  final List<String> todoList = ["Bom", "Polish", "Getar", "Kasih ke Olivia"];
+  final List<String> todoList = [
+    'Bom',
+    'Polish',
+    'Pengecekan',
+    'Kasih ke Olivia',
+  ];
   List<String> checkedTodos = [];
 
   @override
@@ -28,7 +33,6 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
   Future<void> _saveChecklist() async {
     final updatedOrder = _order.copyWith(carvingWorkChecklist: checkedTodos);
     await OrderService().updateOrder(updatedOrder);
-    setState(() => _order = updatedOrder);
   }
 
   Future<void> _submitToNext() async {
@@ -36,6 +40,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
     final updatedOrder = _order.copyWith(
       workflowStatus: OrderWorkflowStatus.waitingDiamondSetting,
       carvingWorkChecklist: checkedTodos,
+      updatedAt: DateTime.now(),
     );
     await OrderService().updateOrder(updatedOrder);
     setState(() {
@@ -49,7 +54,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
       workflowStatus: OrderWorkflowStatus.carving,
-      assignedCaster: _order.assignedCaster ?? 'Nama Carver: ',
+      updatedAt: DateTime.now(),
     );
     await OrderService().updateOrder(updatedOrder);
     setState(() {
@@ -95,7 +100,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
     bool isWaiting =
         _order.workflowStatus == OrderWorkflowStatus.waitingCarving;
     return Scaffold(
-      appBar: AppBar(title: const Text('Detail Pesanan Cor')),
+      appBar: AppBar(title: const Text('Detail Pesanan Carver')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -117,13 +122,12 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                           width: 110,
                           height: 110,
                           fit: BoxFit.cover,
-                          errorBuilder:
-                              (c, e, s) => Container(
-                                width: 110,
-                                height: 110,
-                                color: Colors.grey[200],
-                                child: const Icon(Icons.broken_image, size: 40),
-                              ),
+                          errorBuilder: (c, e, s) => Container(
+                            width: 110,
+                            height: 110,
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.broken_image, size: 40),
+                          ),
                         ),
                       ),
                     );
@@ -131,19 +135,10 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                 ),
               ),
             const SizedBox(height: 16),
-            _buildDisplayField(
-              'Nama Pelanggan',
-              showField(_order.customerName),
-            ),
-            _buildDisplayField(
-              'Nomor Telepon',
-              showField(_order.customerContact),
-            ),
+            _buildDisplayField('Nama Pelanggan', showField(_order.customerName)),
+            _buildDisplayField('Nomor Telepon', showField(_order.customerContact)),
             _buildDisplayField('Alamat', showField(_order.address)),
-            _buildDisplayField(
-              'Jenis Perhiasan',
-              showField(_order.jewelryType),
-            ),
+            _buildDisplayField('Jenis Perhiasan', showField(_order.jewelryType)),
             _buildDisplayField('Warna Emas', showField(_order.goldColor)),
             _buildDisplayField('Jenis Emas', showField(_order.goldType)),
             _buildDisplayField('Jenis Batu', showField(_order.stoneType)),
@@ -151,16 +146,8 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
             _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
             _buildDisplayField('Status', _order.workflowStatus.label),
             const SizedBox(height: 24),
-            // Progress bar: tampilkan jika status sudah masuk tahap on progress
-            if ({
-              OrderWorkflowStatus.waitingDiamondSetting,
-              OrderWorkflowStatus.stoneSetting,
-              OrderWorkflowStatus.waitingFinishing,
-              OrderWorkflowStatus.finishing,
-              OrderWorkflowStatus.waitingInventory,
-              OrderWorkflowStatus.inventory,
-              OrderWorkflowStatus.waitingSalesCompletion,
-            }.contains(_order.workflowStatus))
+            if (_order.workflowStatus != OrderWorkflowStatus.done &&
+                _order.workflowStatus != OrderWorkflowStatus.cancelled)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
                 child: Column(
@@ -185,6 +172,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
+                        color: Colors.black54,
                       ),
                     ),
                   ],
@@ -215,20 +203,45 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                         checkedTodos.remove(task);
                       }
                     });
-
                     await _saveChecklist();
                   },
                 ),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed:
-                    checkedTodos.length == todoList.length && !_isProcessing
-                        ? _submitToNext
-                        : null,
-                child: const Text('Submit ke Carver'),
+                onPressed: checkedTodos.length == todoList.length && !_isProcessing
+                    ? _submitToNext
+                    : null,
+                child: const Text('Submit ke Diamond Setting'),
               ),
             ],
+            if (!isWorking && !isWaiting)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+                  Text(
+                    'Checklist Carver',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  ...todoList.map(
+                    (task) => Row(
+                      children: [
+                        Icon(
+                          (_order.carvingWorkChecklist ?? []).contains(task)
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
+                          color: (_order.carvingWorkChecklist ?? []).contains(task)
+                              ? Colors.green
+                              : Colors.grey,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(task),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
       ),

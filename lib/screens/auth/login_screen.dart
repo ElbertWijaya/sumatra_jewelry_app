@@ -68,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
         nextScreen = const DesignerDashboardScreen();
         role = 'designer';
         break;
-      case 'cor':
+      case 'caster':
         nextScreen = const CorDashboardScreen();
         role = 'cor';
         break;

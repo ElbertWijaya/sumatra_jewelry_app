@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
+import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
 
 class CorTaskScreen extends StatefulWidget {
@@ -14,17 +15,25 @@ class CorTaskScreen extends StatefulWidget {
 class _CorTaskScreenState extends State<CorTaskScreen> {
   late Order _order;
   bool _isProcessing = false;
+  final List<String> corTodoList = [
+    'Buat pohon',
+    'Ambil emas',
+    'Cor pohon',
+  ];
+  List<String> checkedTodos = [];
 
   @override
   void initState() {
     super.initState();
     _order = widget.order;
+    checkedTodos = List<String>.from(_order.castingWorkChecklist ?? []);
   }
 
   Future<void> _acceptOrder() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
       workflowStatus: OrderWorkflowStatus.casting,
+      updatedAt: DateTime.now(),
     );
     try {
       await OrderService().updateOrder(updatedOrder);
@@ -33,13 +42,42 @@ class _CorTaskScreenState extends State<CorTaskScreen> {
         _order = updatedOrder;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pesanan diterima, silakan mulai cor!')),
+        const SnackBar(
+          content: Text('Pesanan diterima, silakan mulai cor!'),
+        ),
       );
-      Navigator.of(context).pop(true); // Refresh dashboard
+      Navigator.of(context).pop(true);
     } catch (e) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Gagal menerima pesanan: $e')));
+    }
+    setState(() => _isProcessing = false);
+  }
+
+  Future<void> _submitToNext() async {
+    setState(() => _isProcessing = true);
+    final updatedOrder = _order.copyWith(
+      castingWorkChecklist: checkedTodos,
+      workflowStatus: OrderWorkflowStatus.waitingCarving,
+      updatedAt: DateTime.now(),
+    );
+    try {
+      await OrderService().updateOrder(updatedOrder);
+      if (!mounted) return;
+      setState(() {
+        _order = updatedOrder;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Checklist selesai. Pesanan lanjut ke Carving!'),
+        ),
+      );
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal submit: $e')));
     }
     setState(() => _isProcessing = false);
   }
@@ -70,7 +108,7 @@ class _CorTaskScreenState extends State<CorTaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tugas Cor')),
+      appBar: AppBar(title: const Text('Tugas Casting')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -92,13 +130,12 @@ class _CorTaskScreenState extends State<CorTaskScreen> {
                           width: 110,
                           height: 110,
                           fit: BoxFit.cover,
-                          errorBuilder:
-                              (c, e, s) => Container(
-                                width: 110,
-                                height: 110,
-                                color: Colors.grey[200],
-                                child: const Icon(Icons.broken_image, size: 40),
-                              ),
+                          errorBuilder: (c, e, s) => Container(
+                            width: 110,
+                            height: 110,
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.broken_image, size: 40),
+                          ),
                         ),
                       ),
                     );
@@ -137,19 +174,65 @@ class _CorTaskScreenState extends State<CorTaskScreen> {
                   ),
                 ),
               ),
-            if (_order.workflowStatus == OrderWorkflowStatus.designing)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  'Pesanan sedang dikerjakan caster.',
-                  style: TextStyle(
-                    color: Colors.blue.shade700,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+            if (_order.workflowStatus == OrderWorkflowStatus.casting) ...[
+              Text(
+                'Checklist Pekerjaan',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              ...corTodoList.map(
+                (task) => CheckboxListTile(
+                  title: Text(task),
+                  value: checkedTodos.contains(task),
+                  onChanged: (val) {
+                    setState(() {
+                      if (val == true && !checkedTodos.contains(task)) {
+                        checkedTodos.add(task);
+                      } else if (val == false && checkedTodos.contains(task)) {
+                        checkedTodos.remove(task);
+                      }
+                    });
+                  },
                 ),
               ),
-            // Tambah aksi untuk lanjut workflow jika dibutuhkan
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: checkedTodos.length == corTodoList.length && !_isProcessing
+                      ? _submitToNext
+                      : null,
+                  child: const Text('Submit ke Carving'),
+                ),
+              ),
+            ],
+            if (_order.workflowStatus != OrderWorkflowStatus.waitingCasting &&
+                _order.workflowStatus != OrderWorkflowStatus.casting)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+                  Text(
+                    'Checklist Casting',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  ...corTodoList.map(
+                    (task) => Row(
+                      children: [
+                        Icon(
+                          (_order.castingWorkChecklist ?? []).contains(task)
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
+                          color: (_order.castingWorkChecklist ?? []).contains(task)
+                              ? Colors.green
+                              : Colors.grey,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(task),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
       ),

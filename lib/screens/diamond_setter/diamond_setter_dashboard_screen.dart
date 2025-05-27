@@ -52,7 +52,6 @@ class _DiamondSetterDashboardScreenState
     OrderWorkflowStatus.waitingInventory,
     OrderWorkflowStatus.inventory,
     OrderWorkflowStatus.waitingSalesCompletion,
-    // Tambah status lain jika perlu
   ];
 
   // Daftar pilihan filter
@@ -80,7 +79,6 @@ class _DiamondSetterDashboardScreenState
     "Diamond",
   ];
 
-  // Warna untuk kategori dan filter sheet
   static const Color categoryActiveBgColor = Color(0xFFFAF5E0);
   static const Color categoryInactiveBgColor = Colors.white;
   static const Color categoryInactiveTextColor = Color(0xFF656359);
@@ -107,7 +105,6 @@ class _DiamondSetterDashboardScreenState
     setState(() {
       _randomCategoryFilters = allOptions.take(5).toList();
       _isRandomCategoryActive = true;
-      // Reset juga filter sheet jika perlu
       selectedJewelryTypes.clear();
       selectedGoldColors.clear();
       selectedGoldTypes.clear();
@@ -457,8 +454,8 @@ class _DiamondSetterDashboardScreenState
                                           selected
                                               ? selectedJewelryTypes.add(type)
                                               : selectedJewelryTypes.remove(
-                                                type,
-                                              );
+                                                  type,
+                                                );
                                         });
                                       },
                                     ),
@@ -510,43 +507,6 @@ class _DiamondSetterDashboardScreenState
                                     ),
                                   )
                                   .toList(),
-                        ),
-                        const SizedBox(height: 16),
-                        // Harga Min - Max
-                        Text(
-                          "Harga Min - Max",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Row(
-                          children: [
-                            Flexible(
-                              child: TextField(
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  hintText: "Min",
-                                ),
-                                onChanged: (v) {
-                                  setModalState(() {
-                                    priceMin = double.tryParse(v);
-                                  });
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: TextField(
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  hintText: "Max",
-                                ),
-                                onChanged: (v) {
-                                  setModalState(() {
-                                    priceMax = double.tryParse(v);
-                                  });
-                                },
-                              ),
-                            ),
-                          ],
                         ),
                         const SizedBox(height: 16),
                         // Jenis Emas
@@ -635,6 +595,43 @@ class _DiamondSetterDashboardScreenState
                                     ),
                                   )
                                   .toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        // Harga Min - Max
+                        Text(
+                          "Harga Min - Max",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  hintText: "Min",
+                                ),
+                                onChanged: (v) {
+                                  setModalState(() {
+                                    priceMin = double.tryParse(v);
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  hintText: "Max",
+                                ),
+                                onChanged: (v) {
+                                  setModalState(() {
+                                    priceMax = double.tryParse(v);
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
                         // Ring Size
@@ -1007,6 +1004,21 @@ class _DiamondSetterDashboardScreenState
                                                         : Colors.grey,
                                               ),
                                             ),
+                                            Text(
+                                              'Tanggal Order: ${order.createdAt!.day}/${order.createdAt!.month}/${order.createdAt!.year}',
+                                              style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.lightGreen),
+                                            ),
+                                            if (order.readyDate != null)
+                                              Text(
+                                                'Tanggal Siap: ${order.readyDate!.day}/${order.readyDate!.month}/${order.readyDate!.year}',
+                                                style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.redAccent,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
                                             // Progress bar & persentase hanya jika status "Waiting" atau "On Progress"
                                             if (waitingStatuses.contains(
                                                   order.workflowStatus,

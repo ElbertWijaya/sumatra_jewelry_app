@@ -43,7 +43,7 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
 
   Future<void> _fetchOrder() async {
     final latestOrder = await OrderService().getOrderById(widget.order.id);
-    if (latestOrder == null) return; // atau tampilkan error/snackbar
+    if (latestOrder == null) return;
     setState(() {
       _order = latestOrder;
       checkedTodos = List<String>.from(_order.designerWorkChecklist ?? []);
@@ -55,23 +55,20 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
       _ringSizeController = TextEditingController(text: _order.ringSize ?? "");
       _notesController = TextEditingController(text: _order.notes ?? "");
       _finalPriceController = TextEditingController(
-        text:
-            _order.finalPrice != null && _order.finalPrice != 0
-                ? _rupiahFormat.format(_order.finalPrice)
-                : '',
+        text: _order.finalPrice != null && _order.finalPrice != 0
+            ? _rupiahFormat.format(_order.finalPrice)
+            : '',
       );
       _dpController = TextEditingController(
-        text:
-            _order.dp != null && _order.dp != 0
-                ? _rupiahFormat.format(_order.dp)
-                : '',
+        text: _order.dp != null && _order.dp != 0
+            ? _rupiahFormat.format(_order.dp)
+            : '',
       );
       _readyDate = _order.readyDate;
       _dateController = TextEditingController(
-        text:
-            _readyDate == null
-                ? ""
-                : "${_readyDate!.day}/${_readyDate!.month}/${_readyDate!.year}",
+        text: _readyDate == null
+            ? ""
+            : "${_readyDate!.day}/${_readyDate!.month}/${_readyDate!.year}",
       );
     });
   }
@@ -117,49 +114,6 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
     );
   }
 
-  // Dialog konfirmasi submit dengan checkbox persetujuan
-  Future<bool?> _showSubmitConfirmationDialog() async {
-    bool isAgreed = false;
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder:
-              (context, setState) => AlertDialog(
-                title: const Text('Konfirmasi Submit'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Yakin ingin submit pesanan ke Designer? Setelah submit, data tidak bisa diedit lagi.',
-                    ),
-                    const SizedBox(height: 12),
-                    CheckboxListTile(
-                      value: isAgreed,
-                      onChanged:
-                          (val) => setState(() => isAgreed = val ?? false),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      title: const Text('Saya setuju dengan ketentuan ini'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    child: const Text('Batal'),
-                  ),
-                  TextButton(
-                    onPressed: isAgreed ? () => Navigator.pop(ctx, true) : null,
-                    child: const Text('Submit'),
-                  ),
-                ],
-              ),
-        );
-      },
-    );
-  }
-
   bool _isProcessing = false;
   final List<String> designerTodoList = [
     'Designing',
@@ -168,9 +122,11 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
   ];
   List<String> checkedTodos = [];
 
-  Future<void> _saveChecklist() async {
-    // Simpan checklist ke database atau server
-    // Misal: await OrderService().updateOrderChecklist(_order.id, checkedTodos);
+  double getOrderProgress(Order order) {
+    final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
+    final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
+    if (idx < 0) return 0.0;
+    return idx / maxIdx;
   }
 
   Future<void> _acceptOrder() async {
@@ -200,6 +156,7 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
     });
     try {
       final updatedOrder = _order.copyWith(
+        designerWorkChecklist: checkedTodos,
         workflowStatus: OrderWorkflowStatus.waitingCasting,
         updatedAt: DateTime.now(),
       );
@@ -240,17 +197,16 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
                           width: 110,
                           height: 110,
                           fit: BoxFit.cover,
-                          errorBuilder:
-                              (c, e, s) => Container(
-                                width: 110,
-                                height: 110,
-                                color: Colors.grey[200],
-                                child: const Icon(
-                                  Icons.broken_image,
-                                  size: 40,
-                                  color: Colors.grey,
-                                ),
-                              ),
+                          errorBuilder: (c, e, s) => Container(
+                            width: 110,
+                            height: 110,
+                            color: Colors.grey[200],
+                            child: const Icon(
+                              Icons.broken_image,
+                              size: 40,
+                              color: Colors.grey,
+                            ),
+                          ),
                         ),
                       ),
                     );
@@ -332,7 +288,7 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
                 (task) => CheckboxListTile(
                   title: Text(task),
                   value: checkedTodos.contains(task),
-                  onChanged: (val) async {
+                  onChanged: (val) {
                     setState(() {
                       if (val == true && !checkedTodos.contains(task)) {
                         checkedTodos.add(task);
@@ -340,10 +296,6 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
                         checkedTodos.remove(task);
                       }
                     });
-                    // Simpan checklist ke backend secara real-time
-                    await OrderService().updateOrder(_order.copyWith(
-                      designerWorkChecklist: checkedTodos,
-                    ));
                   },
                 ),
               ),
@@ -355,51 +307,35 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
                 child: const Text('Submit ke Casting'),
               ),
             ],
-
-            // Progress bar & persentase (On Progress)
-            if ({
-              OrderWorkflowStatus.waitingCasting,
-              OrderWorkflowStatus.casting,
-              OrderWorkflowStatus.waitingCarving,
-              OrderWorkflowStatus.carving,
-              OrderWorkflowStatus.waitingDiamondSetting,
-              OrderWorkflowStatus.stoneSetting,
-              OrderWorkflowStatus.waitingFinishing,
-              OrderWorkflowStatus.finishing,
-              OrderWorkflowStatus.waitingInventory,
-              OrderWorkflowStatus.inventory,
-              OrderWorkflowStatus.waitingSalesCompletion,
-            }.contains(_order.workflowStatus))
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Progress Pesanan',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+            // Checklist readonly jika sudah lewat dari designing
+            if (_order.workflowStatus != OrderWorkflowStatus.waitingDesigner &&
+                _order.workflowStatus != OrderWorkflowStatus.designing)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+                  Text(
+                    'Checklist Designer',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  ...designerTodoList.map(
+                    (task) => Row(
+                      children: [
+                        Icon(
+                          (_order.designerWorkChecklist ?? []).contains(task)
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
+                          color: (_order.designerWorkChecklist ?? []).contains(task)
+                              ? Colors.green
+                              : Colors.grey,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(task),
+                      ],
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: LinearProgressIndicator(
-                        value: getOrderProgress(_order),
-                        minHeight: 8,
-                        backgroundColor: Colors.grey[200],
-                        color: Colors.amber[700],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    Text(
-                      '${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            // Tombol submit untuk carver sudah dihilangkan
           ],
         ),
       ),

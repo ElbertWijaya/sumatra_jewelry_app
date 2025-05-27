@@ -14,17 +14,26 @@ class CarverTaskScreen extends StatefulWidget {
 class _CarverTaskScreenState extends State<CarverTaskScreen> {
   late Order _order;
   bool _isProcessing = false;
+  final List<String> todoList = [
+    'Bom',
+    'Polish',
+    'Pengecekan',
+    'Kasih ke Olivia',
+  ];
+  List<String> checkedTodos = [];
 
   @override
   void initState() {
     super.initState();
     _order = widget.order;
+    checkedTodos = List<String>.from(_order.carvingWorkChecklist ?? []);
   }
 
   Future<void> _acceptOrder() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
       workflowStatus: OrderWorkflowStatus.carving,
+      updatedAt: DateTime.now(),
     );
     try {
       await OrderService().updateOrder(updatedOrder);
@@ -34,14 +43,41 @@ class _CarverTaskScreenState extends State<CarverTaskScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Pesanan diterima, silakan mulai reparasi!'),
+          content: Text('Pesanan diterima, silakan mulai carving!'),
         ),
       );
-      Navigator.of(context).pop(true); // Refresh dashboard
+      Navigator.of(context).pop(true);
     } catch (e) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Gagal menerima pesanan: $e')));
+    }
+    setState(() => _isProcessing = false);
+  }
+
+  Future<void> _submitToNext() async {
+    setState(() => _isProcessing = true);
+    final updatedOrder = _order.copyWith(
+      carvingWorkChecklist: checkedTodos,
+      workflowStatus: OrderWorkflowStatus.waitingDiamondSetting,
+      updatedAt: DateTime.now(),
+    );
+    try {
+      await OrderService().updateOrder(updatedOrder);
+      if (!mounted) return;
+      setState(() {
+        _order = updatedOrder;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Checklist selesai. Pesanan lanjut ke Diamond Setting!'),
+        ),
+      );
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal submit: $e')));
     }
     setState(() => _isProcessing = false);
   }
@@ -94,13 +130,12 @@ class _CarverTaskScreenState extends State<CarverTaskScreen> {
                           width: 110,
                           height: 110,
                           fit: BoxFit.cover,
-                          errorBuilder:
-                              (c, e, s) => Container(
-                                width: 110,
-                                height: 110,
-                                color: Colors.grey[200],
-                                child: const Icon(Icons.broken_image, size: 40),
-                              ),
+                          errorBuilder: (c, e, s) => Container(
+                            width: 110,
+                            height: 110,
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.broken_image, size: 40),
+                          ),
                         ),
                       ),
                     );
@@ -139,19 +174,65 @@ class _CarverTaskScreenState extends State<CarverTaskScreen> {
                   ),
                 ),
               ),
-            if (_order.workflowStatus == OrderWorkflowStatus.carving)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  'Pesanan sedang dikerjakan carver.',
-                  style: TextStyle(
-                    color: Colors.blue.shade700,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+            if (_order.workflowStatus == OrderWorkflowStatus.carving) ...[
+              Text(
+                'Checklist Pekerjaan',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              ...todoList.map(
+                (task) => CheckboxListTile(
+                  title: Text(task),
+                  value: checkedTodos.contains(task),
+                  onChanged: (val) {
+                    setState(() {
+                      if (val == true && !checkedTodos.contains(task)) {
+                        checkedTodos.add(task);
+                      } else if (val == false && checkedTodos.contains(task)) {
+                        checkedTodos.remove(task);
+                      }
+                    });
+                  },
                 ),
               ),
-            // Tambah aksi untuk lanjut workflow jika dibutuhkan
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: checkedTodos.length == todoList.length && !_isProcessing
+                      ? _submitToNext
+                      : null,
+                  child: const Text('Submit ke Diamond Setting'),
+                ),
+              ),
+            ],
+            if (_order.workflowStatus != OrderWorkflowStatus.waitingCarving &&
+                _order.workflowStatus != OrderWorkflowStatus.carving)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+                  Text(
+                    'Checklist Carver',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  ...todoList.map(
+                    (task) => Row(
+                      children: [
+                        Icon(
+                          (_order.carvingWorkChecklist ?? []).contains(task)
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
+                          color: (_order.carvingWorkChecklist ?? []).contains(task)
+                              ? Colors.green
+                              : Colors.grey,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(task),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
       ),

@@ -15,6 +15,12 @@ class DiamondSetterTaskScreen extends StatefulWidget {
 class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
   late Order _order;
   bool _isProcessing = false;
+  final List<String> diamondSetterTodoList = [
+      'Milih berlian',
+      'Pemasangan berlian',
+      'Kasih ke Olivia',
+  ];
+  List<String> checkedTodos = [];
 
   @override
   void initState() {
@@ -35,7 +41,7 @@ class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Pesanan diterima, silakan mulai desain!'),
+          content: Text('Pesanan diterima, silakan mulai pasang berlian!'),
         ),
       );
       Navigator.of(context).pop(true); // Refresh dashboard

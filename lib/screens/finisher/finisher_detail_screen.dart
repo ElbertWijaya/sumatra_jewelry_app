@@ -1,8 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../services/order_service.dart';
 import '../../models/order.dart';
 import '../../models/order_workflow.dart';
-import '../../services/order_service.dart';
 
 class FinisherDetailScreen extends StatefulWidget {
   final Order order;
@@ -14,49 +15,84 @@ class FinisherDetailScreen extends StatefulWidget {
 
 class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
   late Order _order;
-  bool _isProcessing = false;
-  final List<String> todoList = ["Finishing"];
-  List<String> checkedTodos = [];
+  late List<String> _images;
+  DateTime? _readyDate;
+
+  // Controllers
+  late TextEditingController _nameController;
+  late TextEditingController _contactController;
+  late TextEditingController _addressController;
+  late TextEditingController _stoneSizeController;
+  late TextEditingController _ringSizeController;
+  late TextEditingController _notesController;
+  late TextEditingController _dateController;
+  late TextEditingController _finalPriceController;
+  late TextEditingController _dpController;
+
+  final _rupiahFormat = NumberFormat.currency(
+    locale: 'id',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
 
   @override
   void initState() {
     super.initState();
-    _order = widget.order;
-    checkedTodos = List<String>.from(_order.finishingWorkChecklist ?? []);
+    _fetchOrder();
   }
 
-  Future<void> _saveChecklist() async {
-    final updatedOrder = _order.copyWith(finishingWorkChecklist: checkedTodos);
-    await OrderService().updateOrder(updatedOrder);
-    setState(() => _order = updatedOrder);
-  }
-
-  Future<void> _submitToNext() async {
-    setState(() => _isProcessing = true);
-    final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waitingInventory,
-      finishingWorkChecklist: checkedTodos,
-    );
-    await OrderService().updateOrder(updatedOrder);
+  Future<void> _fetchOrder() async {
+    final latestOrder = await OrderService().getOrderById(widget.order.id);
+    if (latestOrder == null) return;
     setState(() {
-      _order = updatedOrder;
-      _isProcessing = false;
+      _order = latestOrder;
+      checkedTodos = List<String>.from(_order.finishingWorkChecklist ?? []);
+      _images = List<String>.from(_order.imagePaths ?? []);
+      _nameController = TextEditingController(text: _order.customerName);
+      _contactController = TextEditingController(text: _order.customerContact);
+      _addressController = TextEditingController(text: _order.address);
+      _stoneSizeController = TextEditingController(text: _order.stoneSize ?? "");
+      _ringSizeController = TextEditingController(text: _order.ringSize ?? "");
+      _notesController = TextEditingController(text: _order.notes ?? "");
+      _finalPriceController = TextEditingController(
+        text: _order.finalPrice != null && _order.finalPrice != 0
+            ? _rupiahFormat.format(_order.finalPrice)
+            : '',
+      );
+      _dpController = TextEditingController(
+        text: _order.dp != null && _order.dp != 0
+            ? _rupiahFormat.format(_order.dp)
+            : '',
+      );
+      _readyDate = _order.readyDate;
+      _dateController = TextEditingController(
+        text: _readyDate == null
+            ? ""
+            : "${_readyDate!.day}/${_readyDate!.month}/${_readyDate!.year}",
+      );
     });
-    if (mounted) Navigator.of(context).pop(true);
   }
 
-  Future<void> _acceptOrder() async {
-    setState(() => _isProcessing = true);
-    final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.finishing,
-    );
-    await OrderService().updateOrder(updatedOrder);
-    setState(() {
-      _order = updatedOrder;
-      _isProcessing = false;
-    });
-    if (mounted) Navigator.of(context).pop(true);
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _contactController.dispose();
+    _addressController.dispose();
+    _stoneSizeController.dispose();
+    _ringSizeController.dispose();
+    _notesController.dispose();
+    _dateController.dispose();
+    _finalPriceController.dispose();
+    _dpController.dispose();
+    super.dispose();
   }
+
+  String showField(String? value) =>
+      (value == null || value.trim().isEmpty) ? 'Belum diisi' : value;
+  String showDouble(double? value) =>
+      value == null ? 'Belum diisi' : _rupiahFormat.format(value);
+  String showDate(DateTime? date) =>
+      date == null ? 'Belum diisi' : "${date.day}/${date.month}/${date.year}";
 
   Widget _buildDisplayField(String label, String value) {
     return Padding(
@@ -78,8 +114,12 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
     );
   }
 
-  String showField(String? value) =>
-      (value == null || value.trim().isEmpty) ? 'Belum diisi' : value;
+  bool _isProcessing = false;
+  final List<String> finishingTodoList = [
+      'Finishing',
+      'Kasih ke Olivia',
+  ];
+  List<String> checkedTodos = [];
 
   double getOrderProgress(Order order) {
     final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
@@ -88,44 +128,84 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
     return idx / maxIdx;
   }
 
+  Future<void> _acceptOrder() async {
+    setState(() {
+      _isProcessing = true;
+    });
+    try {
+      final updatedOrder = _order.copyWith(
+        workflowStatus: OrderWorkflowStatus.finishing,
+        updatedAt: DateTime.now(),
+      );
+      await OrderService().updateOrder(updatedOrder);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      // Handle error
+    } finally {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
+  }
+
+  Future<void> _submitToNext() async {
+    setState(() {
+      _isProcessing = true;
+    });
+    try {
+      final updatedOrder = _order.copyWith(
+        finishingWorkChecklist: checkedTodos,
+        workflowStatus: OrderWorkflowStatus.waitingInventory,
+        updatedAt: DateTime.now(),
+      );
+      await OrderService().updateOrder(updatedOrder);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      // Handle error
+    } finally {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    bool isWorking = _order.workflowStatus == OrderWorkflowStatus.finishing;
-    bool isWaiting =
-        _order.workflowStatus == OrderWorkflowStatus.waitingFinishing;
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detail Pesanan Finisher'),
-      ), // Perbaiki judul
+      appBar: AppBar(title: const Text('Detail Pesanan')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (_order.imagePaths != null && _order.imagePaths!.isNotEmpty)
+            if (_images.isNotEmpty)
               SizedBox(
                 height: 110,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: _order.imagePaths!.length,
+                  itemCount: _images.length,
                   itemBuilder: (context, idx) {
                     return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.file(
-                          File(_order.imagePaths![idx]),
+                          File(_images[idx]),
                           width: 110,
                           height: 110,
                           fit: BoxFit.cover,
-                          errorBuilder:
-                              (c, e, s) => Container(
-                                width: 110,
-                                height: 110,
-                                color: Colors.grey[200],
-                                child: const Icon(Icons.broken_image, size: 40),
-                              ),
+                          errorBuilder: (c, e, s) => Container(
+                            width: 110,
+                            height: 110,
+                            color: Colors.grey[200],
+                            child: const Icon(
+                              Icons.broken_image,
+                              size: 40,
+                              color: Colors.grey,
+                            ),
+                          ),
                         ),
                       ),
                     );
@@ -151,11 +231,44 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
             _buildDisplayField('Jenis Batu', showField(_order.stoneType)),
             _buildDisplayField('Ukuran Batu', showField(_order.stoneSize)),
             _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
+            _buildDisplayField(
+              'Harga Barang / Perkiraan',
+              showDouble(_order.finalPrice),
+            ),
+            _buildDisplayField('Jumlah DP', showDouble(_order.dp)),
+            _buildDisplayField(
+              'Sisa harga untuk lunas',
+              showDouble(_order.sisaLunas),
+            ),
+            _buildDisplayField('Catatan Tambahan', showField(_order.notes)),
+            _buildDisplayField('Tanggal Siap', showDate(_order.readyDate)),
             _buildDisplayField('Status', _order.workflowStatus.label),
-            const SizedBox(height: 12),
-
-            // Tampilkan tombol hanya saat waitingFinishing
-            if (isWaiting)
+            if (_order.workflowStatus != OrderWorkflowStatus.done &&
+                _order.workflowStatus != OrderWorkflowStatus.cancelled)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    LinearProgressIndicator(
+                      value: getOrderProgress(_order),
+                      minHeight: 10,
+                      backgroundColor: Colors.grey[300],
+                      color: Colors.blue,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Progress: ${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            // Tombol terima pesanan (Waiting)
+            if (_order.workflowStatus == OrderWorkflowStatus.waitingFinishing)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
                 child: ElevatedButton(
@@ -164,18 +277,17 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
                 ),
               ),
 
-            // Progress bar, persentase, checklist, dan "Progress Cor" hanya saat status finishing
-            if (isWorking) ...[
-              // Checklist Finishing
+            // Checklist dan tombol submit (Working)
+            if (_order.workflowStatus == OrderWorkflowStatus.finishing) ...[
               Text(
                 'To Do Work',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              ...todoList.map(
+              ...finishingTodoList.map(
                 (task) => CheckboxListTile(
                   title: Text(task),
                   value: checkedTodos.contains(task),
-                  onChanged: (val) async {
+                  onChanged: (val) {
                     setState(() {
                       if (val == true && !checkedTodos.contains(task)) {
                         checkedTodos.add(task);
@@ -183,55 +295,45 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
                         checkedTodos.remove(task);
                       }
                     });
-                    await _saveChecklist();
                   },
                 ),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed:
-                    checkedTodos.length == todoList.length && !_isProcessing
-                        ? _submitToNext
-                        : null,
-                child: const Text('Submit ke Inventory'),
+                onPressed: checkedTodos.length == finishingTodoList.length && !_isProcessing
+                    ? _submitToNext
+                    : null,
+                child: const Text('Submit ke Casting'),
               ),
             ],
 
-            // Progress bar & persentase hanya untuk status "On Progress"
-            if ({
-              OrderWorkflowStatus.waitingInventory,
-              OrderWorkflowStatus.inventory,
-              OrderWorkflowStatus.waitingSalesCompletion,
-              // tambahkan status lain jika perlu
-            }.contains(_order.workflowStatus))
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Progress Pesanan',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+            if (_order.workflowStatus != OrderWorkflowStatus.waitingFinishing &&
+                _order.workflowStatus != OrderWorkflowStatus.finishing)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+                  Text(
+                    'Checklist Finishing',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  ...finishingTodoList.map(
+                    (task) => Row(
+                      children: [
+                        Icon(
+                          (_order.finishingWorkChecklist ?? []).contains(task)
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
+                          color: (_order.finishingWorkChecklist ?? []).contains(task)
+                              ? Colors.green
+                              : Colors.grey,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(task),
+                      ],
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: LinearProgressIndicator(
-                        value: getOrderProgress(_order),
-                        minHeight: 8,
-                        backgroundColor: Colors.grey[200],
-                        color: Colors.amber[700],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    Text(
-                      '${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
           ],
         ),

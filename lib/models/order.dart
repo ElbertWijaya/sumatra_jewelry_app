@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 
-/// Enum Status Pesanan sesuai alur kerja multi-divisi
 enum OrderWorkflowStatus {
   waitingSalesCheck,
   waitingDesigner,
@@ -28,7 +27,6 @@ enum OrderWorkflowStatus {
   debut,
 }
 
-/// Extension parsing OrderWorkflowStatus dari string dan label
 extension OrderWorkflowStatusX on OrderWorkflowStatus {
   static OrderWorkflowStatus fromString(String? status) {
     switch ((status ?? '').replaceAll('_', '').toLowerCase()) {
@@ -84,7 +82,6 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
     }
   }
 
-  /// Label status workflow dalam bahasa Indonesia
   String get label {
     switch (this) {
       case OrderWorkflowStatus.waitingSalesCheck:
@@ -139,7 +136,6 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
   }
 }
 
-/// Model data pesanan (Order) terhubung workflow multi-divisi
 class Order {
   final List<String>? imagePaths;
   final String id;
@@ -155,18 +151,18 @@ class Order {
   final DateTime? readyDate;
   final DateTime? pickupDate;
   final double? goldPricePerGram;
-  final double? finalPrice; // untuk harga barang/perkiraan
+  final double? finalPrice;
   final double? dp;
   final double? sisaLunas;
   final String? notes;
   final OrderWorkflowStatus workflowStatus;
 
-  // Tambahan: Checklist kerja designer
   final List<String>? designerWorkChecklist;
   final List<String>? castingWorkChecklist;
   final List<String>? carvingWorkChecklist;
   final List<String>? stoneSettingWorkChecklist;
   final List<String>? finishingWorkChecklist;
+  final List<String>? inventoryWorkChecklist;
 
   final String? assignedDesigner;
   final String? assignedCaster;
@@ -203,6 +199,7 @@ class Order {
     this.carvingWorkChecklist,
     this.stoneSettingWorkChecklist,
     this.finishingWorkChecklist,
+    this.inventoryWorkChecklist,
     this.assignedDesigner,
     this.assignedCaster,
     this.assignedCarver,
@@ -211,11 +208,11 @@ class Order {
     this.assignedInventory,
     DateTime? createdAt,
     this.updatedAt,
-  }) : assert(customerName.isNotEmpty, 'Nama pelanggan wajib diisi'),
-       assert(customerContact.isNotEmpty, 'Nomor telepon wajib diisi'),
-       assert(address.isNotEmpty, 'Alamat wajib diisi'),
-       assert(jewelryType.isNotEmpty, 'Jenis perhiasan wajib diisi'),
-       createdAt = createdAt ?? DateTime.now();
+  })  : assert(customerName.isNotEmpty, 'Nama pelanggan wajib diisi'),
+        assert(customerContact.isNotEmpty, 'Nomor telepon wajib diisi'),
+        assert(address.isNotEmpty, 'Alamat wajib diisi'),
+        assert(jewelryType.isNotEmpty, 'Jenis perhiasan wajib diisi'),
+        createdAt = createdAt ?? DateTime.now();
 
   Order copyWith({
     List<String>? imagePaths,
@@ -242,6 +239,7 @@ class Order {
     List<String>? carvingWorkChecklist,
     List<String>? stoneSettingWorkChecklist,
     List<String>? finishingWorkChecklist,
+    List<String>? inventoryWorkChecklist,
     String? assignedDesigner,
     String? assignedCaster,
     String? assignedCarver,
@@ -271,19 +269,16 @@ class Order {
       sisaLunas: sisaLunas ?? this.sisaLunas,
       notes: notes ?? this.notes,
       workflowStatus: workflowStatus ?? this.workflowStatus,
-      designerWorkChecklist:
-          designerWorkChecklist ?? this.designerWorkChecklist,
+      designerWorkChecklist: designerWorkChecklist ?? this.designerWorkChecklist,
       castingWorkChecklist: castingWorkChecklist ?? this.castingWorkChecklist,
       carvingWorkChecklist: carvingWorkChecklist ?? this.carvingWorkChecklist,
-      stoneSettingWorkChecklist:
-          stoneSettingWorkChecklist ?? this.stoneSettingWorkChecklist,
-      finishingWorkChecklist:
-          finishingWorkChecklist ?? this.finishingWorkChecklist,
+      stoneSettingWorkChecklist: stoneSettingWorkChecklist ?? this.stoneSettingWorkChecklist,
+      finishingWorkChecklist: finishingWorkChecklist ?? this.finishingWorkChecklist,
+      inventoryWorkChecklist: inventoryWorkChecklist ?? this.inventoryWorkChecklist,
       assignedDesigner: assignedDesigner ?? this.assignedDesigner,
       assignedCaster: assignedCaster ?? this.assignedCaster,
       assignedCarver: assignedCarver ?? this.assignedCarver,
-      assignedDiamondSetter:
-          assignedDiamondSetter ?? this.assignedDiamondSetter,
+      assignedDiamondSetter: assignedDiamondSetter ?? this.assignedDiamondSetter,
       assignedFinisher: assignedFinisher ?? this.assignedFinisher,
       assignedInventory: assignedInventory ?? this.assignedInventory,
       createdAt: createdAt ?? this.createdAt,
@@ -293,8 +288,7 @@ class Order {
 
   factory Order.fromJson(Map<String, dynamic> json) {
     return Order(
-      imagePaths:
-          (json['imagePaths'] as List?)?.map((e) => e as String).toList(),
+      imagePaths: (json['imagePaths'] as List?)?.map((e) => e as String).toList(),
       id: json['id'] as String,
       customerName: json['customerName'] as String,
       customerContact: json['customerContact'] as String,
@@ -305,92 +299,64 @@ class Order {
       stoneType: json['stoneType'] as String?,
       stoneSize: json['stoneSize'] as String?,
       ringSize: json['ringSize'] as String?,
-      readyDate:
-          json['readyDate'] != null
-              ? DateTime.tryParse(json['readyDate'])
-              : null,
-      pickupDate:
-          json['pickupDate'] != null
-              ? DateTime.tryParse(json['pickupDate'])
-              : null,
+      readyDate: json['readyDate'] != null ? DateTime.tryParse(json['readyDate']) : null,
+      pickupDate: json['pickupDate'] != null ? DateTime.tryParse(json['pickupDate']) : null,
       goldPricePerGram: (json['goldPricePerGram'] as num?)?.toDouble(),
       finalPrice: (json['finalPrice'] as num?)?.toDouble(),
       dp: (json['dp'] as num?)?.toDouble(),
       sisaLunas: (json['sisaLunas'] as num?)?.toDouble(),
       notes: json['notes'] as String?,
-      workflowStatus: OrderWorkflowStatusX.fromString(
-        json['workflowStatus'] as String?,
-      ),
-      designerWorkChecklist:
-          (json['designerWorkChecklist'] as List?)
-              ?.map((e) => e as String)
-              .toList(),
-      castingWorkChecklist:
-          (json['castingWorkChecklist'] as List?)
-              ?.map((e) => e as String)
-              .toList(),
-      carvingWorkChecklist:
-          (json['carvingWorkChecklist'] as List?)
-              ?.map((e) => e as String)
-              .toList(),
-      stoneSettingWorkChecklist:
-          (json['stoneSettingWorkChecklist'] as List?)
-              ?.map((e) => e as String)
-              .toList(),
-      finishingWorkChecklist:
-          (json['finishingWorkChecklist'] as List?)
-              ?.map((e) => e as String)
-              .toList(),
-
+      workflowStatus: OrderWorkflowStatusX.fromString(json['workflowStatus'] as String?),
+      designerWorkChecklist: (json['designerWorkChecklist'] as List?)?.map((e) => e as String).toList(),
+      castingWorkChecklist: (json['castingWorkChecklist'] as List?)?.map((e) => e as String).toList(),
+      carvingWorkChecklist: (json['carvingWorkChecklist'] as List?)?.map((e) => e as String).toList(),
+      stoneSettingWorkChecklist: (json['stoneSettingWorkChecklist'] as List?)?.map((e) => e as String).toList(),
+      finishingWorkChecklist: (json['finishingWorkChecklist'] as List?)?.map((e) => e as String).toList(),
+      inventoryWorkChecklist: (json['inventoryWorkChecklist'] as List?)?.map((e) => e as String).toList(),
       assignedDesigner: json['assignedDesigner'] as String?,
       assignedCaster: json['assignedCaster'] as String?,
       assignedCarver: json['assignedCarver'] as String?,
       assignedDiamondSetter: json['assignedDiamondSetter'] as String?,
       assignedFinisher: json['assignedFinisher'] as String?,
       assignedInventory: json['assignedInventory'] as String?,
-      createdAt:
-          json['createdAt'] != null
-              ? DateTime.parse(json['createdAt'])
-              : DateTime.now(),
-      updatedAt:
-          json['updatedAt'] != null
-              ? DateTime.tryParse(json['updatedAt'])
-              : null,
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt']) : null,
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'imagePaths': imagePaths,
-    'id': id,
-    'customerName': customerName,
-    'customerContact': customerContact,
-    'address': address,
-    'jewelryType': jewelryType,
-    'goldColor': goldColor,
-    'goldType': goldType,
-    'stoneType': stoneType,
-    'stoneSize': stoneSize,
-    'ringSize': ringSize,
-    'readyDate': readyDate?.toIso8601String(),
-    'pickupDate': pickupDate?.toIso8601String(),
-    'goldPricePerGram': goldPricePerGram,
-    'finalPrice': finalPrice,
-    'dp': dp,
-    'sisaLunas': sisaLunas,
-    'notes': notes,
-    'workflowStatus': workflowStatus.name,
-    'designerWorkChecklist': designerWorkChecklist,
-    'castingWorkChecklist': castingWorkChecklist,
-    'carvingWorkChecklist': carvingWorkChecklist,
-    'stoneSettingWorkChecklist': stoneSettingWorkChecklist,
-    'finishingWorkChecklist': finishingWorkChecklist,
-    'assignedDesigner': assignedDesigner,
-    'assignedCaster': assignedCaster,
-    'assignedCarver': assignedCarver,
-    'assignedDiamondSetter': assignedDiamondSetter,
-    'assignedFinisher': assignedFinisher,
-    'assignedInventory': assignedInventory,
-    'createdAt': createdAt.toIso8601String(),
-    'updatedAt': updatedAt?.toIso8601String(),
-  };
+        'imagePaths': imagePaths,
+        'id': id,
+        'customerName': customerName,
+        'customerContact': customerContact,
+        'address': address,
+        'jewelryType': jewelryType,
+        'goldColor': goldColor,
+        'goldType': goldType,
+        'stoneType': stoneType,
+        'stoneSize': stoneSize,
+        'ringSize': ringSize,
+        'readyDate': readyDate?.toIso8601String(),
+        'pickupDate': pickupDate?.toIso8601String(),
+        'goldPricePerGram': goldPricePerGram,
+        'finalPrice': finalPrice,
+        'dp': dp,
+        'sisaLunas': sisaLunas,
+        'notes': notes,
+        'workflowStatus': workflowStatus.name,
+        'designerWorkChecklist': designerWorkChecklist,
+        'castingWorkChecklist': castingWorkChecklist,
+        'carvingWorkChecklist': carvingWorkChecklist,
+        'stoneSettingWorkChecklist': stoneSettingWorkChecklist,
+        'finishingWorkChecklist': finishingWorkChecklist,
+        'inventoryWorkChecklist': inventoryWorkChecklist,
+        'assignedDesigner': assignedDesigner,
+        'assignedCaster': assignedCaster,
+        'assignedCarver': assignedCarver,
+        'assignedDiamondSetter': assignedDiamondSetter,
+        'assignedFinisher': assignedFinisher,
+        'assignedInventory': assignedInventory,
+        'createdAt': createdAt.toIso8601String(),
+        'updatedAt': updatedAt?.toIso8601String(),
+      };
 }

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
+import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
 
 class DesignerTaskScreen extends StatefulWidget {
@@ -14,17 +15,25 @@ class DesignerTaskScreen extends StatefulWidget {
 class _DesignerTaskScreenState extends State<DesignerTaskScreen> {
   late Order _order;
   bool _isProcessing = false;
+  final List<String> designerTodoList = [
+    'Designing',
+    '3D Printing',
+    'Pengecekan',
+  ];
+  List<String> checkedTodos = [];
 
   @override
   void initState() {
     super.initState();
     _order = widget.order;
+    checkedTodos = List<String>.from(_order.designerWorkChecklist ?? []);
   }
 
   Future<void> _acceptOrder() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
       workflowStatus: OrderWorkflowStatus.designing,
+      updatedAt: DateTime.now(),
     );
     try {
       await OrderService().updateOrder(updatedOrder);
@@ -37,11 +46,38 @@ class _DesignerTaskScreenState extends State<DesignerTaskScreen> {
           content: Text('Pesanan diterima, silakan mulai desain!'),
         ),
       );
-      Navigator.of(context).pop(true); // Refresh dashboard
+      Navigator.of(context).pop(true);
     } catch (e) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Gagal menerima pesanan: $e')));
+    }
+    setState(() => _isProcessing = false);
+  }
+
+  Future<void> _submitToNext() async {
+    setState(() => _isProcessing = true);
+    final updatedOrder = _order.copyWith(
+      designerWorkChecklist: checkedTodos,
+      workflowStatus: OrderWorkflowStatus.waitingCasting,
+      updatedAt: DateTime.now(),
+    );
+    try {
+      await OrderService().updateOrder(updatedOrder);
+      if (!mounted) return;
+      setState(() {
+        _order = updatedOrder;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Checklist selesai. Pesanan lanjut ke Casting!'),
+        ),
+      );
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal submit: $e')));
     }
     setState(() => _isProcessing = false);
   }
@@ -94,13 +130,12 @@ class _DesignerTaskScreenState extends State<DesignerTaskScreen> {
                           width: 110,
                           height: 110,
                           fit: BoxFit.cover,
-                          errorBuilder:
-                              (c, e, s) => Container(
-                                width: 110,
-                                height: 110,
-                                color: Colors.grey[200],
-                                child: const Icon(Icons.broken_image, size: 40),
-                              ),
+                          errorBuilder: (c, e, s) => Container(
+                            width: 110,
+                            height: 110,
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.broken_image, size: 40),
+                          ),
                         ),
                       ),
                     );
@@ -139,19 +174,65 @@ class _DesignerTaskScreenState extends State<DesignerTaskScreen> {
                   ),
                 ),
               ),
-            if (_order.workflowStatus == OrderWorkflowStatus.designing)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  'Pesanan sedang dikerjakan designer.',
-                  style: TextStyle(
-                    color: Colors.blue.shade700,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+            if (_order.workflowStatus == OrderWorkflowStatus.designing) ...[
+              Text(
+                'Checklist Pekerjaan',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              ...designerTodoList.map(
+                (task) => CheckboxListTile(
+                  title: Text(task),
+                  value: checkedTodos.contains(task),
+                  onChanged: (val) {
+                    setState(() {
+                      if (val == true && !checkedTodos.contains(task)) {
+                        checkedTodos.add(task);
+                      } else if (val == false && checkedTodos.contains(task)) {
+                        checkedTodos.remove(task);
+                      }
+                    });
+                  },
                 ),
               ),
-            // Tambah aksi untuk lanjut workflow jika dibutuhkan
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: checkedTodos.length == designerTodoList.length && !_isProcessing
+                      ? _submitToNext
+                      : null,
+                  child: const Text('Submit ke Casting'),
+                ),
+              ),
+            ],
+            if (_order.workflowStatus != OrderWorkflowStatus.waitingDesigner &&
+                _order.workflowStatus != OrderWorkflowStatus.designing)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+                  Text(
+                    'Checklist Designer',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  ...designerTodoList.map(
+                    (task) => Row(
+                      children: [
+                        Icon(
+                          (_order.designerWorkChecklist ?? []).contains(task)
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
+                          color: (_order.designerWorkChecklist ?? []).contains(task)
+                              ? Colors.green
+                              : Colors.grey,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(task),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
       ),

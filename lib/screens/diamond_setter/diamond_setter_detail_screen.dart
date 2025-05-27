@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../../models/order.dart';
+import 'package:intl/intl.dart';
 import '../../services/order_service.dart';
+import '../../models/order.dart';
 import '../../models/order_workflow.dart';
 
 class DiamondSetterDetailScreen extends StatefulWidget {
@@ -9,64 +10,89 @@ class DiamondSetterDetailScreen extends StatefulWidget {
   const DiamondSetterDetailScreen({super.key, required this.order});
 
   @override
-  State<DiamondSetterDetailScreen> createState() =>
-      _DiamondSetterDetailScreenState();
+  State<DiamondSetterDetailScreen> createState() => _DiamondSetterDetailScreenState();
 }
 
 class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
   late Order _order;
-  bool _isProcessing = false;
-  final List<String> todoList = [
-    "Pilih batu",
-    "Pasang batu",
-    "Kasih ke Olivia",
-  ];
-  List<String> checkedTodos = [];
+  late List<String> _images;
+  DateTime? _readyDate;
+
+  // Controllers
+  late TextEditingController _nameController;
+  late TextEditingController _contactController;
+  late TextEditingController _addressController;
+  late TextEditingController _stoneSizeController;
+  late TextEditingController _ringSizeController;
+  late TextEditingController _notesController;
+  late TextEditingController _dateController;
+  late TextEditingController _finalPriceController;
+  late TextEditingController _dpController;
+
+  final _rupiahFormat = NumberFormat.currency(
+    locale: 'id',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
 
   @override
   void initState() {
     super.initState();
-    _order = widget.order;
-    checkedTodos = List<String>.from(_order.stoneSettingWorkChecklist ?? []);
+    _fetchOrder();
   }
 
-  Future<void> _saveChecklist() async {
-    final updatedOrder = _order.copyWith(
-      stoneSettingWorkChecklist: checkedTodos,
-    );
-    await OrderService().updateOrder(updatedOrder);
-    setState(() => _order = updatedOrder);
-  }
-
-  Future<void> _submitToFinisher() async {
-    setState(() => _isProcessing = true);
-    final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waitingFinishing,
-      stoneSettingWorkChecklist: checkedTodos,
-    );
-    await OrderService().updateOrder(updatedOrder);
+  Future<void> _fetchOrder() async {
+    final latestOrder = await OrderService().getOrderById(widget.order.id);
+    if (latestOrder == null) return;
     setState(() {
-      _order = updatedOrder;
-      _isProcessing = false;
+      _order = latestOrder;
+      checkedTodos = List<String>.from(_order.stoneSettingWorkChecklist ?? []);
+      _images = List<String>.from(_order.imagePaths ?? []);
+      _nameController = TextEditingController(text: _order.customerName);
+      _contactController = TextEditingController(text: _order.customerContact);
+      _addressController = TextEditingController(text: _order.address);
+      _stoneSizeController = TextEditingController(text: _order.stoneSize ?? "");
+      _ringSizeController = TextEditingController(text: _order.ringSize ?? "");
+      _notesController = TextEditingController(text: _order.notes ?? "");
+      _finalPriceController = TextEditingController(
+        text: _order.finalPrice != null && _order.finalPrice != 0
+            ? _rupiahFormat.format(_order.finalPrice)
+            : '',
+      );
+      _dpController = TextEditingController(
+        text: _order.dp != null && _order.dp != 0
+            ? _rupiahFormat.format(_order.dp)
+            : '',
+      );
+      _readyDate = _order.readyDate;
+      _dateController = TextEditingController(
+        text: _readyDate == null
+            ? ""
+            : "${_readyDate!.day}/${_readyDate!.month}/${_readyDate!.year}",
+      );
     });
-    if (mounted) Navigator.of(context).pop(true);
   }
 
-  Future<void> _acceptOrder() async {
-    setState(() => _isProcessing = true);
-
-    final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.stoneSetting,
-      assignedDiamondSetter:
-          _order.assignedDiamondSetter ?? 'Nama Diamond Setter',
-    );
-    await OrderService().updateOrder(updatedOrder);
-    setState(() {
-      _order = updatedOrder;
-      _isProcessing = false;
-    });
-    if (mounted) Navigator.of(context).pop(true);
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _contactController.dispose();
+    _addressController.dispose();
+    _stoneSizeController.dispose();
+    _ringSizeController.dispose();
+    _notesController.dispose();
+    _dateController.dispose();
+    _finalPriceController.dispose();
+    _dpController.dispose();
+    super.dispose();
   }
+
+  String showField(String? value) =>
+      (value == null || value.trim().isEmpty) ? 'Belum diisi' : value;
+  String showDouble(double? value) =>
+      value == null ? 'Belum diisi' : _rupiahFormat.format(value);
+  String showDate(DateTime? date) =>
+      date == null ? 'Belum diisi' : "${date.day}/${date.month}/${date.year}";
 
   Widget _buildDisplayField(String label, String value) {
     return Padding(
@@ -88,8 +114,13 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
     );
   }
 
-  String showField(String? value) =>
-      (value == null || value.trim().isEmpty) ? 'Belum diisi' : value;
+  bool _isProcessing = false;
+  final List<String> stoneSettingTodoList = [
+      'Milih berlian',
+      'Pemasangan berlian',
+      'Kasih ke Olivia',
+  ];
+  List<String> checkedTodos = [];
 
   double getOrderProgress(Order order) {
     final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
@@ -98,41 +129,84 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
     return idx / maxIdx;
   }
 
+  Future<void> _acceptOrder() async {
+    setState(() {
+      _isProcessing = true;
+    });
+    try {
+      final updatedOrder = _order.copyWith(
+        workflowStatus: OrderWorkflowStatus.stoneSetting,
+        updatedAt: DateTime.now(),
+      );
+      await OrderService().updateOrder(updatedOrder);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      // Handle error
+    } finally {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
+  }
+
+  Future<void> _submitToNext() async {
+    setState(() {
+      _isProcessing = true;
+    });
+    try {
+      final updatedOrder = _order.copyWith(
+        stoneSettingWorkChecklist: checkedTodos,
+        workflowStatus: OrderWorkflowStatus.waitingFinishing,
+        updatedAt: DateTime.now(),
+      );
+      await OrderService().updateOrder(updatedOrder);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      // Handle error
+    } finally {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    bool isWorking = _order.workflowStatus == OrderWorkflowStatus.stoneSetting;
-    bool isWaitingDiamondSetter =
-        _order.workflowStatus == OrderWorkflowStatus.waitingDiamondSetting;
     return Scaffold(
-      appBar: AppBar(title: const Text('Detail Pesanan Diamond Setter')),
+      appBar: AppBar(title: const Text('Detail Pesanan')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (_order.imagePaths != null && _order.imagePaths!.isNotEmpty)
+            if (_images.isNotEmpty)
               SizedBox(
                 height: 110,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: _order.imagePaths!.length,
+                  itemCount: _images.length,
                   itemBuilder: (context, idx) {
                     return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.file(
-                          File(_order.imagePaths![idx]),
+                          File(_images[idx]),
                           width: 110,
                           height: 110,
                           fit: BoxFit.cover,
-                          errorBuilder:
-                              (c, e, s) => Container(
-                                width: 110,
-                                height: 110,
-                                color: Colors.grey[200],
-                                child: const Icon(Icons.broken_image, size: 40),
-                              ),
+                          errorBuilder: (c, e, s) => Container(
+                            width: 110,
+                            height: 110,
+                            color: Colors.grey[200],
+                            child: const Icon(
+                              Icons.broken_image,
+                              size: 40,
+                              color: Colors.grey,
+                            ),
+                          ),
                         ),
                       ),
                     );
@@ -158,11 +232,44 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
             _buildDisplayField('Jenis Batu', showField(_order.stoneType)),
             _buildDisplayField('Ukuran Batu', showField(_order.stoneSize)),
             _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
+            _buildDisplayField(
+              'Harga Barang / Perkiraan',
+              showDouble(_order.finalPrice),
+            ),
+            _buildDisplayField('Jumlah DP', showDouble(_order.dp)),
+            _buildDisplayField(
+              'Sisa harga untuk lunas',
+              showDouble(_order.sisaLunas),
+            ),
+            _buildDisplayField('Catatan Tambahan', showField(_order.notes)),
+            _buildDisplayField('Tanggal Siap', showDate(_order.readyDate)),
             _buildDisplayField('Status', _order.workflowStatus.label),
-            const SizedBox(height: 24),
-
-            // PATCH: Tambahkan tombol "Terima & Mulai Kerjakan Pesanan"
-            if (isWaitingDiamondSetter)
+            if (_order.workflowStatus != OrderWorkflowStatus.done &&
+                _order.workflowStatus != OrderWorkflowStatus.cancelled)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    LinearProgressIndicator(
+                      value: getOrderProgress(_order),
+                      minHeight: 10,
+                      backgroundColor: Colors.grey[300],
+                      color: Colors.blue,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Progress: ${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            // Tombol terima pesanan (Waiting)
+            if (_order.workflowStatus == OrderWorkflowStatus.waitingDiamondSetting)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
                 child: ElevatedButton(
@@ -171,17 +278,17 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                 ),
               ),
 
-            // Checklist To Do List
-            if (isWorking) ...[
+            // Checklist dan tombol submit (Working)
+            if (_order.workflowStatus == OrderWorkflowStatus.stoneSetting) ...[
               Text(
                 'To Do Work',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              ...todoList.map(
+              ...stoneSettingTodoList.map(
                 (task) => CheckboxListTile(
                   title: Text(task),
                   value: checkedTodos.contains(task),
-                  onChanged: (val) async {
+                  onChanged: (val) {
                     setState(() {
                       if (val == true && !checkedTodos.contains(task)) {
                         checkedTodos.add(task);
@@ -189,64 +296,45 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                         checkedTodos.remove(task);
                       }
                     });
-                    await _saveChecklist();
                   },
                 ),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed:
-                    checkedTodos.length == todoList.length && !_isProcessing
-                        ? _submitToFinisher
-                        : null,
-                child: const Text('Submit ke Finisher'),
+                onPressed: checkedTodos.length == stoneSettingTodoList.length && !_isProcessing
+                    ? _submitToNext
+                    : null,
+                child: const Text('Submit ke Casting'),
               ),
             ],
-            // Progress checklist, tampilkan juga jika sudah lewat tahap desain
-            if (_order.stoneSettingWorkChecklist != null &&
-                _order.stoneSettingWorkChecklist!.isNotEmpty &&
-                !isWorking)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Progress Stone Setter:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+
+            if (_order.workflowStatus != OrderWorkflowStatus.waitingDiamondSetting &&
+                _order.workflowStatus != OrderWorkflowStatus.stoneSetting)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+                  Text(
+                    'Checklist Diamond Setting',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  ...stoneSettingTodoList.map(
+                    (task) => Row(
+                      children: [
+                        Icon(
+                          (_order.stoneSettingWorkChecklist ?? []).contains(task)
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
+                          color: (_order.stoneSettingWorkChecklist ?? []).contains(task)
+                              ? Colors.green
+                              : Colors.grey,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(task),
+                      ],
                     ),
-                    // Progress bar
-                    Builder(
-                      builder: (context) {
-                        final total = todoList.length;
-                        final done =
-                            _order.stoneSettingWorkChecklist!
-                                .where((item) => todoList.contains(item))
-                                .length;
-                        final percent = total > 0 ? done / total : 0.0;
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(height: 16),
-                            LinearProgressIndicator(
-                              value: percent,
-                              minHeight: 10,
-                              backgroundColor: Colors.grey[300],
-                              color: Colors.green,
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              "${(percent * 100).toStringAsFixed(0)}% Selesai",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
           ],
         ),
