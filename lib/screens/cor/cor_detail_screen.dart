@@ -34,7 +34,7 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
   Future<void> _submitToNext() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waiting_carving,
+      workflowStatus: OrderWorkflowStatus.waitingCarving,
       castingWorkChecklist: checkedTodos,
     );
     await OrderService().updateOrder(updatedOrder);
@@ -93,7 +93,7 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
   Widget build(BuildContext context) {
     bool isWorking = _order.workflowStatus == OrderWorkflowStatus.casting;
     bool isWaiting =
-        _order.workflowStatus == OrderWorkflowStatus.waiting_casting;
+        _order.workflowStatus == OrderWorkflowStatus.waitingCasting;
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Pesanan Cor')),
       body: SingleChildScrollView(
@@ -151,7 +151,7 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
             _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
             _buildDisplayField('Status', _order.workflowStatus.label),
             const SizedBox(height: 24),
-            // Tombol "Terima & Mulai Kerjakan Pesanan" hanya saat waiting_casting
+            // Tombol "Terima & Mulai Kerjakan Pesanan" hanya saat waitingCasting
             if (isWaiting)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
@@ -184,23 +184,24 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: checkedTodos.length == todoList.length && !_isProcessing
-                    ? _submitToNext
-                    : null,
+                onPressed:
+                    checkedTodos.length == todoList.length && !_isProcessing
+                        ? _submitToNext
+                        : null,
                 child: const Text('Submit ke Carver'),
               ),
             ],
             // Progress bar & persentase hanya untuk status "On Progress" (bukan waiting/casting)
             if ({
-              OrderWorkflowStatus.waiting_carving,
+              OrderWorkflowStatus.waitingCarving,
               OrderWorkflowStatus.carving,
-              OrderWorkflowStatus.waiting_diamond_setting,
+              OrderWorkflowStatus.waitingDiamondSetting,
               OrderWorkflowStatus.stoneSetting,
-              OrderWorkflowStatus.waiting_finishing,
+              OrderWorkflowStatus.waitingFinishing,
               OrderWorkflowStatus.finishing,
-              OrderWorkflowStatus.waiting_inventory,
+              OrderWorkflowStatus.waitingInventory,
               OrderWorkflowStatus.inventory,
-              OrderWorkflowStatus.waiting_sales_completion,
+              OrderWorkflowStatus.waitingSalesCompletion,
             }.contains(_order.workflowStatus))
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16.0),

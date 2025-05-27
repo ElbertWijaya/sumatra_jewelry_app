@@ -41,7 +41,7 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
   Future<void> _submitToFinisher() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waiting_finishing,
+      workflowStatus: OrderWorkflowStatus.waitingFinishing,
       stoneSettingWorkChecklist: checkedTodos,
     );
     await OrderService().updateOrder(updatedOrder);
@@ -102,7 +102,7 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
   Widget build(BuildContext context) {
     bool isWorking = _order.workflowStatus == OrderWorkflowStatus.stoneSetting;
     bool isWaitingDiamondSetter =
-        _order.workflowStatus == OrderWorkflowStatus.waiting_diamond_setting;
+        _order.workflowStatus == OrderWorkflowStatus.waitingDiamondSetting;
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Pesanan Diamond Setter')),
       body: SingleChildScrollView(

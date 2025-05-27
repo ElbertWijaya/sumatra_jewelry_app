@@ -126,7 +126,7 @@ class _CorTaskScreenState extends State<CorTaskScreen> {
             _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
             _buildDisplayField('Status', _order.workflowStatus.label),
             const SizedBox(height: 24),
-            if (_order.workflowStatus == OrderWorkflowStatus.waiting_casting)
+            if (_order.workflowStatus == OrderWorkflowStatus.waitingCasting)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

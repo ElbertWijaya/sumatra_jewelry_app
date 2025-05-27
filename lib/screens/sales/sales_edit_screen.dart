@@ -225,16 +225,18 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
                         ),
                         keyboardType: TextInputType.number,
                         inputFormatters: [
-                          MoneyInputFormatter(
+                          CurrencyInputFormatter(
                             thousandSeparator: ThousandSeparator.Period,
                             mantissaLength: 0,
                           ),
                         ],
                         validator: (v) {
-                          if (v == null || v.isEmpty)
+                          if (v == null || v.isEmpty) {
                             return 'Harga wajib diisi';
-                          if (toNumericString(v, allowPeriod: false).isEmpty)
+                          }
+                          if (toNumericString(v, allowPeriod: false).isEmpty) {
                             return 'Masukkan angka yang valid';
+                          }
                           return null;
                         },
                         onChanged: (_) => setState(() {}),
@@ -247,7 +249,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
                         ),
                         keyboardType: TextInputType.number,
                         inputFormatters: [
-                          MoneyInputFormatter(
+                          CurrencyInputFormatter(
                             thousandSeparator: ThousandSeparator.Period,
                             mantissaLength: 0,
                           ),

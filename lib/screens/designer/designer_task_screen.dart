@@ -128,7 +128,7 @@ class _DesignerTaskScreenState extends State<DesignerTaskScreen> {
             _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
             _buildDisplayField('Status', _order.workflowStatus.label),
             const SizedBox(height: 24),
-            if (_order.workflowStatus == OrderWorkflowStatus.waiting_designer)
+            if (_order.workflowStatus == OrderWorkflowStatus.waitingDesigner)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

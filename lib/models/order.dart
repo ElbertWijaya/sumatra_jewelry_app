@@ -2,26 +2,26 @@ import 'package:flutter/foundation.dart';
 
 /// Enum Status Pesanan sesuai alur kerja multi-divisi
 enum OrderWorkflowStatus {
-  waiting_sales_check,
-  waiting_designer,
+  waitingSalesCheck,
+  waitingDesigner,
   pending,
   designing,
-  waiting_casting,
+  waitingCasting,
   readyForCasting,
   casting,
-  waiting_carving,
+  waitingCarving,
   readyForCarving,
   carving,
-  waiting_diamond_setting,
+  waitingDiamondSetting,
   readyForStoneSetting,
   stoneSetting,
-  waiting_finishing,
+  waitingFinishing,
   readyForFinishing,
   finishing,
-  waiting_inventory,
+  waitingInventory,
   readyForInventory,
   inventory,
-  waiting_sales_completion,
+  waitingSalesCompletion,
   done,
   cancelled,
   unknown,
@@ -32,46 +32,46 @@ enum OrderWorkflowStatus {
 extension OrderWorkflowStatusX on OrderWorkflowStatus {
   static OrderWorkflowStatus fromString(String? status) {
     switch ((status ?? '').toLowerCase()) {
-      case 'waiting_sales_check':
-        return OrderWorkflowStatus.waiting_sales_check;
-      case 'waiting_designer':
-        return OrderWorkflowStatus.waiting_designer;
+      case 'waitingSalesCheck':
+        return OrderWorkflowStatus.waitingSalesCheck;
+      case 'waitingDesigner':
+        return OrderWorkflowStatus.waitingDesigner;
       case 'pending':
         return OrderWorkflowStatus.pending;
       case 'designing':
         return OrderWorkflowStatus.designing;
-      case 'waiting_casting':
-        return OrderWorkflowStatus.waiting_casting;
+      case 'waitingCasting':
+        return OrderWorkflowStatus.waitingCasting;
       case 'readyforcasting':
         return OrderWorkflowStatus.readyForCasting;
       case 'casting':
         return OrderWorkflowStatus.casting;
-      case 'waiting_carving':
-        return OrderWorkflowStatus.waiting_carving;
+      case 'waitingCarving':
+        return OrderWorkflowStatus.waitingCarving;
       case 'readyforcarving':
         return OrderWorkflowStatus.readyForCarving;
       case 'carving':
         return OrderWorkflowStatus.carving;
-      case 'waiting_diamond_setting':
-        return OrderWorkflowStatus.waiting_diamond_setting;
+      case 'waitingDiamondSetting':
+        return OrderWorkflowStatus.waitingDiamondSetting;
       case 'readyforstonesetting':
         return OrderWorkflowStatus.readyForStoneSetting;
       case 'stonesetting':
         return OrderWorkflowStatus.stoneSetting;
-      case 'waiting_finishing':
-        return OrderWorkflowStatus.waiting_finishing;
+      case 'waitingFinishing':
+        return OrderWorkflowStatus.waitingFinishing;
       case 'readyforfinishing':
         return OrderWorkflowStatus.readyForFinishing;
       case 'finishing':
         return OrderWorkflowStatus.finishing;
-      case 'waiting_inventory':
-        return OrderWorkflowStatus.waiting_inventory;
+      case 'waitingInventory':
+        return OrderWorkflowStatus.waitingInventory;
       case 'readyforinventory':
         return OrderWorkflowStatus.readyForInventory;
       case 'inventory':
         return OrderWorkflowStatus.inventory;
-      case 'waiting_sales_completion':
-        return OrderWorkflowStatus.waiting_sales_completion;
+      case 'waitingSalesCompletion':
+        return OrderWorkflowStatus.waitingSalesCompletion;
       case 'done':
         return OrderWorkflowStatus.done;
       case 'cancelled':
@@ -87,45 +87,45 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
   /// Label status workflow dalam bahasa Indonesia
   String get label {
     switch (this) {
-      case OrderWorkflowStatus.waiting_sales_check:
+      case OrderWorkflowStatus.waitingSalesCheck:
         return 'Cek & Submit Sales';
-      case OrderWorkflowStatus.waiting_designer:
+      case OrderWorkflowStatus.waitingDesigner:
         return 'Menunggu Designer';
       case OrderWorkflowStatus.pending:
         return 'Menunggu Desain';
       case OrderWorkflowStatus.designing:
         return 'Proses Desain';
-      case OrderWorkflowStatus.waiting_casting:
+      case OrderWorkflowStatus.waitingCasting:
         return 'Menunggu Cor';
       case OrderWorkflowStatus.readyForCasting:
         return 'Siap Cor';
       case OrderWorkflowStatus.casting:
         return 'Proses Cor';
-      case OrderWorkflowStatus.waiting_carving:
+      case OrderWorkflowStatus.waitingCarving:
         return 'Menunggu Carver';
       case OrderWorkflowStatus.readyForCarving:
         return 'Siap Ukir';
       case OrderWorkflowStatus.carving:
         return 'Proses Ukir';
-      case OrderWorkflowStatus.waiting_diamond_setting:
+      case OrderWorkflowStatus.waitingDiamondSetting:
         return 'Menunggu Diamond Setting';
       case OrderWorkflowStatus.readyForStoneSetting:
         return 'Siap Pasang Batu';
       case OrderWorkflowStatus.stoneSetting:
         return 'Proses Pasang Batu';
-      case OrderWorkflowStatus.waiting_finishing:
+      case OrderWorkflowStatus.waitingFinishing:
         return 'Menunggu Finishing';
       case OrderWorkflowStatus.readyForFinishing:
         return 'Siap Finishing';
       case OrderWorkflowStatus.finishing:
         return 'Proses Finishing';
-      case OrderWorkflowStatus.waiting_inventory:
+      case OrderWorkflowStatus.waitingInventory:
         return 'Menunggu Inventaris';
       case OrderWorkflowStatus.readyForInventory:
         return 'Siap Inventory';
       case OrderWorkflowStatus.inventory:
         return 'Input Inventaris';
-      case OrderWorkflowStatus.waiting_sales_completion:
+      case OrderWorkflowStatus.waitingSalesCompletion:
         return 'Menunggu Konfirmasi Sales';
       case OrderWorkflowStatus.done:
         return 'Selesai';
@@ -134,7 +134,6 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
       case OrderWorkflowStatus.debut:
         return 'Debut';
       case OrderWorkflowStatus.unknown:
-      default:
         return 'Tidak Diketahui';
     }
   }

@@ -128,7 +128,7 @@ class _CarverTaskScreenState extends State<CarverTaskScreen> {
             _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
             _buildDisplayField('Status', _order.workflowStatus.label),
             const SizedBox(height: 24),
-            if (_order.workflowStatus == OrderWorkflowStatus.waiting_carving)
+            if (_order.workflowStatus == OrderWorkflowStatus.waitingCarving)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

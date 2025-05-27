@@ -61,7 +61,9 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
         const SnackBar(content: Text('Pesanan masuk proses Inventory!')),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal update pesanan: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal update pesanan: $e')));
     }
     setState(() => _isSaving = false);
   }
@@ -75,25 +77,29 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
       _savedToTokoSumatra = true;
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Data berhasil disimpan ke data Toko Sumatra!')),
+      const SnackBar(
+        content: Text('Data berhasil disimpan ke data Toko Sumatra!'),
+      ),
     );
   }
 
   Future<void> _submitKeSales() async {
     setState(() => _isSaving = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waiting_sales_completion,
+      workflowStatus: OrderWorkflowStatus.waitingSalesCompletion,
       // Tambahkan field untuk data inventory jika ada properti di Order
     );
     try {
       await OrderService().updateOrder(updatedOrder);
       if (!mounted) return;
       Navigator.of(context).pop(true);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Pesanan diteruskan ke Sales!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pesanan diteruskan ke Sales!')),
+      );
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Gagal update pesanan: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal update pesanan: $e')));
     }
     setState(() => _isSaving = false);
   }
@@ -107,162 +113,180 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
     final imageList = List<String>.from(_order.imagePaths ?? []);
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Pesanan - Inventory')),
-      body: _isSaving
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Referensi Gambar',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 110,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: imageList.length,
-                      itemBuilder: (context, idx) => Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.file(
-                            File(imageList[idx]),
-                            width: 110,
-                            height: 110,
-                            fit: BoxFit.cover,
-                            errorBuilder: (c, e, s) => Container(
-                              width: 110,
-                              height: 110,
-                              color: Colors.grey[200],
-                              child: const Icon(
-                                Icons.broken_image,
-                                size: 40,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Nama Pelanggan: ${_order.customerName}'),
-                  Text('Nomor Telepon: ${_order.customerContact}'),
-                  Text('Alamat: ${_order.address}'),
-                  Text('Jenis Perhiasan: ${_order.jewelryType}'),
-                  if (_order.stoneType != null && _order.stoneType!.isNotEmpty)
-                    Text('Jenis Batu: ${_order.stoneType}'),
-                  if (_order.stoneSize != null && _order.stoneSize!.isNotEmpty)
-                    Text('Ukuran Batu: ${_order.stoneSize}'),
-                  if (_order.ringSize != null && _order.ringSize!.isNotEmpty)
-                    Text('Ukuran Cincin: ${_order.ringSize}'),
-                  if (_order.goldPricePerGram != null)
-                    Text('Harga Emas/Gram: ${_order.goldPricePerGram}'),
-                  if (_order.notes != null && _order.notes!.isNotEmpty)
-                    Text('Catatan Tambahan: ${_order.notes}'),
-                  if (_order.readyDate != null)
+      body:
+          _isSaving
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      'Tanggal Siap: ${_order.readyDate!.day}/${_order.readyDate!.month}/${_order.readyDate!.year}',
+                      'Referensi Gambar',
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                  const SizedBox(height: 24),
-                  if (_order.workflowStatus == OrderWorkflowStatus.waiting_inventory)
+                    const SizedBox(height: 8),
                     SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isSaving ? null : _mulaiInventory,
-                        child: const Text('Mulai Input Inventory'),
+                      height: 110,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: imageList.length,
+                        itemBuilder:
+                            (context, idx) => Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  File(imageList[idx]),
+                                  width: 110,
+                                  height: 110,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (c, e, s) => Container(
+                                        width: 110,
+                                        height: 110,
+                                        color: Colors.grey[200],
+                                        child: const Icon(
+                                          Icons.broken_image,
+                                          size: 40,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                ),
+                              ),
+                            ),
                       ),
                     ),
-                  if (_order.workflowStatus == OrderWorkflowStatus.inventory)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Data Inventory',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                    const SizedBox(height: 16),
+                    Text('Nama Pelanggan: ${_order.customerName}'),
+                    Text('Nomor Telepon: ${_order.customerContact}'),
+                    Text('Alamat: ${_order.address}'),
+                    Text('Jenis Perhiasan: ${_order.jewelryType}'),
+                    if (_order.stoneType != null &&
+                        _order.stoneType!.isNotEmpty)
+                      Text('Jenis Batu: ${_order.stoneType}'),
+                    if (_order.stoneSize != null &&
+                        _order.stoneSize!.isNotEmpty)
+                      Text('Ukuran Batu: ${_order.stoneSize}'),
+                    if (_order.ringSize != null && _order.ringSize!.isNotEmpty)
+                      Text('Ukuran Cincin: ${_order.ringSize}'),
+                    if (_order.goldPricePerGram != null)
+                      Text('Harga Emas/Gram: ${_order.goldPricePerGram}'),
+                    if (_order.notes != null && _order.notes!.isNotEmpty)
+                      Text('Catatan Tambahan: ${_order.notes}'),
+                    if (_order.readyDate != null)
+                      Text(
+                        'Tanggal Siap: ${_order.readyDate!.day}/${_order.readyDate!.month}/${_order.readyDate!.year}',
+                      ),
+                    const SizedBox(height: 24),
+                    if (_order.workflowStatus ==
+                        OrderWorkflowStatus.waitingInventory)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isSaving ? null : _mulaiInventory,
+                          child: const Text('Mulai Input Inventory'),
                         ),
-                        InventoryTaskScreen(
-                          kodeBarangController: _kodeBarangController,
-                          lokasiRakController: _lokasiRakController,
-                          catatanController: _catatanController,
-                          enabled: !_savedToTokoSumatra && !_isSaving,
-                        ),
-                        const SizedBox(height: 16),
-                        if (!_savedToTokoSumatra)
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: _isFormValid && !_isSaving
-                                  ? _simpanKeTokoSumatra
-                                  : null,
-                              child: const Text('Simpan ke data Toko Sumatra'),
-                            ),
-                          ),
-                        if (_savedToTokoSumatra)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                margin: const EdgeInsets.only(bottom: 10, top: 5),
-                                decoration: BoxDecoration(
-                                  color: Colors.green[50],
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.green),
-                                ),
-                                child: const Text(
-                                  'Data telah disimpan ke Toko Sumatra. Silakan submit ke Sales untuk penyelesaian pesanan.',
-                                  style: TextStyle(
-                                      color: Colors.green, fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: !_isSaving ? _submitKeSales : null,
-                                  child: const Text('Submit ke Sales'),
-                                ),
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
-                  if (_order.workflowStatus == OrderWorkflowStatus.waiting_sales_completion)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: Column(
+                      ),
+                    if (_order.workflowStatus == OrderWorkflowStatus.inventory)
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Progress Pesanan',
+                            'Data Inventory',
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: LinearProgressIndicator(
-                              value: getOrderProgress(_order),
-                              minHeight: 8,
-                              backgroundColor: Colors.grey[200],
-                              color: Colors.amber[700],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                          InventoryTaskScreen(
+                            kodeBarangController: _kodeBarangController,
+                            lokasiRakController: _lokasiRakController,
+                            catatanController: _catatanController,
+                            enabled: !_savedToTokoSumatra && !_isSaving,
                           ),
-                          Text(
-                            '${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                          const SizedBox(height: 16),
+                          if (!_savedToTokoSumatra)
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed:
+                                    _isFormValid && !_isSaving
+                                        ? _simpanKeTokoSumatra
+                                        : null,
+                                child: const Text(
+                                  'Simpan ke data Toko Sumatra',
+                                ),
+                              ),
                             ),
-                          ),
+                          if (_savedToTokoSumatra)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  margin: const EdgeInsets.only(
+                                    bottom: 10,
+                                    top: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green[50],
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.green),
+                                  ),
+                                  child: const Text(
+                                    'Data telah disimpan ke Toko Sumatra. Silakan submit ke Sales untuk penyelesaian pesanan.',
+                                    style: TextStyle(
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed:
+                                        !_isSaving ? _submitKeSales : null,
+                                    child: const Text('Submit ke Sales'),
+                                  ),
+                                ),
+                              ],
+                            ),
                         ],
                       ),
-                    ),
-                ],
+                    if (_order.workflowStatus ==
+                        OrderWorkflowStatus.waitingSalesCompletion)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Progress Pesanan',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 8.0,
+                              ),
+                              child: LinearProgressIndicator(
+                                value: getOrderProgress(_order),
+                                minHeight: 8,
+                                backgroundColor: Colors.grey[200],
+                                color: Colors.amber[700],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            Text(
+                              '${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
     );
   }
 }

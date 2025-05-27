@@ -30,7 +30,7 @@ class _SalesTaskScreenState extends State<SalesTaskScreen> {
   Future<void> _submitToDesigner() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waiting_designer,
+      workflowStatus: OrderWorkflowStatus.waitingDesigner,
     );
     try {
       await OrderService().updateOrder(updatedOrder);
@@ -65,7 +65,6 @@ class _SalesTaskScreenState extends State<SalesTaskScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Tampilkan detail order (ringkas, null safety)
             Text('Nama Pelanggan: ${showField(_order.customerName)}'),
             Text('Jenis Perhiasan: ${showField(_order.jewelryType)}'),
             Text('Nomor Telepon: ${showField(_order.customerContact)}'),
@@ -73,10 +72,9 @@ class _SalesTaskScreenState extends State<SalesTaskScreen> {
             Text('Harga Barang / Perkiraan: ${showDouble(_order.finalPrice)}'),
             Text('Jumlah DP: ${showDouble(_order.dp)}'),
             Text('Sisa harga untuk lunas: ${showDouble(_order.sisaLunas)}'),
-            const SizedBox(height: 16),
-            // Tombol submit ke designer jika status waiting_sales_check
-            if (_order.workflowStatus ==
-                OrderWorkflowStatus.waiting_sales_check)
+            Text('Status Enum: ${_order.workflowStatus}'), // debug
+            Text('Status Label: ${_order.workflowStatus.label}'), // debug
+            if (_order.workflowStatus == OrderWorkflowStatus.waitingSalesCheck)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

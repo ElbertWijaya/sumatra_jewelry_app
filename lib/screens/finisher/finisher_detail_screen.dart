@@ -34,7 +34,7 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
   Future<void> _submitToNext() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waiting_inventory, 
+      workflowStatus: OrderWorkflowStatus.waitingInventory,
       finishingWorkChecklist: checkedTodos,
     );
     await OrderService().updateOrder(updatedOrder);
@@ -91,10 +91,13 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
   @override
   Widget build(BuildContext context) {
     bool isWorking = _order.workflowStatus == OrderWorkflowStatus.finishing;
-    bool isWaiting = _order.workflowStatus == OrderWorkflowStatus.waiting_finishing;
+    bool isWaiting =
+        _order.workflowStatus == OrderWorkflowStatus.waitingFinishing;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Detail Pesanan Finisher')), // Perbaiki judul
+      appBar: AppBar(
+        title: const Text('Detail Pesanan Finisher'),
+      ), // Perbaiki judul
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -151,7 +154,7 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
             _buildDisplayField('Status', _order.workflowStatus.label),
             const SizedBox(height: 12),
 
-            // Tampilkan tombol hanya saat waiting_finishing
+            // Tampilkan tombol hanya saat waitingFinishing
             if (isWaiting)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
@@ -196,9 +199,9 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
 
             // Progress bar & persentase hanya untuk status "On Progress"
             if ({
-              OrderWorkflowStatus.waiting_inventory,
+              OrderWorkflowStatus.waitingInventory,
               OrderWorkflowStatus.inventory,
-              OrderWorkflowStatus.waiting_sales_completion,
+              OrderWorkflowStatus.waitingSalesCompletion,
               // tambahkan status lain jika perlu
             }.contains(_order.workflowStatus))
               Padding(

@@ -130,7 +130,7 @@ class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
             _buildDisplayField('Status', _order.workflowStatus.label),
             const SizedBox(height: 24),
             if (_order.workflowStatus ==
-                OrderWorkflowStatus.waiting_diamond_setting)
+                OrderWorkflowStatus.waitingDiamondSetting)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

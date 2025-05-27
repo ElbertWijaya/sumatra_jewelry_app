@@ -2,8 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/order.dart';
-import '../../models/order_workflow.dart';
-import '../../services/order_service.dart';
 
 class SalesDetailScreen extends StatefulWidget {
   final Order order;
@@ -16,9 +14,6 @@ class SalesDetailScreen extends StatefulWidget {
 class _SalesDetailScreenState extends State<SalesDetailScreen> {
   late Order _order;
   late List<String> _images;
-  bool _isEditing = false;
-  bool _isSaving = false;
-  bool _isDeleting = false;
   DateTime? _readyDate;
 
   // Controllers
@@ -31,12 +26,6 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
   late TextEditingController _dateController;
   late TextEditingController _finalPriceController;
   late TextEditingController _dpController;
-
-  // Dropdown values
-  String? _jewelryType;
-  String? _goldColor;
-  String? _goldType;
-  String? _stoneType;
 
   final _rupiahFormat = NumberFormat.currency(
     locale: 'id',
@@ -74,10 +63,6 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
               ? ""
               : "${_readyDate!.day}/${_readyDate!.month}/${_readyDate!.year}",
     );
-    _jewelryType = _order.jewelryType.isNotEmpty ? _order.jewelryType : null;
-    _goldColor = _order.goldColor;
-    _goldType = _order.goldType;
-    _stoneType = _order.stoneType;
   }
 
   @override

@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/order.dart';
-import '../../models/order_workflow.dart';
 import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 import '../../services/order_service.dart';
 
@@ -106,12 +105,14 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
   Future<void> _pickImages() async {
     try {
       final List<XFile> images = await _picker.pickMultiImage();
+      if (!mounted) return;
       if (images.isNotEmpty) {
         setState(() {
           _images.addAll(images.map((x) => x.path));
         });
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Gagal memilih gambar: $e')));
@@ -148,7 +149,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
       notes: _notesController.text.isEmpty ? null : _notesController.text,
       readyDate: _readyDate,
       imagePaths: _images,
-      workflowStatus: OrderWorkflowStatus.waiting_sales_check,
+      workflowStatus: OrderWorkflowStatus.waitingSalesCheck,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -161,6 +162,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
       ).showSnackBar(const SnackBar(content: Text('Pesanan berhasil dibuat!')));
       Navigator.of(context).pop(true);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Gagal membuat pesanan: $e')));
@@ -188,11 +190,12 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                         decoration: const InputDecoration(
                           labelText: 'Nama Pelanggan *',
                         ),
-                        validator:
-                            (v) =>
-                                (v == null || v.trim().isEmpty)
-                                    ? 'Nama wajib diisi'
-                                    : null,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Nama wajib diisi';
+                          }
+                          return null;
+                        },
                       ),
                       // Nomor Telepon
                       TextFormField(
@@ -217,11 +220,12 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                         decoration: const InputDecoration(
                           labelText: 'Alamat *',
                         ),
-                        validator:
-                            (v) =>
-                                (v == null || v.trim().isEmpty)
-                                    ? 'Alamat wajib diisi'
-                                    : null,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Alamat wajib diisi';
+                          }
+                          return null;
+                        },
                       ),
                       // Jenis Perhiasan
                       DropdownButtonFormField<String>(
@@ -239,11 +243,12 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                         decoration: const InputDecoration(
                           labelText: 'Jenis Perhiasan *',
                         ),
-                        validator:
-                            (v) =>
-                                v == null || v.isEmpty
-                                    ? 'Pilih jenis perhiasan'
-                                    : null,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return 'Pilih jenis perhiasan';
+                          }
+                          return null;
+                        },
                       ),
                       // Warna Emas
                       DropdownButtonFormField<String>(
@@ -261,11 +266,12 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                         decoration: const InputDecoration(
                           labelText: 'Warna Emas *',
                         ),
-                        validator:
-                            (v) =>
-                                v == null || v.isEmpty
-                                    ? 'Pilih warna emas'
-                                    : null,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return 'Pilih warna emas';
+                          }
+                          return null;
+                        },
                       ),
                       // Jenis Emas
                       DropdownButtonFormField<String>(
@@ -283,11 +289,12 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                         decoration: const InputDecoration(
                           labelText: 'Jenis Emas *',
                         ),
-                        validator:
-                            (v) =>
-                                v == null || v.isEmpty
-                                    ? 'Pilih jenis emas'
-                                    : null,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return 'Pilih jenis emas';
+                          }
+                          return null;
+                        },
                       ),
                       // Jenis Batu
                       DropdownButtonFormField<String>(
@@ -328,16 +335,18 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                         ),
                         keyboardType: TextInputType.number,
                         inputFormatters: [
-                          MoneyInputFormatter(
+                          CurrencyInputFormatter(
                             thousandSeparator: ThousandSeparator.Period,
                             mantissaLength: 0,
                           ),
                         ],
                         validator: (v) {
-                          if (v == null || v.isEmpty)
+                          if (v == null || v.isEmpty) {
                             return 'Harga wajib diisi';
-                          if (toNumericString(v, allowPeriod: false).isEmpty)
+                          }
+                          if (toNumericString(v, allowPeriod: false).isEmpty) {
                             return 'Masukkan angka yang valid';
+                          }
                           return null;
                         },
                         onChanged: (_) => setState(() {}),
@@ -350,7 +359,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                         ),
                         keyboardType: TextInputType.number,
                         inputFormatters: [
-                          MoneyInputFormatter(
+                          CurrencyInputFormatter(
                             thousandSeparator: ThousandSeparator.Period,
                             mantissaLength: 0,
                           ),

@@ -103,7 +103,10 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
             decoration: BoxDecoration(
-              color: isSelected ? color.withOpacity(0.8) : Colors.grey[200],
+              color:
+                  isSelected
+                      ? color.withAlpha((255 * 0.8).round())
+                      : Colors.grey[200],
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: isSelected ? color : Colors.grey,
@@ -163,24 +166,24 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final allStatuses = OrderWorkflowStatus.values;
-    final waitingStatus = [OrderWorkflowStatus.waiting_inventory];
+    final waitingStatus = [OrderWorkflowStatus.waitingInventory];
     final workingStatus = [OrderWorkflowStatus.inventory];
-    // On Progress = semua status selain tahap inventory/waiting_inventory dan status yang sudah selesai/dibatalkan
+    // On Progress = semua status selain tahap inventory/waitingInventory dan status yang sudah selesai/dibatalkan
     final onProgressStatuses =
         allStatuses
             .where(
               (s) =>
                   s != OrderWorkflowStatus.pending &&
                   s != OrderWorkflowStatus.designing &&
-                  s != OrderWorkflowStatus.waiting_casting &&
+                  s != OrderWorkflowStatus.waitingCasting &&
                   s != OrderWorkflowStatus.casting &&
-                  s != OrderWorkflowStatus.waiting_carving &&
+                  s != OrderWorkflowStatus.waitingCarving &&
                   s != OrderWorkflowStatus.carving &&
-                  s != OrderWorkflowStatus.waiting_diamond_setting &&
+                  s != OrderWorkflowStatus.waitingDiamondSetting &&
                   s != OrderWorkflowStatus.stoneSetting &&
-                  s != OrderWorkflowStatus.waiting_finishing &&
+                  s != OrderWorkflowStatus.waitingFinishing &&
                   s != OrderWorkflowStatus.finishing &&
-                  s != OrderWorkflowStatus.waiting_inventory &&
+                  s != OrderWorkflowStatus.waitingInventory &&
                   s != OrderWorkflowStatus.inventory &&
                   s != OrderWorkflowStatus.done && // pastikan done tidak masuk!
                   s != OrderWorkflowStatus.cancelled &&
@@ -214,7 +217,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
               'assets/images/toko_sumatra.jpg',
               fit: BoxFit.cover,
               colorBlendMode: BlendMode.darken,
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withAlpha((255 * 0.9).round()),
             ),
           ),
           _isLoading
@@ -403,7 +406,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                                 color:
                                                     order.workflowStatus ==
                                                             OrderWorkflowStatus
-                                                                .waiting_inventory
+                                                                .waitingInventory
                                                         ? Colors.orange
                                                         : order.workflowStatus ==
                                                             OrderWorkflowStatus
@@ -413,17 +416,25 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                               ),
                                             ),
                                             Padding(
-                                              padding: const EdgeInsets.only(top: 6.0, bottom: 2.0),
+                                              padding: const EdgeInsets.only(
+                                                top: 6.0,
+                                                bottom: 2.0,
+                                              ),
                                               child: LinearProgressIndicator(
                                                 value: getOrderProgress(order),
                                                 minHeight: 6,
-                                                backgroundColor: Colors.grey[200],
+                                                backgroundColor:
+                                                    Colors.grey[200],
                                                 color: Colors.amber[700],
-                                                borderRadius: BorderRadius.circular(8),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
                                             ),
                                             Padding(
-                                              padding: const EdgeInsets.only(top: 2.0, bottom: 6.0),
+                                              padding: const EdgeInsets.only(
+                                                top: 2.0,
+                                                bottom: 6.0,
+                                              ),
                                               child: Text(
                                                 '${(getOrderProgress(order) * 100).toStringAsFixed(0)}%',
                                                 style: const TextStyle(
@@ -434,20 +445,30 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                               ),
                                             ),
                                             // Info On Monitoring
-                                            if (order.workflowStatus != OrderWorkflowStatus.done &&
-                                                order.workflowStatus != OrderWorkflowStatus.cancelled)
+                                            if (order.workflowStatus !=
+                                                    OrderWorkflowStatus.done &&
+                                                order.workflowStatus !=
+                                                    OrderWorkflowStatus
+                                                        .cancelled)
                                               Padding(
-                                                padding: const EdgeInsets.only(top: 2.0),
+                                                padding: const EdgeInsets.only(
+                                                  top: 2.0,
+                                                ),
                                                 child: Row(
                                                   children: const [
-                                                    Icon(Icons.visibility, color: Colors.blue, size: 16),
+                                                    Icon(
+                                                      Icons.visibility,
+                                                      color: Colors.blue,
+                                                      size: 16,
+                                                    ),
                                                     SizedBox(width: 4),
                                                     Text(
                                                       'On Monitoring',
                                                       style: TextStyle(
                                                         color: Colors.blue,
                                                         fontSize: 12,
-                                                        fontWeight: FontWeight.w600,
+                                                        fontWeight:
+                                                            FontWeight.w600,
                                                       ),
                                                     ),
                                                   ],

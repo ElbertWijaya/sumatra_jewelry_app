@@ -36,7 +36,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
   bool _isRandomCategoryActive = true;
 
   final List<OrderWorkflowStatus> waitingStatuses = [
-    OrderWorkflowStatus.waiting_finishing,
+    OrderWorkflowStatus.waitingFinishing,
   ];
 
   final List<OrderWorkflowStatus> workingStatuses = [
@@ -44,9 +44,9 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
   ];
 
   final List<OrderWorkflowStatus> onProgressStatuses = [
-    OrderWorkflowStatus.waiting_inventory,
+    OrderWorkflowStatus.waitingInventory,
     OrderWorkflowStatus.inventory,
-    OrderWorkflowStatus.waiting_sales_completion,
+    OrderWorkflowStatus.waitingSalesCompletion,
   ];
 
   // Filter options
@@ -972,65 +972,100 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                           ),
                                         ),
                                         subtitle: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text('Jenis: ${order.jewelryType}'),
                                             Text(
                                               'Status: ${order.workflowStatus.label}',
                                               style: TextStyle(
                                                 color:
-                                                    order.workflowStatus == OrderWorkflowStatus.waiting_finishing
+                                                    order.workflowStatus ==
+                                                            OrderWorkflowStatus
+                                                                .waitingFinishing
                                                         ? Colors.orange
-                                                        : order.workflowStatus == OrderWorkflowStatus.finishing
-                                                            ? Colors.blue
-                                                            : onProgressStatuses.contains(order.workflowStatus)
-                                                                ? Colors.green
-                                                                : Colors.grey,
+                                                        : order.workflowStatus ==
+                                                            OrderWorkflowStatus
+                                                                .finishing
+                                                        ? Colors.blue
+                                                        : onProgressStatuses
+                                                            .contains(
+                                                              order
+                                                                  .workflowStatus,
+                                                            )
+                                                        ? Colors.green
+                                                        : Colors.grey,
                                               ),
                                             ),
                                             // Progress bar & persentase hanya jika status "Waiting" atau "On Progress"
-                                            if (waitingStatuses.contains(order.workflowStatus) ||
-                                                onProgressStatuses.contains(order.workflowStatus))
+                                            if (waitingStatuses.contains(
+                                                  order.workflowStatus,
+                                                ) ||
+                                                onProgressStatuses.contains(
+                                                  order.workflowStatus,
+                                                ))
                                               Padding(
-                                                padding: const EdgeInsets.only(top: 6.0, bottom: 2.0),
+                                                padding: const EdgeInsets.only(
+                                                  top: 6.0,
+                                                  bottom: 2.0,
+                                                ),
                                                 child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
                                                   children: [
                                                     Text(
                                                       '${(getOrderProgress(order) * 100).toStringAsFixed(0)}%',
                                                       style: const TextStyle(
                                                         fontSize: 12,
-                                                        fontWeight: FontWeight.bold,
+                                                        fontWeight:
+                                                            FontWeight.bold,
                                                         color: Colors.black87,
                                                       ),
                                                     ),
                                                     const SizedBox(height: 2),
                                                     LinearProgressIndicator(
-                                                      value: getOrderProgress(order),
+                                                      value: getOrderProgress(
+                                                        order,
+                                                      ),
                                                       minHeight: 6,
-                                                      backgroundColor: Colors.grey[200],
+                                                      backgroundColor:
+                                                          Colors.grey[200],
                                                       color: Colors.amber[700],
-                                                      borderRadius: BorderRadius.circular(8),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
                                                     ),
                                                   ],
                                                 ),
                                               ),
                                             // Info On Monitoring
-                                            if (order.workflowStatus != OrderWorkflowStatus.done &&
-                                                order.workflowStatus != OrderWorkflowStatus.cancelled &&
-                                                _selectedStatusFilter != 'working')
+                                            if (order.workflowStatus !=
+                                                    OrderWorkflowStatus.done &&
+                                                order.workflowStatus !=
+                                                    OrderWorkflowStatus
+                                                        .cancelled &&
+                                                _selectedStatusFilter !=
+                                                    'working')
                                               Padding(
-                                                padding: const EdgeInsets.only(top: 2.0),
+                                                padding: const EdgeInsets.only(
+                                                  top: 2.0,
+                                                ),
                                                 child: Row(
                                                   children: const [
-                                                    Icon(Icons.visibility, color: Colors.blue, size: 16),
+                                                    Icon(
+                                                      Icons.visibility,
+                                                      color: Colors.blue,
+                                                      size: 16,
+                                                    ),
                                                     SizedBox(width: 4),
                                                     Text(
                                                       'On Monitoring',
                                                       style: TextStyle(
                                                         color: Colors.blue,
                                                         fontSize: 12,
-                                                        fontWeight: FontWeight.w600,
+                                                        fontWeight:
+                                                            FontWeight.w600,
                                                       ),
                                                     ),
                                                   ],

@@ -47,7 +47,7 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen>
   Future<void> _submitToCor() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waiting_casting,
+      workflowStatus: OrderWorkflowStatus.waitingCasting,
       designerWorkChecklist: checkedTodos,
     );
     await OrderService().updateOrder(updatedOrder);
@@ -107,7 +107,7 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen>
   Widget build(BuildContext context) {
     bool isWorking = _order.workflowStatus == OrderWorkflowStatus.designing;
     bool isWaitingDesigner =
-        _order.workflowStatus == OrderWorkflowStatus.waiting_designer;
+        _order.workflowStatus == OrderWorkflowStatus.waitingDesigner;
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Pesanan Designer')),
       body: SingleChildScrollView(
@@ -163,10 +163,7 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen>
             _buildDisplayField('Jenis Batu', showField(_order.stoneType)),
             _buildDisplayField('Ukuran Batu', showField(_order.stoneSize)),
             _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
-            _buildDisplayField(
-              'Status',
-              _order.workflowStatus.label,
-            ),
+            _buildDisplayField('Status', _order.workflowStatus.label),
             const SizedBox(height: 24),
 
             // PATCH: Tambahkan tombol "Terima & Mulai Kerjakan Pesanan"
@@ -203,26 +200,27 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen>
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: checkedTodos.length == todoList.length && !_isProcessing
-                    ? _submitToCor
-                    : null,
+                onPressed:
+                    checkedTodos.length == todoList.length && !_isProcessing
+                        ? _submitToCor
+                        : null,
                 child: const Text('Submit ke Cor'),
               ),
             ],
 
             // Progress bar: tampilkan jika status sudah masuk tahap on progress
             if ({
-              OrderWorkflowStatus.waiting_casting,
+              OrderWorkflowStatus.waitingCasting,
               OrderWorkflowStatus.casting,
-              OrderWorkflowStatus.waiting_carving,
+              OrderWorkflowStatus.waitingCarving,
               OrderWorkflowStatus.carving,
-              OrderWorkflowStatus.waiting_diamond_setting,
+              OrderWorkflowStatus.waitingDiamondSetting,
               OrderWorkflowStatus.stoneSetting,
-              OrderWorkflowStatus.waiting_finishing,
+              OrderWorkflowStatus.waitingFinishing,
               OrderWorkflowStatus.finishing,
-              OrderWorkflowStatus.waiting_inventory,
+              OrderWorkflowStatus.waitingInventory,
               OrderWorkflowStatus.inventory,
-              OrderWorkflowStatus.waiting_sales_completion,
+              OrderWorkflowStatus.waitingSalesCompletion,
             }.contains(_order.workflowStatus))
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16.0),

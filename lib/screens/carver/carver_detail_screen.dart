@@ -15,7 +15,7 @@ class CarverDetailScreen extends StatefulWidget {
 class _CarverDetailScreenState extends State<CarverDetailScreen> {
   late Order _order;
   bool _isProcessing = false;
-  final List<String> todoList = ["Bom", "Polish","Getar", "Kasih ke Olivia"];
+  final List<String> todoList = ["Bom", "Polish", "Getar", "Kasih ke Olivia"];
   List<String> checkedTodos = [];
 
   @override
@@ -34,7 +34,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
   Future<void> _submitToNext() async {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
-      workflowStatus: OrderWorkflowStatus.waiting_diamond_setting,
+      workflowStatus: OrderWorkflowStatus.waitingDiamondSetting,
       carvingWorkChecklist: checkedTodos,
     );
     await OrderService().updateOrder(updatedOrder);
@@ -92,7 +92,8 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
   @override
   Widget build(BuildContext context) {
     bool isWorking = _order.workflowStatus == OrderWorkflowStatus.carving;
-    bool isWaiting = _order.workflowStatus == OrderWorkflowStatus.waiting_carving;
+    bool isWaiting =
+        _order.workflowStatus == OrderWorkflowStatus.waitingCarving;
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Pesanan Cor')),
       body: SingleChildScrollView(
@@ -152,13 +153,13 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
             const SizedBox(height: 24),
             // Progress bar: tampilkan jika status sudah masuk tahap on progress
             if ({
-              OrderWorkflowStatus.waiting_diamond_setting,
+              OrderWorkflowStatus.waitingDiamondSetting,
               OrderWorkflowStatus.stoneSetting,
-              OrderWorkflowStatus.waiting_finishing,
+              OrderWorkflowStatus.waitingFinishing,
               OrderWorkflowStatus.finishing,
-              OrderWorkflowStatus.waiting_inventory,
+              OrderWorkflowStatus.waitingInventory,
               OrderWorkflowStatus.inventory,
-              OrderWorkflowStatus.waiting_sales_completion,
+              OrderWorkflowStatus.waitingSalesCompletion,
             }.contains(_order.workflowStatus))
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -214,17 +215,17 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                         checkedTodos.remove(task);
                       }
                     });
-                    print('checkedTodos: $checkedTodos');
-                    print('todoList: $todoList');
+
                     await _saveChecklist();
                   },
                 ),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: checkedTodos.length == todoList.length && !_isProcessing
-                    ? _submitToNext
-                    : null,
+                onPressed:
+                    checkedTodos.length == todoList.length && !_isProcessing
+                        ? _submitToNext
+                        : null,
                 child: const Text('Submit ke Carver'),
               ),
             ],

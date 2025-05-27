@@ -37,30 +37,30 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   bool _isRandomCategoryActive = true;
 
   final List<OrderWorkflowStatus> waitingStatuses = [
-    OrderWorkflowStatus.waiting_sales_check,
+    OrderWorkflowStatus.waitingSalesCheck,
   ];
 
   final List<OrderWorkflowStatus> activeStatuses = [
-    OrderWorkflowStatus.waiting_sales_check,
-    OrderWorkflowStatus.waiting_designer,
+    OrderWorkflowStatus.waitingSalesCheck,
+    OrderWorkflowStatus.waitingDesigner,
     OrderWorkflowStatus.pending,
     OrderWorkflowStatus.designing,
-    OrderWorkflowStatus.waiting_casting,
+    OrderWorkflowStatus.waitingCasting,
     OrderWorkflowStatus.readyForCasting,
     OrderWorkflowStatus.casting,
-    OrderWorkflowStatus.waiting_carving,
+    OrderWorkflowStatus.waitingCarving,
     OrderWorkflowStatus.readyForCarving,
     OrderWorkflowStatus.carving,
-    OrderWorkflowStatus.waiting_diamond_setting,
+    OrderWorkflowStatus.waitingDiamondSetting,
     OrderWorkflowStatus.readyForStoneSetting,
     OrderWorkflowStatus.stoneSetting,
-    OrderWorkflowStatus.waiting_finishing,
+    OrderWorkflowStatus.waitingFinishing,
     OrderWorkflowStatus.readyForFinishing,
     OrderWorkflowStatus.finishing,
-    OrderWorkflowStatus.waiting_inventory,
+    OrderWorkflowStatus.waitingInventory,
     OrderWorkflowStatus.readyForInventory,
     OrderWorkflowStatus.inventory,
-    OrderWorkflowStatus.waiting_sales_completion,
+    OrderWorkflowStatus.waitingSalesCompletion,
   ];
 
   final List<String> categories = ['Progress', 'Jenis', 'Harga'];
@@ -324,7 +324,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
             decoration: BoxDecoration(
               color:
                   _selectedStatusFilter == filterValue
-                      ? color.withOpacity(0.8)
+                      ? color.withAlpha((255 * 0.8).round())
                       : Colors.grey[200],
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
@@ -745,7 +745,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
               'assets/images/toko_sumatra.jpg',
               fit: BoxFit.cover,
               colorBlendMode: BlendMode.darken,
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withAlpha((255 * 0.9).round()),
             ),
           ),
           _isLoading
@@ -795,7 +795,9 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                               borderSide: BorderSide.none,
                             ),
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.2),
+                            fillColor: Colors.white.withAlpha(
+                              (255 * 0.9).round(),
+                            ),
                             contentPadding: const EdgeInsets.symmetric(
                               vertical: 12,
                               horizontal: 16,
@@ -972,7 +974,9 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(10),
                                       ),
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.withAlpha(
+                                        (255 * 0.9).round(),
+                                      ),
                                       child: ListTile(
                                         leading: leadingWidget,
                                         minLeadingWidth: 90,
@@ -994,7 +998,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                                 color:
                                                     order.workflowStatus ==
                                                             OrderWorkflowStatus
-                                                                .waiting_sales_check
+                                                                .waitingSalesCheck
                                                         ? Colors.orange
                                                         : order.workflowStatus ==
                                                             OrderWorkflowStatus
@@ -1006,14 +1010,14 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                                         ? Colors.red
                                                         : order.workflowStatus ==
                                                             OrderWorkflowStatus
-                                                                .waiting_sales_completion
+                                                                .waitingSalesCompletion
                                                         ? Colors.orange
                                                         : Colors.blue,
                                               ),
                                             ),
                                             if (order.workflowStatus !=
                                                     OrderWorkflowStatus
-                                                        .waiting_sales_check &&
+                                                        .waitingSalesCheck &&
                                                 order.workflowStatus !=
                                                     OrderWorkflowStatus.done &&
                                                 order.workflowStatus !=
@@ -1056,7 +1060,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                               ),
                                             if (order.workflowStatus !=
                                                     OrderWorkflowStatus
-                                                        .waiting_sales_check &&
+                                                        .waitingSalesCheck &&
                                                 order.workflowStatus !=
                                                     OrderWorkflowStatus.done &&
                                                 order.workflowStatus !=

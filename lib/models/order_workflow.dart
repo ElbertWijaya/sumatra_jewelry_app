@@ -1,20 +1,20 @@
 import 'order.dart';
 
 final List<OrderWorkflowStatus> fullWorkflowStatuses = [
-  OrderWorkflowStatus.waiting_sales_check,
-  OrderWorkflowStatus.waiting_designer,
+  OrderWorkflowStatus.waitingSalesCheck,
+  OrderWorkflowStatus.waitingDesigner,
   OrderWorkflowStatus.designing,
-  OrderWorkflowStatus.waiting_casting,
+  OrderWorkflowStatus.waitingCasting,
   OrderWorkflowStatus.casting,
-  OrderWorkflowStatus.waiting_carving,
+  OrderWorkflowStatus.waitingCarving,
   OrderWorkflowStatus.carving,
-  OrderWorkflowStatus.waiting_diamond_setting,
+  OrderWorkflowStatus.waitingDiamondSetting,
   OrderWorkflowStatus.stoneSetting,
-  OrderWorkflowStatus.waiting_finishing,
+  OrderWorkflowStatus.waitingFinishing,
   OrderWorkflowStatus.finishing,
-  OrderWorkflowStatus.waiting_inventory,
+  OrderWorkflowStatus.waitingInventory,
   OrderWorkflowStatus.inventory,
-  OrderWorkflowStatus.waiting_sales_completion,
+  OrderWorkflowStatus.waitingSalesCompletion,
   OrderWorkflowStatus.done,
   OrderWorkflowStatus.cancelled,
 ];
