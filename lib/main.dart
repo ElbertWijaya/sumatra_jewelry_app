@@ -3,6 +3,7 @@ import 'screens/auth/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/sales/sales_dashboard_screen.dart';
 import 'screens/sales/sales_create_screen.dart';
+import 'screens/sales/sales_edit_screen.dart';
 // Import dashboard lain jika ada
 import 'screens/boss/boss_dashboard_screen.dart';
 import 'screens/finisher/finisher_dashboard_screen.dart';
@@ -27,7 +28,7 @@ class MyApp extends StatelessWidget {
       home: const SplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
-        '/sales/edit': (context) => const SalesCreateScreen(),
+        '/sales/edit': (context) => const SalesEditScreen(),
         '/sales/dashboard': (context) => const SalesDashboardScreen(),
         '/sales/create': (context) => const SalesCreateScreen(),
         '/boss/dashboard': (context) => const BossDashboardScreen(),

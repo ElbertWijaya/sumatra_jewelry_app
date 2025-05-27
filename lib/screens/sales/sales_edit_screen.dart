@@ -1,4 +1,8 @@
+import 'dart:io';
+import 'package:intl/intl.dart';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../models/order.dart';
 import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 import '../../services/order_service.dart';
@@ -11,153 +15,235 @@ class SalesEditScreen extends StatefulWidget {
 }
 
 class _SalesEditScreenState extends State<SalesEditScreen> {
+  late Order order; // <-- di sini tempat yang benar
   final _formKey = GlobalKey<FormState>();
-  final _orderService = OrderService();
-
-  late Order order;
-  bool _isLoading = false;
+  final ImagePicker _picker = ImagePicker();
 
   // Form fields
-  late String customerName;
-  late String customerContact;
-  late String address;
-  late String jewelryType;
-  String? stoneType;
-  String? stoneSize;
-  String? ringSize;
-  DateTime? readyDate;
-  String? notes;
-  double? finalPrice;
-  double? dp;
-  double? sisaLunas;
-
-  final TextEditingController _finalPriceController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _contactController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _stoneSizeController = TextEditingController();
+  final TextEditingController _ringSizeController = TextEditingController();
+  final TextEditingController _notesController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _hargaController = TextEditingController();
   final TextEditingController _dpController = TextEditingController();
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final Order? argOrder =
-        ModalRoute.of(context)?.settings.arguments as Order?;
-    if (argOrder != null) {
-      order = argOrder;
-      customerName = order.customerName;
-      customerContact = order.customerContact;
-      address = order.address;
-      jewelryType = order.jewelryType;
-      stoneType = order.stoneType;
-      stoneSize = order.stoneSize;
-      ringSize = order.ringSize;
-      readyDate = order.readyDate;
-      notes = order.notes;
-      finalPrice = order.finalPrice;
-      dp = order.dp;
-      sisaLunas = order.sisaLunas;
-      _finalPriceController.text =
-          finalPrice != null && finalPrice != 0
-              ? toCurrencyString(
-                finalPrice!.toStringAsFixed(0),
-                thousandSeparator: ThousandSeparator.Period,
-                mantissaLength: 0,
-              )
-              : '';
-      _dpController.text =
-          dp != null && dp != 0
-              ? toCurrencyString(
-                dp!.toStringAsFixed(0),
-                thousandSeparator: ThousandSeparator.Period,
-                mantissaLength: 0,
-              )
-              : '';
-    }
-  }
+  String? _jewelryType;
+  String? _goldColor;
+  String? _goldType;
+  String? _stoneType;
+  DateTime? _readyDate;
+  DateTime? _pickupDate;
+  late List<String> _images = [];
+  bool _isSaving = false;
+  bool _isInit = false;
 
-  double get _finalPriceValue {
+  double get _hargaBarang {
     return double.tryParse(
-          toNumericString(_finalPriceController.text, allowPeriod: false),
+          toNumericString(_hargaController.text, allowPeriod: false),
         ) ??
         0;
   }
 
-  double get _dpValue {
+  double get _dp {
     return double.tryParse(
           toNumericString(_dpController.text, allowPeriod: false),
         ) ??
         0;
   }
 
-  double get _sisaLunasValue {
-    final harga = _finalPriceValue;
-    final dp = _dpValue;
+  double get _sisaLunas {
+    final harga = _hargaBarang;
+    final dp = _dp;
     final sisa = harga - dp;
     return sisa < 0 ? 0 : sisa;
   }
 
-  Future<void> _submitEdit() async {
-    if (!_formKey.currentState!.validate()) return;
-    _formKey.currentState!.save();
+  final List<String> jewelryTypes = [
+    "Ring",
+    "Bangle",
+    "Earring",
+    "Pendant",
+    "Hairpin",
+    "Pin",
+    "Men ring",
+    "Women ring",
+    "Engagement ring",
+    "Custom",
+  ];
+  final List<String> goldColors = ["White Gold", "Rose Gold", "Yellow Gold"];
+  final List<String> goldTypes = ["19K", "18K", "14K", "9K"];
+  final List<String> stoneTypes = [
+    "Opal",
+    "Sapphire",
+    "Jade",
+    "Emerald",
+    "Ruby",
+    "Amethyst",
+    "Diamond",
+  ];
 
-    setState(() => _isLoading = true);
+  final _rupiahFormat = NumberFormat.currency(
+    locale: 'id',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _contactController.dispose();
+    _addressController.dispose();
+    _stoneSizeController.dispose();
+    _ringSizeController.dispose();
+    _notesController.dispose();
+    _dateController.dispose();
+    _hargaController.dispose();
+    _dpController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInit) {
+      final Order? argOrder = ModalRoute.of(context)?.settings.arguments as Order?;
+      if (argOrder != null) {
+        order = argOrder;
+        _nameController.text = order.customerName;
+        _contactController.text = order.customerContact;
+        _addressController.text = order.address;
+        _jewelryType = order.jewelryType;
+        _goldColor = order.goldColor;
+        _goldType = order.goldType;
+        _stoneType = order.stoneType;
+        _stoneSizeController.text = order.stoneSize ?? '';
+        _ringSizeController.text = order.ringSize ?? '';
+        _notesController.text = order.notes ?? '';
+        _hargaController.text = order.finalPrice != null && order.finalPrice != 0
+            ? toCurrencyString(
+                order.finalPrice!.toStringAsFixed(0),
+                thousandSeparator: ThousandSeparator.Period,
+                mantissaLength: 0,
+              )
+            : '';
+        _dpController.text = order.dp != null && order.dp != 0
+            ? toCurrencyString(
+                order.dp!.toStringAsFixed(0),
+                thousandSeparator: ThousandSeparator.Period,
+                mantissaLength: 0,
+              )
+            : '';
+        _readyDate = order.readyDate;
+        _pickupDate = order.pickupDate;
+        _dateController.text = _readyDate != null
+            ? "${_readyDate!.day}/${_readyDate!.month}/${_readyDate!.year}"
+            : '';
+        _images = List<String>.from(order.imagePaths ?? []);
+      }
+      _isInit = true;
+    }
+  }
+
+  Future<void> _pickImages() async {
+    try {
+      final List<XFile> images = await _picker.pickMultiImage();
+      if (!mounted) return;
+      if (images.isNotEmpty) {
+        setState(() {
+          _images.addAll(images.map((x) => x.path));
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal memilih gambar: $e')));
+    }
+  }
+
+  void _removeImage(int idx) {
+    setState(() {
+      _images.removeAt(idx);
+    });
+  }
+
+  Future<void> _saveOrder() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSaving = true);
 
     final updatedOrder = order.copyWith(
-      customerName: customerName,
-      customerContact: customerContact,
-      address: address,
-      jewelryType: jewelryType,
-      stoneType: stoneType,
-      stoneSize: stoneSize,
-      ringSize: ringSize,
-      readyDate: readyDate,
-      notes: notes,
-      finalPrice: _finalPriceValue,
-      dp: _dpValue,
-      sisaLunas: _sisaLunasValue,
+      customerName: _nameController.text,
+      customerContact: _contactController.text,
+      address: _addressController.text,
+      jewelryType: _jewelryType ?? '',
+      goldColor: _goldColor,
+      goldType: _goldType,
+      stoneType: _stoneType,
+      stoneSize:
+          _stoneSizeController.text.isEmpty ? null : _stoneSizeController.text,
+      ringSize:
+          _ringSizeController.text.isEmpty ? null : _ringSizeController.text,
+      goldPricePerGram: null,
+      finalPrice: _hargaBarang,
+      dp: _dp,
+      sisaLunas: _sisaLunas,
+      notes: _notesController.text.isEmpty ? null : _notesController.text,
+      readyDate: _readyDate,
+      pickupDate: _pickupDate,
+      imagePaths: _images,
+      workflowStatus: OrderWorkflowStatus.waitingSalesCheck,
       updatedAt: DateTime.now(),
     );
 
     try {
-      await _orderService.updateOrder(updatedOrder);
+      await OrderService().updateOrder(updatedOrder); // <-- harus updateOrder!
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pesanan berhasil diperbarui!')),
       );
       Navigator.of(context).pop(true);
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Gagal memperbarui pesanan: $e')));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memperbarui pesanan: $e')),
+      );
     }
-    setState(() => _isLoading = false);
+    setState(() => _isSaving = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final order = ModalRoute.of(context)?.settings.arguments as Order?;
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Pesanan')),
       body:
-          _isLoading
+          _isSaving
               ? const Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Form(
                   key: _formKey,
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Nama Pelanggan
                       TextFormField(
-                        initialValue: customerName,
+                        controller: _nameController,
                         decoration: const InputDecoration(
                           labelText: 'Nama Pelanggan *',
                         ),
-                        validator:
-                            (v) =>
-                                (v == null || v.trim().isEmpty)
-                                    ? 'Nama wajib diisi'
-                                    : null,
-                        onSaved: (v) => customerName = v?.trim() ?? '',
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Nama wajib diisi';
+                          }
+                          return null;
+                        },
                       ),
+                      // Nomor Telepon
                       TextFormField(
-                        initialValue: customerContact,
+                        controller: _contactController,
                         decoration: const InputDecoration(
                           labelText: 'Nomor Telepon *',
                         ),
@@ -171,56 +257,123 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
                           }
                           return null;
                         },
-                        onSaved: (v) => customerContact = v?.trim() ?? '',
                       ),
+                      // Alamat
                       TextFormField(
-                        initialValue: address,
+                        controller: _addressController,
                         decoration: const InputDecoration(
                           labelText: 'Alamat *',
                         ),
-                        validator:
-                            (v) =>
-                                (v == null || v.trim().isEmpty)
-                                    ? 'Alamat wajib diisi'
-                                    : null,
-                        onSaved: (v) => address = v?.trim() ?? '',
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Alamat wajib diisi';
+                          }
+                          return null;
+                        },
                       ),
-                      TextFormField(
-                        initialValue: jewelryType,
+                      // Jenis Perhiasan
+                      DropdownButtonFormField<String>(
+                        value: _jewelryType,
+                        items:
+                            jewelryTypes
+                                .map(
+                                  (type) => DropdownMenuItem(
+                                    value: type,
+                                    child: Text(type),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (v) => setState(() => _jewelryType = v),
                         decoration: const InputDecoration(
                           labelText: 'Jenis Perhiasan *',
                         ),
-                        validator:
-                            (v) =>
-                                (v == null || v.trim().isEmpty)
-                                    ? 'Jenis perhiasan wajib diisi'
-                                    : null,
-                        onSaved: (v) => jewelryType = v?.trim() ?? '',
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return 'Pilih jenis perhiasan';
+                          }
+                          return null;
+                        },
                       ),
-                      TextFormField(
-                        initialValue: stoneType,
+                      // Warna Emas
+                      DropdownButtonFormField<String>(
+                        value: _goldColor,
+                        items:
+                            goldColors
+                                .map(
+                                  (color) => DropdownMenuItem(
+                                    value: color,
+                                    child: Text(color),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (v) => setState(() => _goldColor = v),
+                        decoration: const InputDecoration(
+                          labelText: 'Warna Emas *',
+                        ),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return 'Pilih warna emas';
+                          }
+                          return null;
+                        },
+                      ),
+                      // Jenis Emas
+                      DropdownButtonFormField<String>(
+                        value: _goldType,
+                        items:
+                            goldTypes
+                                .map(
+                                  (type) => DropdownMenuItem(
+                                    value: type,
+                                    child: Text(type),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (v) => setState(() => _goldType = v),
+                        decoration: const InputDecoration(
+                          labelText: 'Jenis Emas *',
+                        ),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return 'Pilih jenis emas';
+                          }
+                          return null;
+                        },
+                      ),
+                      // Jenis Batu
+                      DropdownButtonFormField<String>(
+                        value: _stoneType,
+                        items:
+                            stoneTypes
+                                .map(
+                                  (type) => DropdownMenuItem(
+                                    value: type,
+                                    child: Text(type),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (v) => setState(() => _stoneType = v),
                         decoration: const InputDecoration(
                           labelText: 'Jenis Batu',
                         ),
-                        onSaved: (v) => stoneType = v?.trim(),
                       ),
+                      // Ukuran Batu
                       TextFormField(
-                        initialValue: stoneSize,
+                        controller: _stoneSizeController,
                         decoration: const InputDecoration(
                           labelText: 'Ukuran Batu',
                         ),
-                        onSaved: (v) => stoneSize = v?.trim(),
                       ),
+                      // Ukuran Cincin
                       TextFormField(
-                        initialValue: ringSize,
+                        controller: _ringSizeController,
                         decoration: const InputDecoration(
                           labelText: 'Ukuran Cincin',
                         ),
-                        onSaved: (v) => ringSize = v?.trim(),
                       ),
                       // Harga Barang / Perkiraan
                       TextFormField(
-                        controller: _finalPriceController,
+                        controller: _hargaController,
                         decoration: const InputDecoration(
                           labelText: 'Harga Barang / Perkiraan *',
                         ),
@@ -267,12 +420,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                             Text(
-                              toCurrencyString(
-                                _sisaLunasValue.toStringAsFixed(0),
-                                thousandSeparator: ThousandSeparator.Period,
-                                mantissaLength: 0,
-                                leadingSymbol: 'Rp ',
-                              ),
+                              _rupiahFormat.format(_sisaLunas),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.blue,
@@ -281,27 +429,162 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
                           ],
                         ),
                       ),
-                      TextFormField(
-                        initialValue: notes,
-                        decoration: const InputDecoration(
-                          labelText: 'Catatan Tambahan',
+                      // Catatan Tambahan sebagai notes besar (multiline)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Catatan Tambahan',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.yellow[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.amber,
+                                  width: 1,
+                                ),
+                              ),
+                              child: TextFormField(
+                                controller: _notesController,
+                                maxLines: 6,
+                                minLines: 4,
+                                decoration: const InputDecoration(
+                                  hintText: 'Tulis catatan tambahan di sini...',
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.all(16),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        onSaved: (v) => notes = v?.trim(),
+                      ),
+                      // Tanggal Siap
+                      TextFormField(
+                        controller: _dateController,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Tanggal Siap',
+                        ),
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _readyDate ?? DateTime.now(),
+                            firstDate: DateTime.now().subtract(
+                              const Duration(days: 365),
+                            ),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 365 * 2),
+                            ),
+                          );
+                          if (picked != null) {
+                            setState(() {
+                              _readyDate = picked;
+                              _dateController.text =
+                                  "${picked.day}/${picked.month}/${picked.year}";
+                            });
+                          }
+                        },
+                      ),
+                      
+                      // Gambar referensi
+                      const SizedBox(height: 12),
+                      Text(
+                        'Gambar Referensi',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 110,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _images.length + 1,
+                          itemBuilder: (context, idx) {
+                            if (idx == _images.length) {
+                              return GestureDetector(
+                                onTap: _pickImages,
+                                child: Container(
+                                  width: 110,
+                                  height: 110,
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.add_a_photo,
+                                    size: 40,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              );
+                            }
+                            return Stack(
+                              children: [
+                                Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.file(
+                                      File(_images[idx]),
+                                      width: 110,
+                                      height: 110,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (c, e, s) => Container(
+                                            width: 110,
+                                            height: 110,
+                                            color: Colors.grey[200],
+                                            child: const Icon(
+                                              Icons.broken_image,
+                                              size: 40,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 2,
+                                  right: 2,
+                                  child: GestureDetector(
+                                    onTap: () => _removeImage(idx),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.black54,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(
+                                        Icons.close,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
                       ),
                       const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: _isLoading ? null : _submitEdit,
-                        child:
-                            _isLoading
-                                ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                                : const Text('Simpan Perubahan'),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isSaving ? null : _saveOrder,
+                          child:
+                              _isSaving
+                                  ? const CircularProgressIndicator()
+                                  : const Text('Simpan Perubahan'),
+                        ),
                       ),
                     ],
                   ),

@@ -1164,18 +1164,23 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                             Text(
                                               'Status: ${order.workflowStatus.label}',
                                               style: TextStyle(
-                                                color:
-                                                    order.workflowStatus ==
-                                                            OrderWorkflowStatus
-                                                                .waitingDesigner
-                                                        ? Colors.orange
-                                                        : order.workflowStatus ==
-                                                            OrderWorkflowStatus
-                                                                .designing
+                                                color: order.workflowStatus == OrderWorkflowStatus.waitingDesigner
+                                                    ? Colors.orange
+                                                    : order.workflowStatus == OrderWorkflowStatus.designing
                                                         ? Colors.blue
                                                         : Colors.green,
                                               ),
                                             ),
+                                            // Tambahkan info tanggal order dan tanggal siap
+                                            Text(
+                                              'Tanggal Order: ${order.createdAt!.day}/${order.createdAt!.month}/${order.createdAt!.year}',
+                                              style: const TextStyle(fontSize: 12, color: Colors.lightGreen),
+                                            ),
+                                            if (order.readyDate != null)
+                                              Text(
+                                                'Tanggal Siap: ${order.readyDate!.day}/${order.readyDate!.month}/${order.readyDate!.year}',
+                                                style: const TextStyle(fontSize: 12, color: Colors.redAccent, fontWeight: FontWeight.bold),
+                                              ),
                                             // Progress bar & persentase hanya jika status "On Progress"
                                             if (waitingStatuses.contains(
                                                   order.workflowStatus,

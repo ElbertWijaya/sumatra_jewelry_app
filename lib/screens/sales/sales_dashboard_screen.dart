@@ -991,26 +991,35 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                             Text(
                                               'Status: ${order.workflowStatus.label}',
                                               style: TextStyle(
-                                                color:
-                                                    order.workflowStatus ==
-                                                            OrderWorkflowStatus
-                                                                .waitingSalesCheck
-                                                        ? Colors.orange
-                                                        : order.workflowStatus ==
-                                                            OrderWorkflowStatus
-                                                                .done
-                                                        ? Colors.green
-                                                        : order.workflowStatus ==
-                                                            OrderWorkflowStatus
-                                                                .cancelled
-                                                        ? Colors.red
-                                                        : order.workflowStatus ==
-                                                            OrderWorkflowStatus
-                                                                .waitingSalesCompletion
-                                                        ? Colors.orange
-                                                        : Colors.blue,
+                                                color: order.workflowStatus ==
+                                                        OrderWorkflowStatus
+                                                            .waitingSalesCheck
+                                                    ? Colors.orange
+                                                    : order.workflowStatus ==
+                                                        OrderWorkflowStatus
+                                                            .done
+                                                    ? Colors.green
+                                                    : order.workflowStatus ==
+                                                        OrderWorkflowStatus
+                                                            .cancelled
+                                                    ? Colors.red
+                                                    : order.workflowStatus ==
+                                                        OrderWorkflowStatus
+                                                            .waitingSalesCompletion
+                                                    ? Colors.orange
+                                                    : Colors.blue,
                                               ),
                                             ),
+                                            // Tambahkan info tanggal order dan tanggal siap
+                                            Text(
+                                              'Tanggal Order: ${order.createdAt!.day}/${order.createdAt!.month}/${order.createdAt!.year}',
+                                              style: const TextStyle(fontSize: 12, color: Colors.lightGreen),
+                                            ),
+                                            if (order.readyDate != null)
+                                              Text(
+                                                'Tanggal Siap: ${order.readyDate!.day}/${order.readyDate!.month}/${order.readyDate!.year}',
+                                                style: const TextStyle(fontSize: 12, color: Colors.redAccent, fontWeight: FontWeight.bold),
+                                              ),
                                             // Progress bar + persentase
                                             if (order.workflowStatus != OrderWorkflowStatus.waitingSalesCheck &&
                                                 order.workflowStatus != OrderWorkflowStatus.done &&

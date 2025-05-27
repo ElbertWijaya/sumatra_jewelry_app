@@ -17,6 +17,7 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
   late Order _order;
   late List<String> _images;
   DateTime? _readyDate;
+  DateTime? _pickupDate;
 
   // Controllers
   late TextEditingController _nameController;
@@ -28,6 +29,7 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
   late TextEditingController _dateController;
   late TextEditingController _finalPriceController;
   late TextEditingController _dpController;
+  final TextEditingController _pickupDateController = TextEditingController();
 
   final _rupiahFormat = NumberFormat.currency(
     locale: 'id',
@@ -78,6 +80,7 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
     _dateController.dispose();
     _finalPriceController.dispose();
     _dpController.dispose();
+    _pickupDateController.dispose();
     super.dispose();
   }
 
@@ -197,6 +200,13 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Daftar tugas designer (samakan dengan yang di designer_detail_screen.dart)
+    final List<String> designerTodoList = [
+      'Designing',
+      '3D Printing',
+      'Pengecekan',
+    ];
+
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Pesanan')),
       body: SingleChildScrollView(
@@ -373,14 +383,29 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                   },
                 ),
               ),
-            if (_order.designerWorkChecklist != null && _order.designerWorkChecklist!.isNotEmpty)
+            if (_order.designerWorkChecklist != null && designerTodoList.isNotEmpty)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('Checklist Designer:', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ..._order.designerWorkChecklist!.map((item) => Text('• $item')),
+                  ...designerTodoList.map((item) => Row(
+                    children: [
+                      Icon(
+                        _order.designerWorkChecklist!.contains(item)
+                            ? Icons.check_box
+                            : Icons.check_box_outline_blank,
+                        color: _order.designerWorkChecklist!.contains(item)
+                            ? Colors.green
+                            : Colors.grey,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(item),
+                    ],
+                  )),
                 ],
               ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
