@@ -12,6 +12,7 @@ import 'screens/cor/cor_dashboard_screen.dart';
 import 'screens/carver/carver_dashboard_screen.dart';
 import 'screens/diamond_setter/diamond_setter_dashboard_screen.dart';
 import 'screens/inventory/inventory_dashboard_screen.dart';
+import 'models/order.dart';
 
 void main() {
   runApp(const MyApp());
@@ -28,7 +29,13 @@ class MyApp extends StatelessWidget {
       home: const SplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
-        '/sales/edit': (context) => const SalesEditScreen(),
+        '/sales/edit': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments;
+          if (args is Order) {
+            return SalesEditScreen(order: args);
+          }
+          throw Exception('Order argument is required for /sales/edit route');
+        },
         '/sales/dashboard': (context) => const SalesDashboardScreen(),
         '/sales/create': (context) => const SalesCreateScreen(),
         '/boss/dashboard': (context) => const BossDashboardScreen(),

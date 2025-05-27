@@ -7,15 +7,18 @@ import '../../models/order.dart';
 import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 import '../../services/order_service.dart';
 
+import '../../models/order.dart';
+
 class SalesEditScreen extends StatefulWidget {
-  const SalesEditScreen({super.key});
+  final Order order;
+  const SalesEditScreen({super.key, required this.order});
 
   @override
   State<SalesEditScreen> createState() => _SalesEditScreenState();
 }
 
 class _SalesEditScreenState extends State<SalesEditScreen> {
-  late Order order; // <-- di sini tempat yang benar
+  late Order order;
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
 
@@ -106,45 +109,39 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_isInit) {
-      final Order? argOrder = ModalRoute.of(context)?.settings.arguments as Order?;
-      if (argOrder != null) {
-        order = argOrder;
-        _nameController.text = order.customerName;
-        _contactController.text = order.customerContact;
-        _addressController.text = order.address;
-        _jewelryType = order.jewelryType;
-        _goldColor = order.goldColor;
-        _goldType = order.goldType;
-        _stoneType = order.stoneType;
-        _stoneSizeController.text = order.stoneSize ?? '';
-        _ringSizeController.text = order.ringSize ?? '';
-        _notesController.text = order.notes ?? '';
-        _hargaController.text = order.finalPrice != null && order.finalPrice != 0
-            ? toCurrencyString(
-                order.finalPrice!.toStringAsFixed(0),
-                thousandSeparator: ThousandSeparator.Period,
-                mantissaLength: 0,
-              )
-            : '';
-        _dpController.text = order.dp != null && order.dp != 0
-            ? toCurrencyString(
-                order.dp!.toStringAsFixed(0),
-                thousandSeparator: ThousandSeparator.Period,
-                mantissaLength: 0,
-              )
-            : '';
-        _readyDate = order.readyDate;
-        _pickupDate = order.pickupDate;
-        _dateController.text = _readyDate != null
-            ? "${_readyDate!.day}/${_readyDate!.month}/${_readyDate!.year}"
-            : '';
-        _images = List<String>.from(order.imagePaths ?? []);
-      }
-      _isInit = true;
-    }
+  void initState() {
+    super.initState();
+    order = widget.order;
+    _nameController.text = order.customerName;
+    _contactController.text = order.customerContact;
+    _addressController.text = order.address;
+    _jewelryType = order.jewelryType;
+    _goldColor = order.goldColor;
+    _goldType = order.goldType;
+    _stoneType = order.stoneType;
+    _stoneSizeController.text = order.stoneSize ?? '';
+    _ringSizeController.text = order.ringSize ?? '';
+    _notesController.text = order.notes ?? '';
+    _hargaController.text = order.finalPrice != null && order.finalPrice != 0
+        ? toCurrencyString(
+            order.finalPrice!.toStringAsFixed(0),
+            thousandSeparator: ThousandSeparator.Period,
+            mantissaLength: 0,
+          )
+        : '';
+    _dpController.text = order.dp != null && order.dp != 0
+        ? toCurrencyString(
+            order.dp!.toStringAsFixed(0),
+            thousandSeparator: ThousandSeparator.Period,
+            mantissaLength: 0,
+          )
+        : '';
+    _readyDate = order.readyDate;
+    _pickupDate = order.pickupDate;
+    _dateController.text = _readyDate != null
+        ? "${_readyDate!.day}/${_readyDate!.month}/${_readyDate!.year}"
+        : '';
+    _images = List<String>.from(order.imagePaths ?? []);
   }
 
   Future<void> _pickImages() async {

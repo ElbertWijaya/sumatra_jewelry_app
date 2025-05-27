@@ -854,7 +854,7 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  'Tanggal Order: ${order.createdAt!.day}/${order.createdAt!.month}/${order.createdAt!.year}',
+                                                  'Tanggal Order: ${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
                                                   style: const TextStyle(fontSize: 12, color: Colors.lightGreen),
                                                 ),
                                                 if (order.readyDate != null)

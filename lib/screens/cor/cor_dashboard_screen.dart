@@ -80,10 +80,6 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
     "Diamond",
   ];
 
-  static const Color categoryActiveBgColor = Color(0xFFFAF5E0);
-  static const Color categoryInactiveBgColor = Colors.white;
-  static const Color categoryInactiveTextColor = Color(0xFF656359);
-
   @override
   void initState() {
     super.initState();
@@ -685,7 +681,7 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  'Tanggal Order: ${order.createdAt!.day}/${order.createdAt!.month}/${order.createdAt!.year}',
+                                                  'Tanggal Order: ${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
                                                   style: const TextStyle(fontSize: 12, color: Colors.lightGreen),
                                                 ),
                                                 if (order.readyDate != null)

@@ -1012,7 +1012,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                             ),
                                             // Tambahkan info tanggal order dan tanggal siap
                                             Text(
-                                              'Tanggal Order: ${order.createdAt!.day}/${order.createdAt!.month}/${order.createdAt!.year}',
+                                              'Tanggal Order: ${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
                                               style: const TextStyle(fontSize: 12, color: Colors.lightGreen),
                                             ),
                                             if (order.readyDate != null)

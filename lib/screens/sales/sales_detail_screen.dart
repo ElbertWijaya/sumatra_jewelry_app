@@ -21,6 +21,7 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
   late List<String> _carvingChecklist;
   late List<String> _diamondSetterChecklist;
   late List<String> _finishingChecklist;
+  late List<String> _inventoryChecklist;
 
   DateTime? _readyDate;
 
@@ -73,6 +74,7 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
     _carvingChecklist = List<String>.from(_order.carvingWorkChecklist ?? []);
     _diamondSetterChecklist = List<String>.from(_order.stoneSettingWorkChecklist ?? []);
     _finishingChecklist = List<String>.from(_order.finishingWorkChecklist ?? []);
+    _inventoryChecklist = List<String>.from(_order.inventoryWorkChecklist ?? []);
 
   }
 
@@ -329,7 +331,7 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                                 ),
                                 onPressed: () {
                                   Navigator.of(context).pushNamed(
-                                    '/edit-order',
+                                    '/sales/edit',
                                     arguments: _order,
                                   );
                                 },
