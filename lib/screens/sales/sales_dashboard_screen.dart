@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
+import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
 import 'sales_detail_screen.dart';
 
@@ -19,10 +20,9 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   String _searchQuery = '';
-  Object? _selectedStatusFilter;
-  String? _selectedCategoryFilter;
+  String _selectedTab = 'all'; // 'all', 'waiting', 'onprogress'
 
-  // Untuk filter sheet
+  // Filter state
   List<String> selectedJewelryTypes = [];
   List<String> selectedGoldColors = [];
   List<String> selectedGoldTypes = [];
@@ -58,34 +58,17 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     OrderWorkflowStatus.waitingSalesCompletion,
   ];
 
-  final List<String> categories = ['Progress', 'Jenis', 'Harga'];
-
   // Daftar pilihan filter
   final List<String> jewelryTypes = [
-    "ring",
-    "bangle",
-    "earring",
-    "pendant",
-    "hairpin",
-    "pin",
-    "men ring",
-    "women ring",
-    "engagement ring",
-    "custom",
+    "ring", "bangle", "earring", "pendant", "hairpin", "pin",
+    "men ring", "women ring", "engagement ring", "custom",
   ];
   final List<String> goldColors = ["White Gold", "Rose Gold", "Yellow Gold"];
   final List<String> goldTypes = ["19K", "18K", "14K", "9K"];
   final List<String> stoneTypes = [
-    "Opal",
-    "Sapphire",
-    "Jade",
-    "Emerald",
-    "Ruby",
-    "Amethyst",
-    "Diamond",
+    "Opal", "Sapphire", "Jade", "Emerald", "Ruby", "Amethyst", "Diamond",
   ];
 
-  // Warna untuk kategori dan filter sheet
   static const Color categoryActiveBgColor = Color(0xFFFAF5E0);
   static const Color categoryInactiveBgColor = Colors.white;
   static const Color categoryInactiveTextColor = Color(0xFF656359);
@@ -112,8 +95,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     setState(() {
       _randomCategoryFilters = allOptions.take(5).toList();
       _isRandomCategoryActive = true;
-      _selectedCategoryFilter = null;
-      // Reset juga filter sheet jika perlu
       selectedJewelryTypes.clear();
       selectedGoldColors.clear();
       selectedGoldTypes.clear();
@@ -134,11 +115,10 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       setState(() {
         _orders = fetchedOrders;
       });
-      _generateRandomCategoryFilters(); // Generate random categories on refresh
+      _generateRandomCategoryFilters();
     } catch (e) {
       setState(() {
-        _errorMessage =
-            'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
+        _errorMessage = 'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
       });
     } finally {
       setState(() {
@@ -172,222 +152,60 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   }
 
   List<Order> get _filteredOrders {
-    List<Order> filtered =
-        _orders
-            .where((order) => activeStatuses.contains(order.workflowStatus))
-            .toList();
+    List<Order> filtered = _orders.where((order) =>
+      order.workflowStatus != OrderWorkflowStatus.done &&
+      order.workflowStatus != OrderWorkflowStatus.cancelled
+    ).toList();
 
-    // Filter kategori (jika ada dipilih & bukan Progress/Jenis/Harga)
-    if (_selectedCategoryFilter != null &&
-        _selectedCategoryFilter!.isNotEmpty &&
-        !_isDefaultCategory(_selectedCategoryFilter!)) {
-      filtered =
-          filtered.where((order) {
-            return orderFullText(
-              order,
-            ).contains(_selectedCategoryFilter!.toLowerCase());
-          }).toList();
+    if (_selectedTab == 'waiting') {
+      filtered = filtered.where((order) =>
+        waitingStatuses.contains(order.workflowStatus)
+      ).toList();
+    } else if (_selectedTab == 'onprogress') {
+      filtered = filtered.where((order) =>
+        activeStatuses.contains(order.workflowStatus) &&
+        !waitingStatuses.contains(order.workflowStatus)
+      ).toList();
     }
 
-    // Filter dari filter sheet (jika diisi)
+    // Filter kategori dari filter bar/sheet
     if (selectedJewelryTypes.isNotEmpty) {
-      filtered =
-          filtered
-              .where(
-                (order) => selectedJewelryTypes.any(
-                  (t) => (order.jewelryType.toLowerCase()).contains(
-                    t.toLowerCase(),
-                  ),
-                ),
-              )
-              .toList();
+      filtered = filtered.where((order) =>
+        selectedJewelryTypes.any((t) => order.jewelryType.toLowerCase().contains(t.toLowerCase()))
+      ).toList();
     }
     if (selectedGoldColors.isNotEmpty) {
-      filtered =
-          filtered.where((order) {
-            final info = orderFullText(order);
-            return selectedGoldColors.any(
-              (gold) => info.contains(gold.toLowerCase()),
-            );
-          }).toList();
+      filtered = filtered.where((order) =>
+        selectedGoldColors.any((gold) => orderFullText(order).contains(gold.toLowerCase()))
+      ).toList();
     }
     if (selectedGoldTypes.isNotEmpty) {
-      filtered =
-          filtered.where((order) {
-            final info = orderFullText(order);
-            return selectedGoldTypes.any((t) => info.contains(t.toLowerCase()));
-          }).toList();
+      filtered = filtered.where((order) =>
+        selectedGoldTypes.any((t) => orderFullText(order).contains(t.toLowerCase()))
+      ).toList();
     }
     if (selectedStoneTypes.isNotEmpty) {
-      filtered =
-          filtered.where((order) {
-            final stones = (order.stoneType ?? '').toLowerCase();
-            return selectedStoneTypes.any(
-              (stone) => stones.contains(stone.toLowerCase()),
-            );
-          }).toList();
+      filtered = filtered.where((order) =>
+        selectedStoneTypes.any((stone) => (order.stoneType ?? '').toLowerCase().contains(stone.toLowerCase()))
+      ).toList();
     }
     if (priceMin != null) {
-      filtered =
-          filtered
-              .where((order) => (order.finalPrice ?? 0) >= priceMin!)
-              .toList();
+      filtered = filtered.where((order) => (order.finalPrice ?? 0) >= priceMin!).toList();
     }
     if (priceMax != null) {
-      filtered =
-          filtered
-              .where((order) => (order.finalPrice ?? 0) <= priceMax!)
-              .toList();
+      filtered = filtered.where((order) => (order.finalPrice ?? 0) <= priceMax!).toList();
     }
     if (ringSize != null && ringSize!.isNotEmpty) {
-      filtered =
-          filtered
-              .where(
-                (order) => (order.ringSize ?? '').toLowerCase().contains(
-                  ringSize!.toLowerCase(),
-                ),
-              )
-              .toList();
-    }
-
-    if (_selectedStatusFilter == null) {
-      // Tampilkan semua status aktif saja
-    } else if (_selectedStatusFilter == 'waiting') {
-      filtered =
-          filtered
-              .where((order) => waitingStatuses.contains(order.workflowStatus))
-              .toList();
-    } else if (_selectedStatusFilter is OrderWorkflowStatus) {
-      filtered =
-          filtered
-              .where((order) => order.workflowStatus == _selectedStatusFilter)
-              .toList();
-    } else if (_selectedStatusFilter == 'onProgress') {
-      filtered =
-          filtered
-              .where((order) => activeStatuses.contains(order.workflowStatus))
-              .toList();
+      filtered = filtered.where((order) => (order.ringSize ?? '').toLowerCase().contains(ringSize!.toLowerCase())).toList();
     }
 
     if (_searchQuery.isNotEmpty) {
-      filtered =
-          filtered
-              .where(
-                (order) =>
-                    orderFullText(order).contains(_searchQuery.toLowerCase()),
-              )
-              .toList();
+      filtered = filtered.where((order) =>
+        orderFullText(order).contains(_searchQuery.toLowerCase())
+      ).toList();
     }
 
     return filtered;
-  }
-
-  bool _isDefaultCategory(String? value) {
-    return value == 'Progress' || value == 'Jenis' || value == 'Harga';
-  }
-
-  Widget _buildStatusFilterButton(
-    String label,
-    Object? filterValue,
-    Color color,
-  ) {
-    int count;
-    if (filterValue == null) {
-      count =
-          _orders
-              .where((order) => activeStatuses.contains(order.workflowStatus))
-              .length;
-    } else if (filterValue == 'waiting') {
-      count =
-          _orders
-              .where((order) => waitingStatuses.contains(order.workflowStatus))
-              .length;
-    } else if (filterValue is OrderWorkflowStatus) {
-      count =
-          _orders.where((order) => order.workflowStatus == filterValue).length;
-    } else if (filterValue == 'onProgress') {
-      count =
-          _orders
-              .where(
-                (order) =>
-                    activeStatuses.contains(order.workflowStatus) &&
-                    !waitingStatuses.contains(order.workflowStatus),
-              )
-              .length;
-    } else {
-      count = 0;
-    }
-
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-        child: InkWell(
-          onTap: () {
-            setState(() {
-              _selectedStatusFilter = filterValue;
-            });
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-            decoration: BoxDecoration(
-              color:
-                  _selectedStatusFilter == filterValue
-                      ? color.withAlpha((0.8 * 255).toInt())
-                      : Colors.grey[200],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color:
-                    _selectedStatusFilter == filterValue ? color : Colors.grey,
-                width: 1.5,
-              ),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color:
-                        _selectedStatusFilter == filterValue
-                            ? Colors.white
-                            : Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color:
-                        _selectedStatusFilter == filterValue
-                            ? Colors.white
-                            : color,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    '$count',
-                    style: TextStyle(
-                      color:
-                          _selectedStatusFilter == filterValue
-                              ? color
-                              : Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _resetCategoryFilter() {
-    setState(() {
-      _generateRandomCategoryFilters();
-    });
   }
 
   void _openFilterSheet() {
@@ -401,295 +219,193 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return Stack(
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    top: 24,
-                    bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-                  ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Jenis Perhiasan
+                    Text("Jenis Perhiasan", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Wrap(
+                      spacing: 8,
+                      children: jewelryTypes.map((type) => FilterChip(
+                        label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
+                        selected: selectedJewelryTypes.contains(type),
+                        showCheckmark: false,
+                        backgroundColor: categoryInactiveBgColor,
+                        selectedColor: categoryActiveBgColor,
+                        side: BorderSide(
+                          color: selectedJewelryTypes.contains(type)
+                              ? categoryActiveBgColor
+                              : categoryInactiveBgColor,
+                        ),
+                        onSelected: (selected) {
+                          setModalState(() {
+                            selected
+                                ? selectedJewelryTypes.add(type)
+                                : selectedJewelryTypes.remove(type);
+                          });
+                        },
+                      )).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    // Warna Emas
+                    Text("Warna Emas", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Wrap(
+                      spacing: 8,
+                      children: goldColors.map((color) => FilterChip(
+                        label: Text(color, style: const TextStyle(color: categoryInactiveTextColor)),
+                        selected: selectedGoldColors.contains(color),
+                        showCheckmark: false,
+                        backgroundColor: categoryInactiveBgColor,
+                        selectedColor: categoryActiveBgColor,
+                        side: BorderSide(
+                          color: selectedGoldColors.contains(color)
+                              ? categoryActiveBgColor
+                              : categoryInactiveBgColor,
+                        ),
+                        onSelected: (selected) {
+                          setModalState(() {
+                            selected
+                                ? selectedGoldColors.add(color)
+                                : selectedGoldColors.remove(color);
+                          });
+                        },
+                      )).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    // Harga Min - Max
+                    Text("Harga Min - Max", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Row(
                       children: [
-                        // Jenis Perhiasan
-                        Text(
-                          "Jenis Perhiasan",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Wrap(
-                          spacing: 8,
-                          children:
-                              jewelryTypes
-                                  .map(
-                                    (type) => FilterChip(
-                                      label: Text(
-                                        type,
-                                        style: const TextStyle(
-                                          color: categoryInactiveTextColor,
-                                        ),
-                                      ),
-                                      selected: selectedJewelryTypes.contains(
-                                        type,
-                                      ),
-                                      showCheckmark: false,
-                                      backgroundColor: categoryInactiveBgColor,
-                                      selectedColor: categoryActiveBgColor,
-                                      side: BorderSide(
-                                        color:
-                                            selectedJewelryTypes.contains(type)
-                                                ? categoryActiveBgColor
-                                                : categoryInactiveBgColor,
-                                      ),
-                                      labelStyle: TextStyle(
-                                        color: categoryInactiveTextColor,
-                                      ),
-                                      onSelected: (selected) {
-                                        setModalState(() {
-                                          selected
-                                              ? selectedJewelryTypes.add(type)
-                                              : selectedJewelryTypes.remove(
-                                                type,
-                                              );
-                                        });
-                                      },
-                                    ),
-                                  )
-                                  .toList(),
-                        ),
-                        const SizedBox(height: 16),
-                        // Warna Emas
-                        Text(
-                          "Warna Emas",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Wrap(
-                          spacing: 8,
-                          children:
-                              goldColors
-                                  .map(
-                                    (color) => FilterChip(
-                                      label: Text(
-                                        color,
-                                        style: const TextStyle(
-                                          color: categoryInactiveTextColor,
-                                        ),
-                                      ),
-                                      selected: selectedGoldColors.contains(
-                                        color,
-                                      ),
-                                      showCheckmark: false,
-                                      backgroundColor: categoryInactiveBgColor,
-                                      selectedColor: categoryActiveBgColor,
-                                      side: BorderSide(
-                                        color:
-                                            selectedGoldColors.contains(color)
-                                                ? categoryActiveBgColor
-                                                : categoryInactiveBgColor,
-                                      ),
-                                      labelStyle: TextStyle(
-                                        color: categoryInactiveTextColor,
-                                      ),
-                                      onSelected: (selected) {
-                                        setModalState(() {
-                                          selected
-                                              ? selectedGoldColors.add(color)
-                                              : selectedGoldColors.remove(
-                                                color,
-                                              );
-                                        });
-                                      },
-                                    ),
-                                  )
-                                  .toList(),
-                        ),
-                        const SizedBox(height: 16),
-                        // Harga Min - Max
-                        Text(
-                          "Harga Min - Max",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Row(
-                          children: [
-                            Flexible(
-                              child: TextField(
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  hintText: "Min",
-                                ),
-                                onChanged: (v) {
-                                  setModalState(() {
-                                    priceMin = double.tryParse(v);
-                                  });
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: TextField(
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  hintText: "Max",
-                                ),
-                                onChanged: (v) {
-                                  setModalState(() {
-                                    priceMax = double.tryParse(v);
-                                  });
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        // Jenis Emas
-                        Text(
-                          "Jenis Emas",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Wrap(
-                          spacing: 8,
-                          children:
-                              goldTypes
-                                  .map(
-                                    (type) => FilterChip(
-                                      label: Text(
-                                        type,
-                                        style: const TextStyle(
-                                          color: categoryInactiveTextColor,
-                                        ),
-                                      ),
-                                      selected: selectedGoldTypes.contains(
-                                        type,
-                                      ),
-                                      showCheckmark: false,
-                                      backgroundColor: categoryInactiveBgColor,
-                                      selectedColor: categoryActiveBgColor,
-                                      side: BorderSide(
-                                        color:
-                                            selectedGoldTypes.contains(type)
-                                                ? categoryActiveBgColor
-                                                : categoryInactiveBgColor,
-                                      ),
-                                      labelStyle: TextStyle(
-                                        color: categoryInactiveTextColor,
-                                      ),
-                                      onSelected: (selected) {
-                                        setModalState(() {
-                                          selected
-                                              ? selectedGoldTypes.add(type)
-                                              : selectedGoldTypes.remove(type);
-                                        });
-                                      },
-                                    ),
-                                  )
-                                  .toList(),
-                        ),
-                        const SizedBox(height: 16),
-                        // Jenis Batu
-                        Text(
-                          "Jenis Batu",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Wrap(
-                          spacing: 8,
-                          children:
-                              stoneTypes
-                                  .map(
-                                    (type) => FilterChip(
-                                      label: Text(
-                                        type,
-                                        style: const TextStyle(
-                                          color: categoryInactiveTextColor,
-                                        ),
-                                      ),
-                                      selected: selectedStoneTypes.contains(
-                                        type,
-                                      ),
-                                      showCheckmark: false,
-                                      backgroundColor: categoryInactiveBgColor,
-                                      selectedColor: categoryActiveBgColor,
-                                      side: BorderSide(
-                                        color:
-                                            selectedStoneTypes.contains(type)
-                                                ? categoryActiveBgColor
-                                                : categoryInactiveBgColor,
-                                      ),
-                                      labelStyle: TextStyle(
-                                        color: categoryInactiveTextColor,
-                                      ),
-                                      onSelected: (selected) {
-                                        setModalState(() {
-                                          selected
-                                              ? selectedStoneTypes.add(type)
-                                              : selectedStoneTypes.remove(type);
-                                        });
-                                      },
-                                    ),
-                                  )
-                                  .toList(),
-                        ),
-                        const SizedBox(height: 16),
-                        // Ring Size
-                        Text(
-                          "Ring Size",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        TextField(
-                          keyboardType: TextInputType.text,
-                          decoration: const InputDecoration(
-                            hintText: "Ring Size",
+                        Flexible(
+                          child: TextField(
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(hintText: "Min"),
+                            onChanged: (v) {
+                              setModalState(() {
+                                priceMin = double.tryParse(v);
+                              });
+                            },
                           ),
-                          onChanged: (v) {
-                            setModalState(() {
-                              ringSize = v;
-                            });
-                          },
                         ),
-                        const SizedBox(height: 24),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  setState(() {
-                                    _isRandomCategoryActive = false;
-                                  });
-                                },
-                                child: const Text("Terapkan Filter"),
-                              ),
-                            ),
-                          ],
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: TextField(
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(hintText: "Max"),
+                            onChanged: (v) {
+                              setModalState(() {
+                                priceMax = double.tryParse(v);
+                              });
+                            },
+                          ),
                         ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    // Jenis Emas
+                    Text("Jenis Emas", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Wrap(
+                      spacing: 8,
+                      children: goldTypes.map((type) => FilterChip(
+                        label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
+                        selected: selectedGoldTypes.contains(type),
+                        showCheckmark: false,
+                        backgroundColor: categoryInactiveBgColor,
+                        selectedColor: categoryActiveBgColor,
+                        side: BorderSide(
+                          color: selectedGoldTypes.contains(type)
+                              ? categoryActiveBgColor
+                              : categoryInactiveBgColor,
+                        ),
+                        onSelected: (selected) {
+                          setModalState(() {
+                            selected
+                                ? selectedGoldTypes.add(type)
+                                : selectedGoldTypes.remove(type);
+                          });
+                        },
+                      )).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    // Jenis Batu
+                    Text("Jenis Batu", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Wrap(
+                      spacing: 8,
+                      children: stoneTypes.map((type) => FilterChip(
+                        label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
+                        selected: selectedStoneTypes.contains(type),
+                        showCheckmark: false,
+                        backgroundColor: categoryInactiveBgColor,
+                        selectedColor: categoryActiveBgColor,
+                        side: BorderSide(
+                          color: selectedStoneTypes.contains(type)
+                              ? categoryActiveBgColor
+                              : categoryInactiveBgColor,
+                        ),
+                        onSelected: (selected) {
+                          setModalState(() {
+                            selected
+                                ? selectedStoneTypes.add(type)
+                                : selectedStoneTypes.remove(type);
+                          });
+                        },
+                      )).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    // Ring Size
+                    Text("Ring Size", style: TextStyle(fontWeight: FontWeight.bold)),
+                    TextField(
+                      keyboardType: TextInputType.text,
+                      decoration: const InputDecoration(hintText: "Ring Size"),
+                      onChanged: (v) {
+                        setModalState(() {
+                          ringSize = v;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              setState(() {
+                                _isRandomCategoryActive = false;
+                              });
+                            },
+                            child: const Text("Terapkan Filter"),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.refresh, color: Colors.redAccent),
+                          tooltip: "Reset Filter",
+                          onPressed: () {
+                            Navigator.pop(context);
+                            setState(() {
+                              _generateRandomCategoryFilters();
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                // Tombol Reset di pojok kanan atas
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: IconButton(
-                    icon: const Icon(Icons.refresh, color: Colors.redAccent),
-                    tooltip: "Reset Category",
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _resetCategoryFilter();
-                    },
-                  ),
-                ),
-              ],
+              ),
             );
           },
         );
       },
     );
-  }
-
-  Future<void> handleOrderCompletionOrCancellation(Order order) async {
-    await _fetchOrders();
   }
 
   Future<void> _logout() async {
@@ -699,6 +415,36 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     if (mounted) {
       Navigator.pushReplacementNamed(context, '/login');
     }
+  }
+
+  Widget _buildTabButton(String label, String value, Color color) {
+    final bool selected = _selectedTab == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedTab = value),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? color : Colors.grey[200],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: selected ? color : Colors.grey,
+              width: 1.5,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -740,6 +486,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
         elevation: 0,
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
+          IconButton(icon: const Icon(Icons.filter_alt), onPressed: _openFilterSheet),
           IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
         ],
       ),
@@ -750,8 +497,8 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
           Navigator.pushNamed(context, '/sales/create');
         },
         backgroundColor: Colors.amber[700],
-        tooltip: 'Buat Pesanan Baru',
         child: const Icon(Icons.add, color: Colors.black),
+        tooltip: 'Buat Pesanan Baru',
       ),
       body: Stack(
         children: [
@@ -808,95 +555,85 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Row(
                     children: [
-                      Expanded(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: List.generate(filterBarList.length, (index) {
-                              final cat = filterBarList[index];
-                              final isSelected = selectedFilters.contains(cat);
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 4.0),
-                                child: ChoiceChip(
-                                  label: Text(
-                                    cat,
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? Colors.black
-                                          : categoryInactiveTextColor,
-                                    ),
-                                  ),
-                                  selected: isSelected,
-                                  onSelected: (selected) {
-                                    setState(() {
-                                      if (selected) {
-                                        _isRandomCategoryActive = false;
-                                        if (jewelryTypes.contains(cat)) {
-                                          if (!selectedJewelryTypes.contains(cat)) {
-                                            selectedJewelryTypes.add(cat);
-                                          }
-                                        } else if (goldColors.contains(cat)) {
-                                          if (!selectedGoldColors.contains(cat)) {
-                                            selectedGoldColors.add(cat);
-                                          }
-                                        } else if (goldTypes.contains(cat)) {
-                                          if (!selectedGoldTypes.contains(cat)) {
-                                            selectedGoldTypes.add(cat);
-                                          }
-                                        } else if (stoneTypes.contains(cat)) {
-                                          if (!selectedStoneTypes.contains(cat)) {
-                                            selectedStoneTypes.add(cat);
-                                          }
-                                        } else if (cat.startsWith('Ring Size:')) {
-                                          ringSize = cat.replaceFirst('Ring Size: ', '');
-                                        }
-                                      } else {
-                                        selectedJewelryTypes.remove(cat);
-                                        selectedGoldColors.remove(cat);
-                                        selectedGoldTypes.remove(cat);
-                                        selectedStoneTypes.remove(cat);
-                                        if (ringSize != null && 'Ring Size: $ringSize' == cat) {
-                                          ringSize = null;
-                                        }
-                                        if (selectedJewelryTypes.isEmpty &&
-                                            selectedGoldColors.isEmpty &&
-                                            selectedGoldTypes.isEmpty &&
-                                            selectedStoneTypes.isEmpty &&
-                                            (ringSize == null || ringSize!.isEmpty)) {
-                                          _isRandomCategoryActive = true;
-                                        }
-                                      }
-                                    });
-                                  },
-                                  backgroundColor: isSelected
-                                      ? const Color(0xFFEAE38C)
-                                      : categoryInactiveBgColor,
-                                  selectedColor: const Color(0xFFEAE38C),
-                                  labelStyle: TextStyle(
-                                    color: isSelected
-                                        ? Colors.black
-                                        : categoryInactiveTextColor,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  side: BorderSide(
-                                    color: isSelected
-                                        ? const Color(0xFFEAE38C)
-                                        : categoryInactiveBgColor,
-                                  ),
-                                ),
-                              );
-                            }),
+                      ...List.generate(filterBarList.length, (index) {
+                        final cat = filterBarList[index];
+                        final isSelected = selectedFilters.contains(cat);
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 4.0),
+                          child: ChoiceChip(
+                            label: Text(
+                              cat,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? Colors.black
+                                    : categoryInactiveTextColor,
+                              ),
+                            ),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              setState(() {
+                                if (selected) {
+                                  _isRandomCategoryActive = false;
+                                  if (jewelryTypes.contains(cat)) {
+                                    if (!selectedJewelryTypes.contains(cat)) {
+                                      selectedJewelryTypes.add(cat);
+                                    }
+                                  } else if (goldColors.contains(cat)) {
+                                    if (!selectedGoldColors.contains(cat)) {
+                                      selectedGoldColors.add(cat);
+                                    }
+                                  } else if (goldTypes.contains(cat)) {
+                                    if (!selectedGoldTypes.contains(cat)) {
+                                      selectedGoldTypes.add(cat);
+                                    }
+                                  } else if (stoneTypes.contains(cat)) {
+                                    if (!selectedStoneTypes.contains(cat)) {
+                                      selectedStoneTypes.add(cat);
+                                    }
+                                  } else if (cat.startsWith('Ring Size:')) {
+                                    ringSize = cat.replaceFirst('Ring Size: ', '');
+                                  }
+                                } else {
+                                  selectedJewelryTypes.remove(cat);
+                                  selectedGoldColors.remove(cat);
+                                  selectedGoldTypes.remove(cat);
+                                  selectedStoneTypes.remove(cat);
+                                  if (ringSize != null && 'Ring Size: $ringSize' == cat) {
+                                    ringSize = null;
+                                  }
+                                  if (selectedJewelryTypes.isEmpty &&
+                                      selectedGoldColors.isEmpty &&
+                                      selectedGoldTypes.isEmpty &&
+                                      selectedStoneTypes.isEmpty &&
+                                      (ringSize == null || ringSize!.isEmpty)) {
+                                    _isRandomCategoryActive = true;
+                                  }
+                                }
+                              });
+                            },
+                            backgroundColor: isSelected
+                                ? const Color(0xFFEAE38C)
+                                : categoryInactiveBgColor,
+                            selectedColor: const Color(0xFFEAE38C),
+                            labelStyle: TextStyle(
+                              color: isSelected
+                                  ? Colors.black
+                                  : categoryInactiveTextColor,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            side: BorderSide(
+                              color: isSelected
+                                  ? const Color(0xFFEAE38C)
+                                  : categoryInactiveBgColor,
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      }),
                       IconButton(
-                        icon: const Icon(
-                          Icons.filter_list,
-                          color: Color(0xFF656359),
-                        ),
-                        tooltip: "Filter",
+                        icon: const Icon(Icons.filter_alt, color: Colors.amber),
+                        tooltip: "Filter Lanjutan",
                         onPressed: _openFilterSheet,
                       ),
                     ],
@@ -906,23 +643,10 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildStatusFilterButton(
-                        'Waiting',
-                        'waiting',
-                        Colors.orange,
-                      ),
-                      _buildStatusFilterButton(
-                        'Working',
-                        'working',
-                        Colors.blue,
-                      ),
-                      _buildStatusFilterButton(
-                        'On Progress',
-                        'onprogress',
-                        Colors.green,
-                      ),
+                      _buildTabButton('All', 'all', Colors.blueGrey),
+                      _buildTabButton('Waiting', 'waiting', Colors.orange),
+                      _buildTabButton('On Progress', 'onprogress', Colors.green),
                     ],
                   ),
                 ),
@@ -1004,7 +728,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(10),
                                         ),
-                                        color: Colors.white.withAlpha((0.9 * 255).toInt()),
+                                        color: Colors.white.withOpacity(0.9),
                                         child: ListTile(
                                           leading: leadingWidget,
                                           minLeadingWidth: 90,

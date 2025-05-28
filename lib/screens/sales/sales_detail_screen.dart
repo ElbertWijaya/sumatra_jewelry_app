@@ -353,9 +353,7 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                                   ),
                                 ),
                                 onPressed: () {
-                                  Navigator.of(
-                                    context,
-                                  ).pushNamed('/sales/edit', arguments: _order);
+                                  Navigator.of(context).pushNamed('/sales/edit', arguments: _order);
                                 },
                               ),
                             ),
