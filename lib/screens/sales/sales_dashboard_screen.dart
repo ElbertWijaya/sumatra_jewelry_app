@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
-import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
 import 'sales_detail_screen.dart';
 
@@ -193,12 +192,15 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     // Filter dari filter sheet (jika diisi)
     if (selectedJewelryTypes.isNotEmpty) {
       filtered =
-          filtered.where((order) {
-            return selectedJewelryTypes.any(
-              (t) =>
-                  (order.jewelryType.toLowerCase()).contains(t.toLowerCase()),
-            );
-          }).toList();
+          filtered
+              .where(
+                (order) => selectedJewelryTypes.any(
+                  (t) => (order.jewelryType.toLowerCase()).contains(
+                    t.toLowerCase(),
+                  ),
+                ),
+              )
+              .toList();
     }
     if (selectedGoldColors.isNotEmpty) {
       filtered =
@@ -239,11 +241,13 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     }
     if (ringSize != null && ringSize!.isNotEmpty) {
       filtered =
-          filtered.where((order) {
-            return (order.ringSize ?? '').toLowerCase().contains(
-              ringSize!.toLowerCase(),
-            );
-          }).toList();
+          filtered
+              .where(
+                (order) => (order.ringSize ?? '').toLowerCase().contains(
+                  ringSize!.toLowerCase(),
+                ),
+              )
+              .toList();
     }
 
     if (_selectedStatusFilter == null) {
@@ -261,15 +265,18 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     } else if (_selectedStatusFilter == 'onProgress') {
       filtered =
           filtered
-              .where((order) => !waitingStatuses.contains(order.workflowStatus))
+              .where((order) => activeStatuses.contains(order.workflowStatus))
               .toList();
     }
 
     if (_searchQuery.isNotEmpty) {
       filtered =
-          filtered.where((order) {
-            return orderFullText(order).contains(_searchQuery.toLowerCase());
-          }).toList();
+          filtered
+              .where(
+                (order) =>
+                    orderFullText(order).contains(_searchQuery.toLowerCase()),
+              )
+              .toList();
     }
 
     return filtered;
@@ -325,7 +332,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
             decoration: BoxDecoration(
               color:
                   _selectedStatusFilter == filterValue
-                      ? color.withOpacity(0.8)
+                      ? color.withAlpha((0.8 * 255).toInt())
                       : Colors.grey[200],
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
@@ -696,7 +703,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Siapkan data kategori yang ditampilkan
     List<String> categoryToShow;
     if (_isRandomCategoryActive) {
       categoryToShow = _randomCategoryFilters;
@@ -708,12 +714,23 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
         ...selectedStoneTypes,
         if (ringSize != null && ringSize!.isNotEmpty) 'Ring Size: $ringSize',
       ];
-      // Jika tidak memilih filter apapun, tetap kembalikan random
       if (categoryToShow.every((e) => e.isEmpty) || categoryToShow.isEmpty) {
         categoryToShow = _randomCategoryFilters;
         _isRandomCategoryActive = true;
       }
     }
+
+    final allFilters = _randomCategoryFilters;
+    final selectedFilters = [
+      ...selectedJewelryTypes,
+      ...selectedGoldColors,
+      ...selectedGoldTypes,
+      ...selectedStoneTypes,
+      if (ringSize != null && ringSize!.isNotEmpty) 'Ring Size: $ringSize',
+    ].where((e) => e.isNotEmpty).toList();
+    final unselectedFilters =
+        allFilters.where((f) => !selectedFilters.contains(f)).toList();
+    final filterBarList = [...selectedFilters, ...unselectedFilters];
 
     return Scaffold(
       appBar: AppBar(
@@ -728,33 +745,26 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       ),
       extendBodyBehindAppBar: true,
       resizeToAvoidBottomInset: false,
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.of(context).pushNamed('/sales/create').then((value) {
-            if (value == true) _fetchOrders();
-          });
+          Navigator.pushNamed(context, '/sales/create');
         },
-        icon: const Icon(Icons.add),
-        label: const Text('Tambah Pesanan'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.amber[700],
+        tooltip: 'Buat Pesanan Baru',
+        child: const Icon(Icons.add, color: Colors.black),
       ),
       body: Stack(
         children: [
-          // Gambar background
+          // Background image
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
                 image: AssetImage('assets/images/toko_sumatra.jpg'),
                 fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(
-                  Colors.black54,
-                  BlendMode.darken,
-                ),
+                colorFilter: ColorFilter.mode(Colors.black54, BlendMode.darken),
               ),
             ),
           ),
-          // Konten utama
           SafeArea(
             child: Column(
               children: [
@@ -781,18 +791,115 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.2),
+                      fillColor: Colors.white.withAlpha((0.2 * 255).toInt()),
                       contentPadding: const EdgeInsets.symmetric(
                         vertical: 12,
                         horizontal: 16,
                       ),
                       labelStyle: const TextStyle(color: Colors.white70),
                       hintStyle: const TextStyle(color: Colors.white54),
-                      floatingLabelStyle: const TextStyle(
-                        color: Colors.white,
-                      ),
+                      floatingLabelStyle: const TextStyle(color: Colors.white),
                     ),
                     style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 10.0),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: List.generate(filterBarList.length, (index) {
+                              final cat = filterBarList[index];
+                              final isSelected = selectedFilters.contains(cat);
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 4.0),
+                                child: ChoiceChip(
+                                  label: Text(
+                                    cat,
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.black
+                                          : categoryInactiveTextColor,
+                                    ),
+                                  ),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _isRandomCategoryActive = false;
+                                        if (jewelryTypes.contains(cat)) {
+                                          if (!selectedJewelryTypes.contains(cat)) {
+                                            selectedJewelryTypes.add(cat);
+                                          }
+                                        } else if (goldColors.contains(cat)) {
+                                          if (!selectedGoldColors.contains(cat)) {
+                                            selectedGoldColors.add(cat);
+                                          }
+                                        } else if (goldTypes.contains(cat)) {
+                                          if (!selectedGoldTypes.contains(cat)) {
+                                            selectedGoldTypes.add(cat);
+                                          }
+                                        } else if (stoneTypes.contains(cat)) {
+                                          if (!selectedStoneTypes.contains(cat)) {
+                                            selectedStoneTypes.add(cat);
+                                          }
+                                        } else if (cat.startsWith('Ring Size:')) {
+                                          ringSize = cat.replaceFirst('Ring Size: ', '');
+                                        }
+                                      } else {
+                                        selectedJewelryTypes.remove(cat);
+                                        selectedGoldColors.remove(cat);
+                                        selectedGoldTypes.remove(cat);
+                                        selectedStoneTypes.remove(cat);
+                                        if (ringSize != null && 'Ring Size: $ringSize' == cat) {
+                                          ringSize = null;
+                                        }
+                                        if (selectedJewelryTypes.isEmpty &&
+                                            selectedGoldColors.isEmpty &&
+                                            selectedGoldTypes.isEmpty &&
+                                            selectedStoneTypes.isEmpty &&
+                                            (ringSize == null || ringSize!.isEmpty)) {
+                                          _isRandomCategoryActive = true;
+                                        }
+                                      }
+                                    });
+                                  },
+                                  backgroundColor: isSelected
+                                      ? const Color(0xFFEAE38C)
+                                      : categoryInactiveBgColor,
+                                  selectedColor: const Color(0xFFEAE38C),
+                                  labelStyle: TextStyle(
+                                    color: isSelected
+                                        ? Colors.black
+                                        : categoryInactiveTextColor,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? const Color(0xFFEAE38C)
+                                        : categoryInactiveBgColor,
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.filter_list,
+                          color: Color(0xFF656359),
+                        ),
+                        tooltip: "Filter",
+                        onPressed: _openFilterSheet,
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 10.0),
@@ -802,19 +909,19 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildStatusFilterButton(
-                        'Semua',
-                        null,
-                        Colors.deepPurple,
-                      ),
-                      _buildStatusFilterButton(
                         'Waiting',
                         'waiting',
                         Colors.orange,
                       ),
                       _buildStatusFilterButton(
-                        'On Progress',
-                        'onProgress',
+                        'Working',
+                        'working',
                         Colors.blue,
+                      ),
+                      _buildStatusFilterButton(
+                        'On Progress',
+                        'onprogress',
+                        Colors.green,
                       ),
                     ],
                   ),
@@ -825,7 +932,9 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                     onRefresh: _fetchOrders,
                     child: _isLoading
                         ? const Center(
-                            child: CircularProgressIndicator(color: Colors.white),
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
                           )
                         : _errorMessage.isNotEmpty
                             ? Center(
@@ -843,9 +952,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                       _searchQuery.isNotEmpty
                                           ? 'Tidak ada pesanan cocok dengan pencarian Anda.'
                                           : 'Tidak ada pesanan aktif.',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                      ),
+                                      style: const TextStyle(color: Colors.white70),
                                     ),
                                   )
                                 : ListView.builder(
@@ -861,8 +968,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                       if (order.imagePaths != null &&
                                           order.imagePaths!.isNotEmpty &&
                                           order.imagePaths!.first.isNotEmpty &&
-                                          File(order.imagePaths!.first)
-                                              .existsSync()) {
+                                          File(order.imagePaths!.first).existsSync()) {
                                         leadingWidget = ClipRRect(
                                           borderRadius: BorderRadius.circular(8),
                                           child: Image.file(
@@ -870,13 +976,12 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                             width: 80,
                                             height: 80,
                                             fit: BoxFit.cover,
-                                            errorBuilder: (context, error,
-                                                    stackTrace) =>
+                                            errorBuilder: (context, error, stackTrace) =>
                                                 const Icon(
-                                              Icons.image_not_supported,
-                                              size: 32,
-                                              color: Colors.grey,
-                                            ),
+                                                  Icons.image_not_supported,
+                                                  size: 32,
+                                                  color: Colors.grey,
+                                                ),
                                           ),
                                         );
                                       } else {
@@ -899,7 +1004,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(10),
                                         ),
-                                        color: Colors.white.withOpacity(0.9),
+                                        color: Colors.white.withAlpha((0.9 * 255).toInt()),
                                         child: ListTile(
                                           leading: leadingWidget,
                                           minLeadingWidth: 90,
@@ -911,38 +1016,34 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                             ),
                                           ),
                                           subtitle: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text('Jenis: ${order.jewelryType}'),
                                               Text(
                                                 'Status: ${order.workflowStatus.label}',
                                                 style: TextStyle(
-                                                  color: order.workflowStatus ==
-                                                          OrderWorkflowStatus
-                                                              .waitingSalesCheck
+                                                  color: order.workflowStatus == OrderWorkflowStatus.waitingSalesCheck
                                                       ? Colors.orange
-                                                      : order.workflowStatus ==
-                                                              OrderWorkflowStatus
-                                                                  .done
-                                                      ? Colors.green
-                                                      : Colors.blue,
+                                                      : order.workflowStatus == OrderWorkflowStatus.waitingSalesCompletion
+                                                          ? Colors.blue
+                                                          : Colors.green,
                                                 ),
                                               ),
                                               Text(
                                                 'Tanggal Order: ${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
                                                 style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.lightGreen),
+                                                  fontSize: 12,
+                                                  color: Colors.lightGreen,
+                                                ),
                                               ),
                                               if (order.readyDate != null)
                                                 Text(
                                                   'Tanggal Siap: ${order.readyDate!.day}/${order.readyDate!.month}/${order.readyDate!.year}',
                                                   style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.redAccent,
-                                                      fontWeight:
-                                                          FontWeight.bold),
+                                                    fontSize: 12,
+                                                    color: Colors.redAccent,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
                                                 ),
                                             ],
                                           ),
@@ -951,11 +1052,13 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                             color: Colors.grey,
                                           ),
                                           onTap: () async {
-                                            final result =
-                                                await Navigator.of(context).push(
+                                            final result = await Navigator.of(
+                                              context,
+                                            ).push(
                                               MaterialPageRoute(
-                                                builder: (context) =>
-                                                    SalesDetailScreen(order: order),
+                                                builder: (context) => SalesDetailScreen(
+                                                  order: order,
+                                                ),
                                               ),
                                             );
                                             if (result == true) _fetchOrders();

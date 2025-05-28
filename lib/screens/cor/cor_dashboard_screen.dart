@@ -80,6 +80,10 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
     "Diamond",
   ];
 
+  static const Color categoryActiveBgColor = Color(0xFFEAE38C);
+  static const Color categoryInactiveBgColor = Colors.white;
+  static const Color categoryInactiveTextColor = Color(0xFF656359);
+
   @override
   void initState() {
     super.initState();
@@ -199,6 +203,7 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
               .toList();
     }
 
+    // Filter dari filter sheet (jika diisi)
     if (selectedJewelryTypes.isNotEmpty) {
       filtered =
           filtered
@@ -471,68 +476,89 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
       }
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Caster Dashboard'),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
-          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
-        ],
-      ),
-      extendBodyBehindAppBar: true,
-      resizeToAvoidBottomInset: false,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return Stack(
-            children: [
-              Positioned.fill(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage('assets/images/toko_sumatra.jpg'),
-                      fit: BoxFit.cover,
-                      colorFilter: ColorFilter.mode(
-                        Colors.black54,
-                        BlendMode.darken,
+    final allFilters = _randomCategoryFilters;
+    final selectedFilters =
+        [
+          ...selectedJewelryTypes,
+          ...selectedGoldColors,
+          ...selectedGoldTypes,
+          ...selectedStoneTypes,
+          if (ringSize != null && ringSize!.isNotEmpty) 'Ring Size: $ringSize',
+        ].where((e) => e.isNotEmpty).toList();
+    final unselectedFilters =
+        allFilters.where((f) => !selectedFilters.contains(f)).toList();
+    final filterBarList = [...selectedFilters, ...unselectedFilters];
+
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Caster Dashboard'),
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _fetchOrders,
+            ),
+            IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
+          ],
+        ),
+        extendBodyBehindAppBar: true,
+        resizeToAvoidBottomInset: false,
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage('assets/images/toko_sumatra.jpg'),
+                        fit: BoxFit.cover,
+                        colorFilter: ColorFilter.mode(
+                          Colors.black54,
+                          BlendMode.darken,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              _isLoading
-                  ? const Center(
+                _isLoading
+                    ? const Center(
                       child: CircularProgressIndicator(color: Colors.white),
                     )
-                  : _errorMessage.isNotEmpty
-                      ? Center(
-                          child: Text(
-                            _errorMessage,
-                            style: const TextStyle(color: Colors.red, fontSize: 16),
+                    : _errorMessage.isNotEmpty
+                    ? Center(
+                      child: Text(
+                        _errorMessage,
+                        style: const TextStyle(color: Colors.red, fontSize: 16),
+                      ),
+                    )
+                    : RefreshIndicator(
+                      onRefresh: _fetchOrders,
+                      child: SingleChildScrollView(
+                        physics: const ClampingScrollPhysics(),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                            maxHeight: constraints.maxHeight,
                           ),
-                        )
-                      : RefreshIndicator(
-                          onRefresh: _fetchOrders,
-                          child: SingleChildScrollView(
-                            physics: const ClampingScrollPhysics(),
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                minHeight: constraints.maxHeight,
-                              ),
-                              child: Column(
-                                children: [
-                                  SizedBox(
-                                    height: AppBar().preferredSize.height +
-                                        MediaQuery.of(context).padding.top +
-                                        20,
+                          child: IntrinsicHeight(
+                            child: Column(
+                              children: [
+                                SizedBox(
+                                  height:
+                                      AppBar().preferredSize.height +
+                                      MediaQuery.of(context).padding.top +
+                                      20,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0,
+                                    vertical: 10.0,
                                   ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16.0,
-                                      vertical: 10.0,
-                                    ),
+                                  child: FocusScope(
                                     child: TextField(
                                       onChanged: (value) {
                                         setState(() {
@@ -548,68 +574,232 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
                                           color: Colors.white70,
                                         ),
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           borderSide: BorderSide.none,
                                         ),
                                         filled: true,
-                                        fillColor: Colors.white.withOpacity(0.2),
-                                        contentPadding: const EdgeInsets.symmetric(
-                                          vertical: 12,
-                                          horizontal: 16,
+                                        fillColor: Colors.white.withOpacity(
+                                          0.2,
                                         ),
-                                        labelStyle:
-                                            const TextStyle(color: Colors.white70),
-                                        hintStyle:
-                                            const TextStyle(color: Colors.white54),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              vertical: 12,
+                                              horizontal: 16,
+                                            ),
+                                        labelStyle: const TextStyle(
+                                          color: Colors.white70,
+                                        ),
+                                        hintStyle: const TextStyle(
+                                          color: Colors.white54,
+                                        ),
                                         floatingLabelStyle: const TextStyle(
                                           color: Colors.white,
                                         ),
                                       ),
-                                      style: const TextStyle(color: Colors.white),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
-                                  const SizedBox(height: 100.0),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16.0,
-                                      vertical: 8.0,
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                      children: [
-                                        _buildStatusFilterButton(
-                                          'Waiting',
-                                          'waiting',
-                                          Colors.orange,
-                                        ),
-                                        _buildStatusFilterButton(
-                                          'Working',
-                                          'working',
-                                          Colors.blue,
-                                        ),
-                                        _buildStatusFilterButton(
-                                          'On Progress',
-                                          'onprogress',
-                                          Colors.green,
-                                        ),
-                                      ],
-                                    ),
+                                ),
+                                const SizedBox(height: 100.0),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0,
+                                    vertical: 8.0,
                                   ),
-                                  // ...kategori filter chip dan filter sheet...
-                                  ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                      maxHeight: MediaQuery.of(context).size.height -
-                                          AppBar().preferredSize.height -
-                                          MediaQuery.of(context).padding.top -
-                                          (10.0 + 12.0 * 2 + 16.0 * 2) -
-                                          100.0 -
-                                          (8.0 * 2 + 20.0 + 16.0 * 2) -
-                                          (8.0 * 2 + 20.0 + 16.0 * 2) -
-                                          MediaQuery.of(context).viewInsets.bottom -
-                                          80,
-                                    ),
-                                    child: _filteredOrders.isEmpty
-                                        ? Center(
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceAround,
+                                    children: [
+                                      _buildStatusFilterButton(
+                                        'Waiting',
+                                        'waiting',
+                                        Colors.orange,
+                                      ),
+                                      _buildStatusFilterButton(
+                                        'Working',
+                                        'working',
+                                        Colors.blue,
+                                      ),
+                                      _buildStatusFilterButton(
+                                        'On Progress',
+                                        'onprogress',
+                                        Colors.green,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: Row(
+                                            children: List.generate(filterBarList.length, (
+                                              index,
+                                            ) {
+                                              final cat = filterBarList[index];
+                                              final isSelected = selectedFilters
+                                                  .contains(cat);
+                                              return Padding(
+                                                padding: const EdgeInsets.only(
+                                                  right: 4.0,
+                                                ),
+                                                child: ChoiceChip(
+                                                  label: Text(
+                                                    cat,
+                                                    style: TextStyle(
+                                                      color: isSelected ? Colors.black : categoryInactiveTextColor,
+                                                    ),
+                                                  ),
+                                                  selected: isSelected,
+                                                  onSelected: (selected) {
+                                                    setState(() {
+                                                      if (selected) {
+                                                        _isRandomCategoryActive =
+                                                            false;
+                                                        if (jewelryTypes
+                                                            .contains(cat)) {
+                                                          if (!selectedJewelryTypes
+                                                              .contains(cat)) {
+                                                            selectedJewelryTypes
+                                                                .add(cat);
+                                                          }
+                                                        } else if (goldColors
+                                                            .contains(cat)) {
+                                                          if (!selectedGoldColors
+                                                              .contains(cat)) {
+                                                            selectedGoldColors
+                                                                .add(cat);
+                                                          }
+                                                        } else if (goldTypes
+                                                            .contains(cat)) {
+                                                          if (!selectedGoldTypes
+                                                              .contains(cat)) {
+                                                            selectedGoldTypes
+                                                                .add(cat);
+                                                          }
+                                                        } else if (stoneTypes
+                                                            .contains(cat)) {
+                                                          if (!selectedStoneTypes
+                                                              .contains(cat)) {
+                                                            selectedStoneTypes
+                                                                .add(cat);
+                                                          }
+                                                        } else if (cat
+                                                            .startsWith(
+                                                              'Ring Size:',
+                                                            )) {
+                                                          ringSize = cat
+                                                              .replaceFirst(
+                                                                'Ring Size: ',
+                                                                '',
+                                                              );
+                                                        }
+                                                      } else {
+                                                        selectedJewelryTypes
+                                                            .remove(cat);
+                                                        selectedGoldColors
+                                                            .remove(cat);
+                                                        selectedGoldTypes
+                                                            .remove(cat);
+                                                        selectedStoneTypes
+                                                            .remove(cat);
+                                                        if (ringSize != null &&
+                                                            'Ring Size: $ringSize' ==
+                                                                cat) {
+                                                          ringSize = null;
+                                                        }
+                                                        if (selectedJewelryTypes
+                                                                .isEmpty &&
+                                                            selectedGoldColors
+                                                                .isEmpty &&
+                                                            selectedGoldTypes
+                                                                .isEmpty &&
+                                                            selectedStoneTypes
+                                                                .isEmpty &&
+                                                            (ringSize ==
+                                                                    null ||
+                                                                ringSize!
+                                                                    .isEmpty)) {
+                                                          _isRandomCategoryActive =
+                                                              true;
+                                                        }
+                                                      }
+                                                    });
+                                                  },
+                                                  backgroundColor:
+                                                      isSelected
+                                                          ? const Color(
+                                                            0xFFEAE38C,
+                                                          )
+                                                          : categoryInactiveBgColor,
+                                                  selectedColor: const Color(
+                                                    0xFFEAE38C,
+                                                  ),
+                                                  labelStyle: TextStyle(
+                                                    color:
+                                                        isSelected
+                                                            ? Colors.black
+                                                            : categoryInactiveTextColor,
+                                                  ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                  ),
+                                                  side: BorderSide(
+                                                    color:
+                                                        isSelected
+                                                            ? const Color(
+                                                              0xFFEAE38C,
+                                                            )
+                                                            : categoryInactiveBgColor,
+                                                  ),
+                                                ),
+                                              );
+                                            }),
+                                          ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.filter_list,
+                                          color: Color(0xFF656359),
+                                        ),
+                                        tooltip: "Filter",
+                                        onPressed: _openFilterSheet,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // ...kategori filter chip dan filter sheet...
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxHeight:
+                                        MediaQuery.of(context).size.height -
+                                        AppBar().preferredSize.height -
+                                        MediaQuery.of(context).padding.top -
+                                        (10.0 + 12.0 * 2 + 16.0 * 2) -
+                                        100.0 -
+                                        (8.0 * 2 + 20.0 + 16.0 * 2) -
+                                        (8.0 * 2 + 20.0 + 16.0 * 2) -
+                                        MediaQuery.of(
+                                          context,
+                                        ).viewInsets.bottom -
+                                        80,
+                                  ),
+                                  child:
+                                      _filteredOrders.isEmpty
+                                          ? Center(
                                             child: Text(
                                               _searchQuery.isNotEmpty
                                                   ? 'Tidak ada pesanan cocok dengan pencarian Anda.'
@@ -619,139 +809,227 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
                                               ),
                                             ),
                                           )
-                                        : ListView.builder(
+                                          : ListView.builder(
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 16.0,
                                             ),
                                             itemCount: _filteredOrders.length,
                                             itemBuilder: (context, index) {
-                                              final order = _filteredOrders[index];
+                                              final order =
+                                                  _filteredOrders[index];
 
                                               Widget leadingWidget;
                                               if (order.imagePaths != null &&
-                                                  order.imagePaths!.isNotEmpty &&
-                                                  order.imagePaths!.first.isNotEmpty &&
-                                                  File(order.imagePaths!.first).existsSync()) {
+                                                  order
+                                                      .imagePaths!
+                                                      .isNotEmpty &&
+                                                  order
+                                                      .imagePaths!
+                                                      .first
+                                                      .isNotEmpty &&
+                                                  File(
+                                                    order.imagePaths!.first,
+                                                  ).existsSync()) {
                                                 leadingWidget = ClipRRect(
-                                                  borderRadius: BorderRadius.circular(8),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
                                                   child: Image.file(
-                                                    File(order.imagePaths!.first),
+                                                    File(
+                                                      order.imagePaths!.first,
+                                                    ),
                                                     width: 80,
                                                     height: 80,
                                                     fit: BoxFit.cover,
-                                                    errorBuilder: (context, error, stackTrace) =>
-                                                        const Icon(
-                                                          Icons.image_not_supported,
+                                                    errorBuilder:
+                                                        (
+                                                          context,
+                                                          error,
+                                                          stackTrace,
+                                                        ) => const Icon(
+                                                          Icons
+                                                              .image_not_supported,
                                                           size: 32,
                                                           color: Colors.grey,
                                                         ),
                                                   ),
                                                 );
                                               } else {
-                                                leadingWidget = const CircleAvatar(
-                                                  backgroundColor: Colors.blueGrey,
-                                                  radius: 40,
-                                                  child: Icon(
-                                                    Icons.image,
-                                                    color: Colors.white,
-                                                    size: 40,
-                                                  ),
-                                                );
+                                                leadingWidget =
+                                                    const CircleAvatar(
+                                                      backgroundColor:
+                                                          Colors.blueGrey,
+                                                      radius: 40,
+                                                      child: Icon(
+                                                        Icons.image,
+                                                        color: Colors.white,
+                                                        size: 40,
+                                                      ),
+                                                    );
                                               }
 
                                               return Card(
-                                                margin: const EdgeInsets.symmetric(
-                                                  vertical: 8.0,
-                                                ),
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 8.0,
+                                                    ),
                                                 elevation: 4,
                                                 shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(10),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
                                                 ),
-                                                color: Colors.white.withOpacity(0.9),
+                                                color: Colors.white.withOpacity(
+                                                  0.9,
+                                                ),
                                                 child: ListTile(
                                                   leading: leadingWidget,
                                                   minLeadingWidth: 90,
-                                                  contentPadding: const EdgeInsets.all(8),
+                                                  contentPadding:
+                                                      const EdgeInsets.all(8),
                                                   title: Text(
                                                     order.customerName,
                                                     style: const TextStyle(
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                   subtitle: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
                                                     children: [
-                                                      Text('Jenis: ${order.jewelryType}'),
+                                                      Text(
+                                                        'Jenis: ${order.jewelryType}',
+                                                      ),
                                                       Text(
                                                         'Status: ${order.workflowStatus.label}',
                                                         style: TextStyle(
-                                                          color: order.workflowStatus == OrderWorkflowStatus.waitingCasting
-                                                              ? Colors.orange
-                                                              : order.workflowStatus == OrderWorkflowStatus.casting
+                                                          color:
+                                                              order.workflowStatus ==
+                                                                      OrderWorkflowStatus
+                                                                          .waitingCasting
+                                                                  ? Colors
+                                                                      .orange
+                                                                  : order.workflowStatus ==
+                                                                      OrderWorkflowStatus
+                                                                          .casting
                                                                   ? Colors.blue
-                                                                  : Colors.green,
+                                                                  : Colors
+                                                                      .green,
                                                         ),
                                                       ),
                                                       Text(
                                                         'Tanggal Order: ${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
-                                                        style: const TextStyle(fontSize: 12, color: Colors.lightGreen),
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color:
+                                                              Colors.lightGreen,
+                                                        ),
                                                       ),
-                                                      if (order.readyDate != null)
+                                                      if (order.readyDate !=
+                                                          null)
                                                         Text(
                                                           'Tanggal Siap: ${order.readyDate!.day}/${order.readyDate!.month}/${order.readyDate!.year}',
-                                                          style: const TextStyle(fontSize: 12, color: Colors.redAccent, fontWeight: FontWeight.bold),
-                                                        ),
-                                                      if ((waitingStatuses.contains(order.workflowStatus) ||
-                                                          onProgressStatuses.contains(order.workflowStatus)) &&
-                                                          _selectedStatusFilter != 'working')
-                                                        Padding(
-                                                          padding: const EdgeInsets.only(
-                                                            top: 6.0,
-                                                            bottom: 2.0,
+                                                          style: const TextStyle(
+                                                            fontSize: 12,
+                                                            color:
+                                                                Colors
+                                                                    .redAccent,
+                                                            fontWeight:
+                                                                FontWeight.bold,
                                                           ),
+                                                        ),
+                                                      if ((waitingStatuses.contains(
+                                                                order
+                                                                    .workflowStatus,
+                                                              ) ||
+                                                              onProgressStatuses
+                                                                  .contains(
+                                                                    order
+                                                                        .workflowStatus,
+                                                                  )) &&
+                                                          _selectedStatusFilter !=
+                                                              'working')
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets.only(
+                                                                top: 6.0,
+                                                                bottom: 2.0,
+                                                              ),
                                                           child: Column(
-                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
                                                             children: [
                                                               Text(
                                                                 '${(getOrderProgress(order) * 100).toStringAsFixed(0)}%',
                                                                 style: const TextStyle(
                                                                   fontSize: 12,
-                                                                  fontWeight: FontWeight.bold,
-                                                                  color: Colors.black87,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  color:
+                                                                      Colors
+                                                                          .black87,
                                                                 ),
                                                               ),
-                                                              const SizedBox(height: 2),
+                                                              const SizedBox(
+                                                                height: 2,
+                                                              ),
                                                               LinearProgressIndicator(
-                                                                value: getOrderProgress(order),
+                                                                value:
+                                                                    getOrderProgress(
+                                                                      order,
+                                                                    ),
                                                                 minHeight: 6,
-                                                                backgroundColor: Colors.grey[200],
-                                                                color: Colors.amber[700],
-                                                                borderRadius: BorderRadius.circular(8),
+                                                                backgroundColor:
+                                                                    Colors
+                                                                        .grey[200],
+                                                                color:
+                                                                    Colors
+                                                                        .amber[700],
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      8,
+                                                                    ),
                                                               ),
                                                             ],
                                                           ),
                                                         ),
-                                                      if (order.workflowStatus != OrderWorkflowStatus.done &&
-                                                          order.workflowStatus != OrderWorkflowStatus.cancelled &&
-                                                          _selectedStatusFilter != 'working')
+                                                      if (order.workflowStatus !=
+                                                              OrderWorkflowStatus
+                                                                  .done &&
+                                                          order.workflowStatus !=
+                                                              OrderWorkflowStatus
+                                                                  .cancelled &&
+                                                          _selectedStatusFilter !=
+                                                              'working')
                                                         Padding(
-                                                          padding: const EdgeInsets.only(
-                                                            top: 2.0,
-                                                          ),
+                                                          padding:
+                                                              const EdgeInsets.only(
+                                                                top: 2.0,
+                                                              ),
                                                           child: Row(
                                                             children: const [
                                                               Icon(
-                                                                Icons.visibility,
-                                                                color: Colors.blue,
+                                                                Icons
+                                                                    .visibility,
+                                                                color:
+                                                                    Colors.blue,
                                                                 size: 16,
                                                               ),
-                                                              SizedBox(width: 4),
+                                                              SizedBox(
+                                                                width: 4,
+                                                              ),
                                                               Text(
                                                                 'On Monitoring',
                                                                 style: TextStyle(
-                                                                  color: Colors.blue,
+                                                                  color:
+                                                                      Colors
+                                                                          .blue,
                                                                   fontSize: 12,
-                                                                  fontWeight: FontWeight.w600,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
                                                                 ),
                                                               ),
                                                             ],
@@ -764,26 +1042,38 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
                                                     color: Colors.grey,
                                                   ),
                                                   onTap: () async {
-                                                    final result = await Navigator.of(context).push(
-                                                      MaterialPageRoute(
-                                                        builder: (context) => CorDetailScreen(order: order),
-                                                      ),
-                                                    );
-                                                    if (result == true) _fetchOrders();
+                                                    final result =
+                                                        await Navigator.of(
+                                                          context,
+                                                        ).push(
+                                                          MaterialPageRoute(
+                                                            builder:
+                                                                (context) =>
+                                                                    CorDetailScreen(
+                                                                      order:
+                                                                          order,
+                                                                    ),
+                                                          ),
+                                                        );
+                                                    if (result == true) {
+                                                      _fetchOrders();
+                                                    }
                                                   },
                                                 ),
                                               );
                                             },
                                           ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-            ],
-          );
-        },
+                      ),
+                    ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

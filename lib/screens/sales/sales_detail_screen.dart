@@ -54,28 +54,36 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
     _ringSizeController = TextEditingController(text: _order.ringSize ?? "");
     _notesController = TextEditingController(text: _order.notes ?? "");
     _finalPriceController = TextEditingController(
-      text: _order.finalPrice != null && _order.finalPrice != 0
-          ? _rupiahFormat.format(_order.finalPrice)
-          : '',
+      text:
+          _order.finalPrice != null && _order.finalPrice != 0
+              ? _rupiahFormat.format(_order.finalPrice)
+              : '',
     );
     _dpController = TextEditingController(
-      text: _order.dp != null && _order.dp != 0
-          ? _rupiahFormat.format(_order.dp)
-          : '',
+      text:
+          _order.dp != null && _order.dp != 0
+              ? _rupiahFormat.format(_order.dp)
+              : '',
     );
     _readyDate = _order.readyDate;
     _dateController = TextEditingController(
-      text: _readyDate == null
-          ? ""
-          : "${_readyDate!.day}/${_readyDate!.month}/${_readyDate!.year}",
+      text:
+          _readyDate == null
+              ? ""
+              : "${_readyDate!.day}/${_readyDate!.month}/${_readyDate!.year}",
     );
     _designerChecklist = List<String>.from(_order.designerWorkChecklist ?? []);
     _castingChecklist = List<String>.from(_order.castingWorkChecklist ?? []);
     _carvingChecklist = List<String>.from(_order.carvingWorkChecklist ?? []);
-    _diamondSetterChecklist = List<String>.from(_order.stoneSettingWorkChecklist ?? []);
-    _finishingChecklist = List<String>.from(_order.finishingWorkChecklist ?? []);
-    _inventoryChecklist = List<String>.from(_order.inventoryWorkChecklist ?? []);
-
+    _diamondSetterChecklist = List<String>.from(
+      _order.stoneSettingWorkChecklist ?? [],
+    );
+    _finishingChecklist = List<String>.from(
+      _order.finishingWorkChecklist ?? [],
+    );
+    _inventoryChecklist = List<String>.from(
+      _order.inventoryWorkChecklist ?? [],
+    );
   }
 
   @override
@@ -126,13 +134,56 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
+          builder: (dialogContext, setState) => AlertDialog(
+            title: const Text('Konfirmasi Hapus'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Yakin ingin menghapus pesanan ini?'),
+                const SizedBox(height: 12),
+                CheckboxListTile(
+                  value: isAgreed,
+                  onChanged: (val) => setState(() => isAgreed = val ?? false),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: const Text('Saya setuju dengan ketentuan ini'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Batal'),
+              ),
+              TextButton(
+                onPressed: isAgreed
+                    ? () => Navigator.pop(dialogContext, true)
+                    : null,
+                child: const Text('Hapus'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Dialog konfirmasi submit
+  Future<bool?> _showSubmitConfirmationDialog(String worker) async {
+    bool isAgreed = false;
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
           builder:
               (context, setState) => AlertDialog(
-                title: const Text('Konfirmasi Hapus'),
+                title: Text('Konfirmasi Submit'),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Yakin ingin menghapus pesanan ini?'),
+                    Text(
+                      'Yakin ingin submit pesanan ke $worker? Setelah submit, data tidak bisa diedit lagi.',
+                    ),
                     const SizedBox(height: 12),
                     CheckboxListTile(
                       value: isAgreed,
@@ -146,59 +197,15 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                 ),
                 actions: [
                   TextButton(
-                    onPressed: () => Navigator.pop(dialogContext, false),
+                    onPressed: () => Navigator.pop(ctx, false),
                     child: const Text('Batal'),
                   ),
                   TextButton(
-                    onPressed:
-                        isAgreed
-                            ? () => Navigator.pop(dialogContext, true)
-                            : null,
-                    child: const Text('Hapus'),
+                    onPressed: isAgreed ? () => Navigator.pop(ctx, true) : null,
+                    child: const Text('Submit'),
                   ),
                 ],
               ),
-        );
-      },
-    );
-  }
-
-  // Dialog konfirmasi submit
-  Future<bool?> _showSubmitConfirmationDialog(String worker) async {
-    bool isAgreed = false;
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setState) => AlertDialog(
-            title: Text('Konfirmasi Submit'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Yakin ingin submit pesanan ke $worker? Setelah submit, data tidak bisa diedit lagi.',
-                ),
-                const SizedBox(height: 12),
-                CheckboxListTile(
-                  value: isAgreed,
-                  onChanged: (val) => setState(() => isAgreed = val ?? false),
-                  controlAffinity: ListTileControlAffinity.leading,
-                  title: const Text('Saya setuju dengan ketentuan ini'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Batal'),
-              ),
-              TextButton(
-                onPressed: isAgreed ? () => Navigator.pop(ctx, true) : null,
-                child: const Text('Submit'),
-              ),
-            ],
-          ),
         );
       },
     );
@@ -228,14 +235,8 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
       'Pemasangan berlian',
       'Kasih ke Olivia',
     ];
-    final List<String> finishingTodoList = [
-      'Finishing',
-      'Kasih ke Olivia',
-    ];
-    final List<String> inventoryTodoList = [
-      'Inventory',
-      'Pengecekan',
-    ];
+    final List<String> finishingTodoList = ['Finishing', 'Kasih ke Olivia'];
+    final List<String> inventoryTodoList = ['Inventory', 'Pengecekan'];
 
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Pesanan')),
@@ -260,16 +261,17 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                           width: 110,
                           height: 110,
                           fit: BoxFit.cover,
-                          errorBuilder: (c, e, s) => Container(
-                            width: 110,
-                            height: 110,
-                            color: Colors.grey[200],
-                            child: const Icon(
-                              Icons.broken_image,
-                              size: 40,
-                              color: Colors.grey,
-                            ),
-                          ),
+                          errorBuilder:
+                              (c, e, s) => Container(
+                                width: 110,
+                                height: 110,
+                                color: Colors.grey[200],
+                                child: const Icon(
+                                  Icons.broken_image,
+                                  size: 40,
+                                  color: Colors.grey,
+                                ),
+                              ),
                         ),
                       ),
                     );
@@ -277,18 +279,33 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                 ),
               ),
             const SizedBox(height: 16),
-            _buildDisplayField('Nama Pelanggan', showField(_order.customerName)),
-            _buildDisplayField('Nomor Telepon', showField(_order.customerContact)),
+            _buildDisplayField(
+              'Nama Pelanggan',
+              showField(_order.customerName),
+            ),
+            _buildDisplayField(
+              'Nomor Telepon',
+              showField(_order.customerContact),
+            ),
             _buildDisplayField('Alamat', showField(_order.address)),
-            _buildDisplayField('Jenis Perhiasan', showField(_order.jewelryType)),
+            _buildDisplayField(
+              'Jenis Perhiasan',
+              showField(_order.jewelryType),
+            ),
             _buildDisplayField('Warna Emas', showField(_order.goldColor)),
             _buildDisplayField('Jenis Emas', showField(_order.goldType)),
             _buildDisplayField('Jenis Batu', showField(_order.stoneType)),
             _buildDisplayField('Ukuran Batu', showField(_order.stoneSize)),
             _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
-            _buildDisplayField('Harga Barang / Perkiraan', showDouble(_order.finalPrice)),
+            _buildDisplayField(
+              'Harga Barang / Perkiraan',
+              showDouble(_order.finalPrice),
+            ),
             _buildDisplayField('Jumlah DP', showDouble(_order.dp)),
-            _buildDisplayField('Sisa harga untuk lunas', showDouble(_order.sisaLunas)),
+            _buildDisplayField(
+              'Sisa harga untuk lunas',
+              showDouble(_order.sisaLunas),
+            ),
             _buildDisplayField('Catatan Tambahan', showField(_order.notes)),
             _buildDisplayField('Tanggal Siap', showDate(_order.readyDate)),
             _buildDisplayField('Status', _order.workflowStatus.label),
@@ -314,7 +331,8 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                       ),
                     ),
                     // Tombol Edit & Hapus (hanya untuk sales, setelah progress bar)
-                    if (_order.workflowStatus == OrderWorkflowStatus.waitingSalesCheck)
+                    if (_order.workflowStatus ==
+                        OrderWorkflowStatus.waitingSalesCheck)
                       Padding(
                         padding: const EdgeInsets.only(top: 16.0),
                         child: Row(
@@ -326,14 +344,18 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.orange,
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  textStyle: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 onPressed: () {
-                                  Navigator.of(context).pushNamed(
-                                    '/sales/edit',
-                                    arguments: _order,
-                                  );
+                                  Navigator.of(
+                                    context,
+                                  ).pushNamed('/sales/edit', arguments: _order);
                                 },
                               ),
                             ),
@@ -345,11 +367,17 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.red,
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  textStyle: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 onPressed: () async {
                                   final confirm = await _showDeleteConfirmationDialog();
+                                  if (!mounted) return;
                                   if (confirm == true) {
                                     await OrderService().deleteOrder(_order.id);
                                     if (!mounted) return;
@@ -362,7 +390,8 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                         ),
                       ),
                     // Tombol submit ke designer (setelah edit & hapus)
-                    if (_order.workflowStatus == OrderWorkflowStatus.waitingSalesCheck)
+                    if (_order.workflowStatus ==
+                        OrderWorkflowStatus.waitingSalesCheck)
                       Padding(
                         padding: const EdgeInsets.only(top: 16.0),
                         child: SizedBox(
@@ -403,7 +432,9 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
               title: 'Checklist Designer',
               todoList: designerTodoList,
               checklist: _designerChecklist,
-              canEdit: _order.workflowStatus == OrderWorkflowStatus.waitingSalesCheck,
+              canEdit:
+                  _order.workflowStatus ==
+                  OrderWorkflowStatus.waitingSalesCheck,
               onSubmit: () async {
                 final confirm = await _showSubmitConfirmationDialog('Designer');
                 if (!mounted) return;
@@ -419,13 +450,16 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                 }
               },
               submitLabel: 'Submit untuk Designer',
-              showSubmit: _order.workflowStatus == OrderWorkflowStatus.waitingSalesCheck,
+              showSubmit:
+                  _order.workflowStatus ==
+                  OrderWorkflowStatus.waitingSalesCheck,
             ),
             _buildWorkerChecklist(
               title: 'Checklist Casting',
               todoList: castingTodoList,
               checklist: _castingChecklist,
-              canEdit: _order.workflowStatus == OrderWorkflowStatus.waitingCasting,
+              canEdit:
+                  _order.workflowStatus == OrderWorkflowStatus.waitingCasting,
               onSubmit: () async {
                 final confirm = await _showSubmitConfirmationDialog('Casting');
                 if (!mounted) return;
@@ -441,13 +475,15 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                 }
               },
               submitLabel: 'Submit untuk Carving',
-              showSubmit: _order.workflowStatus == OrderWorkflowStatus.waitingCasting,
+              showSubmit:
+                  _order.workflowStatus == OrderWorkflowStatus.waitingCasting,
             ),
             _buildWorkerChecklist(
               title: 'Checklist Carving',
               todoList: carvingTodoList,
               checklist: _carvingChecklist,
-              canEdit: _order.workflowStatus == OrderWorkflowStatus.waitingCarving,
+              canEdit:
+                  _order.workflowStatus == OrderWorkflowStatus.waitingCarving,
               onSubmit: () async {
                 final confirm = await _showSubmitConfirmationDialog('Carving');
                 if (!mounted) return;
@@ -463,15 +499,20 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                 }
               },
               submitLabel: 'Submit untuk Diamond Setting',
-              showSubmit: _order.workflowStatus == OrderWorkflowStatus.waitingCarving,
+              showSubmit:
+                  _order.workflowStatus == OrderWorkflowStatus.waitingCarving,
             ),
             _buildWorkerChecklist(
               title: 'Checklist Diamond Setting',
               todoList: diamondSetterTodoList,
               checklist: _diamondSetterChecklist,
-              canEdit: _order.workflowStatus == OrderWorkflowStatus.waitingDiamondSetting,
+              canEdit:
+                  _order.workflowStatus ==
+                  OrderWorkflowStatus.waitingDiamondSetting,
               onSubmit: () async {
-                final confirm = await _showSubmitConfirmationDialog('Diamond Setting');
+                final confirm = await _showSubmitConfirmationDialog(
+                  'Diamond Setting',
+                );
                 if (!mounted) return;
                 if (confirm == true) {
                   final updatedOrder = _order.copyWith(
@@ -485,15 +526,20 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                 }
               },
               submitLabel: 'Submit untuk Finishing',
-              showSubmit: _order.workflowStatus == OrderWorkflowStatus.waitingDiamondSetting,
+              showSubmit:
+                  _order.workflowStatus ==
+                  OrderWorkflowStatus.waitingDiamondSetting,
             ),
             _buildWorkerChecklist(
               title: 'Checklist Finishing',
               todoList: finishingTodoList,
               checklist: _finishingChecklist,
-              canEdit: _order.workflowStatus == OrderWorkflowStatus.waitingFinishing,
+              canEdit:
+                  _order.workflowStatus == OrderWorkflowStatus.waitingFinishing,
               onSubmit: () async {
-                final confirm = await _showSubmitConfirmationDialog('Finishing');
+                final confirm = await _showSubmitConfirmationDialog(
+                  'Finishing',
+                );
                 if (!mounted) return;
                 if (confirm == true) {
                   final updatedOrder = _order.copyWith(
@@ -507,15 +553,19 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                 }
               },
               submitLabel: 'Submit untuk Inventory',
-              showSubmit: _order.workflowStatus == OrderWorkflowStatus.waitingFinishing,
+              showSubmit:
+                  _order.workflowStatus == OrderWorkflowStatus.waitingFinishing,
             ),
             _buildWorkerChecklist(
               title: 'Data Inventaris',
               todoList: inventoryTodoList,
               checklist: _inventoryChecklist,
-              canEdit: _order.workflowStatus == OrderWorkflowStatus.waitingInventory,
+              canEdit:
+                  _order.workflowStatus == OrderWorkflowStatus.waitingInventory,
               onSubmit: () async {
-                final confirm = await _showSubmitConfirmationDialog('Inventory');
+                final confirm = await _showSubmitConfirmationDialog(
+                  'Inventory',
+                );
                 if (!mounted) return;
                 if (confirm == true) {
                   final updatedOrder = _order.copyWith(
@@ -529,7 +579,8 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
                 }
               },
               submitLabel: 'Submit untuk Sales',
-              showSubmit: _order.workflowStatus == OrderWorkflowStatus.waitingInventory,
+              showSubmit:
+                  _order.workflowStatus == OrderWorkflowStatus.waitingInventory,
             ),
             const SizedBox(height: 16),
           ],
@@ -548,23 +599,41 @@ class _SalesDetailScreenState extends State<SalesDetailScreen> {
     required bool showSubmit,
   }) {
     if (todoList.isEmpty) return const SizedBox.shrink();
+    if (title == 'Data Inventaris') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 16),
+          Text(
+            'Data Inventaris',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          Text('Kode Produk: ${showField(_order.inventoryProductCode)}'),
+          Text('Nama Produk: ${showField(_order.inventoryProductName)}'),
+          Text('Lokasi Rak: ${showField(_order.inventoryShelfLocation)}'),
+          Text('Catatan Inventory: ${showField(_order.inventoryNotes)}'),
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
         Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        ...todoList.map((item) => Row(
-          children: [
-            Icon(
-              checklist.contains(item)
-                  ? Icons.check_box
-                  : Icons.check_box_outline_blank,
-              color: checklist.contains(item) ? Colors.green : Colors.grey,
-            ),
-            const SizedBox(width: 8),
-            Text(item),
-          ],
-        )),
+        ...todoList.map(
+          (item) => Row(
+            children: [
+              Icon(
+                checklist.contains(item)
+                    ? Icons.check_box
+                    : Icons.check_box_outline_blank,
+                color: checklist.contains(item) ? Colors.green : Colors.grey,
+              ),
+              const SizedBox(width: 8),
+              Text(item),
+            ],
+          ),
+        ),
       ],
     );
   }

@@ -7,6 +7,9 @@ import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
 import 'carver_detail_screen.dart';
 
+const Color categoryInactiveTextColor = Colors.white70;
+const Color categoryInactiveBgColor = Color(0xFF656359);
+
 class CarverDashboardScreen extends StatefulWidget {
   const CarverDashboardScreen({super.key});
 
@@ -51,13 +54,27 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
   ];
 
   final List<String> jewelryTypes = [
-    "ring", "bangle", "earring", "pendant", "hairpin", "pin",
-    "men ring", "women ring", "engagement ring", "custom",
+    "ring",
+    "bangle",
+    "earring",
+    "pendant",
+    "hairpin",
+    "pin",
+    "men ring",
+    "women ring",
+    "engagement ring",
+    "custom",
   ];
   final List<String> goldColors = ["White Gold", "Rose Gold", "Yellow Gold"];
   final List<String> goldTypes = ["19K", "18K", "14K", "9K"];
   final List<String> stoneTypes = [
-    "Opal", "Sapphire", "Jade", "Emerald", "Ruby", "Amethyst", "Diamond",
+    "Opal",
+    "Sapphire",
+    "Jade",
+    "Emerald",
+    "Ruby",
+    "Amethyst",
+    "Diamond",
   ];
 
   @override
@@ -267,102 +284,6 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
     return filtered;
   }
 
-  Widget _buildStatusFilterButton(
-    String label,
-    String filterValue,
-    Color color,
-  ) {
-    int count = 0;
-    if (filterValue == 'waiting') {
-      count =
-          _orders
-              .where((order) => waitingStatuses.contains(order.workflowStatus))
-              .length;
-    } else if (filterValue == 'working') {
-      count =
-          _orders
-              .where((order) => workingStatuses.contains(order.workflowStatus))
-              .length;
-    } else if (filterValue == 'onprogress') {
-      count =
-          _orders
-              .where(
-                (order) => onProgressStatuses.contains(order.workflowStatus),
-              )
-              .length;
-    }
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-        child: InkWell(
-          onTap: () {
-            setState(() {
-              _selectedStatusFilter = filterValue;
-            });
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-            decoration: BoxDecoration(
-              color:
-                  _selectedStatusFilter == filterValue
-                      ? color.withOpacity(0.8)
-                      : Colors.grey[200],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color:
-                    _selectedStatusFilter == filterValue ? color : Colors.grey,
-                width: 1.5,
-              ),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color:
-                        _selectedStatusFilter == filterValue
-                            ? Colors.white
-                            : Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color:
-                        _selectedStatusFilter == filterValue
-                            ? Colors.white
-                            : color,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    '$count',
-                    style: TextStyle(
-                      color:
-                          _selectedStatusFilter == filterValue
-                              ? color
-                              : Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _resetCategoryFilter() {
-    setState(() {
-      _generateRandomCategoryFilters();
-    });
-  }
-
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
@@ -377,6 +298,34 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
     final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
     if (idx < 0) return 0.0;
     return idx / maxIdx;
+  }
+
+  void _openFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Filter (Coming Soon)',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('Tutup'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -398,276 +347,419 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
       }
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Carver Dashboard'),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
-          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
-        ],
-      ),
-      extendBodyBehindAppBar: true,
-      resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/toko_sumatra.jpg'),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(
-                    Colors.black54,
-                    BlendMode.darken,
+    final allFilters = _randomCategoryFilters;
+    final selectedFilters = [
+      ...selectedJewelryTypes,
+      ...selectedGoldColors,
+      ...selectedGoldTypes,
+      ...selectedStoneTypes,
+      if (ringSize != null && ringSize!.isNotEmpty) 'Ring Size: $ringSize',
+    ].where((e) => e.isNotEmpty).toList();
+    final unselectedFilters =
+        allFilters.where((f) => !selectedFilters.contains(f)).toList();
+    final filterBarList = [...selectedFilters, ...unselectedFilters];
+
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Carver Dashboard'),
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _fetchOrders,
+            ),
+            IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
+          ],
+        ),
+        extendBodyBehindAppBar: true,
+        resizeToAvoidBottomInset: false,
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage('assets/images/toko_sumatra.jpg'),
+                        fit: BoxFit.cover,
+                        colorFilter: ColorFilter.mode(
+                          Colors.black54,
+                          BlendMode.darken,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ),
-          _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                )
-              : _errorMessage.isNotEmpty
-                  ? Center(
+                _isLoading
+                    ? const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    )
+                    : _errorMessage.isNotEmpty
+                    ? Center(
                       child: Text(
                         _errorMessage,
                         style: const TextStyle(color: Colors.red, fontSize: 16),
                       ),
                     )
-                  : RefreshIndicator(
+                    : RefreshIndicator(
                       onRefresh: _fetchOrders,
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          bottom: MediaQuery.of(context).viewInsets.bottom,
-                        ),
-                        child: SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          child: Column(
-                            children: [
-                              SizedBox(
-                                height: AppBar().preferredSize.height +
-                                    MediaQuery.of(context).padding.top +
-                                    20,
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                  vertical: 10.0,
+                      child: SingleChildScrollView(
+                        physics: const ClampingScrollPhysics(),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                            maxHeight: constraints.maxHeight,
+                          ),
+                          child: IntrinsicHeight(
+                            child: Column(
+                              children: [
+                                SizedBox(
+                                  height:
+                                      AppBar().preferredSize.height +
+                                      MediaQuery.of(context).padding.top +
+                                      20,
                                 ),
-                                child: TextField(
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _searchQuery = value;
-                                    });
-                                  },
-                                  decoration: InputDecoration(
-                                    labelText: 'Search',
-                                    hintText:
-                                        'Cari nama pelanggan atau jenis perhiasan...',
-                                    prefixIcon: const Icon(
-                                      Icons.search,
-                                      color: Colors.white70,
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0,
+                                    vertical: 10.0,
+                                  ),
+                                  child: TextField(
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _searchQuery = value;
+                                      });
+                                    },
+                                    decoration: InputDecoration(
+                                      labelText: 'Search',
+                                      hintText:
+                                          'Cari nama pelanggan atau jenis perhiasan...',
+                                      prefixIcon: const Icon(
+                                        Icons.search,
+                                        color: Colors.white70,
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.white.withAlpha((0.2 * 255).toInt()),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            vertical: 12,
+                                            horizontal: 16,
+                                          ),
+                                      labelStyle: const TextStyle(
+                                        color: Colors.white70,
+                                      ),
+                                      hintStyle: const TextStyle(
+                                        color: Colors.white54,
+                                      ),
+                                      floatingLabelStyle: const TextStyle(
+                                        color: Colors.white,
+                                      ),
                                     ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    filled: true,
-                                    fillColor: Colors.white.withOpacity(0.2),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                      horizontal: 16,
-                                    ),
-                                    labelStyle:
-                                        const TextStyle(color: Colors.white70),
-                                    hintStyle:
-                                        const TextStyle(color: Colors.white54),
-                                    floatingLabelStyle: const TextStyle(
+                                    style: const TextStyle(
                                       color: Colors.white,
                                     ),
                                   ),
-                                  style: const TextStyle(color: Colors.white),
                                 ),
-                              ),
-                              const SizedBox(height: 100.0),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                  vertical: 8.0,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                  children: [
-                                    _buildStatusFilterButton(
-                                      'Waiting',
-                                      'waiting',
-                                      Colors.orange,
-                                    ),
-                                    _buildStatusFilterButton(
-                                      'Working',
-                                      'working',
-                                      Colors.blue,
-                                    ),
-                                    _buildStatusFilterButton(
-                                      'On Progress',
-                                      'onprogress',
-                                      Colors.green,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxHeight: MediaQuery.of(context).size.height -
-                                      AppBar().preferredSize.height -
-                                      MediaQuery.of(context).padding.top -
-                                      (10.0 + 12.0 * 2 + 16.0 * 2) -
-                                      100.0 -
-                                      (8.0 * 2 + 20.0 + 16.0 * 2) -
-                                      (8.0 * 2 + 20.0 + 16.0 * 2) -
-                                      MediaQuery.of(context).viewInsets.bottom -
-                                      80,
-                                ),
-                                child: _filteredOrders.isEmpty
-                                    ? Center(
-                                        child: Text(
-                                          _searchQuery.isNotEmpty
-                                              ? 'Tidak ada pesanan cocok dengan pencarian Anda.'
-                                              : 'Tidak ada pesanan aktif.',
-                                          style: const TextStyle(
-                                            color: Colors.white70,
+                                const SizedBox(height: 10.0),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: Row(
+                                            children: List.generate(filterBarList.length, (index) {
+                                              final cat = filterBarList[index];
+                                              final isSelected = selectedFilters.contains(cat);
+                                              return Padding(
+                                                padding: const EdgeInsets.only(right: 4.0),
+                                                child: ChoiceChip(
+                                                  label: Text(
+                                                    cat,
+                                                    style: TextStyle(
+                                                      color: isSelected
+                                                          ? Colors.black
+                                                          : categoryInactiveTextColor,
+                                                    ),
+                                                  ),
+                                                  selected: isSelected,
+                                                  onSelected: (selected) {
+                                                    setState(() {
+                                                      if (selected) {
+                                                        _isRandomCategoryActive = false;
+                                                        if (jewelryTypes.contains(cat)) {
+                                                          if (!selectedJewelryTypes.contains(cat)) {
+                                                            selectedJewelryTypes.add(cat);
+                                                          }
+                                                        } else if (goldColors.contains(cat)) {
+                                                          if (!selectedGoldColors.contains(cat)) {
+                                                            selectedGoldColors.add(cat);
+                                                          }
+                                                        } else if (goldTypes.contains(cat)) {
+                                                          if (!selectedGoldTypes.contains(cat)) {
+                                                            selectedGoldTypes.add(cat);
+                                                          }
+                                                        } else if (stoneTypes.contains(cat)) {
+                                                          if (!selectedStoneTypes.contains(cat)) {
+                                                            selectedStoneTypes.add(cat);
+                                                          }
+                                                        } else if (cat.startsWith('Ring Size:')) {
+                                                          ringSize = cat.replaceFirst('Ring Size: ', '');
+                                                        }
+                                                      } else {
+                                                        selectedJewelryTypes.remove(cat);
+                                                        selectedGoldColors.remove(cat);
+                                                        selectedGoldTypes.remove(cat);
+                                                        selectedStoneTypes.remove(cat);
+                                                        if (ringSize != null && 'Ring Size: $ringSize' == cat) {
+                                                          ringSize = null;
+                                                        }
+                                                        if (selectedJewelryTypes.isEmpty &&
+                                                            selectedGoldColors.isEmpty &&
+                                                            selectedGoldTypes.isEmpty &&
+                                                            selectedStoneTypes.isEmpty &&
+                                                            (ringSize == null || ringSize!.isEmpty)) {
+                                                          _isRandomCategoryActive = true;
+                                                        }
+                                                      }
+                                                    });
+                                                  },
+                                                  backgroundColor: isSelected
+                                                      ? const Color(0xFFEAE38C)
+                                                      : categoryInactiveBgColor,
+                                                  selectedColor: const Color(0xFFEAE38C),
+                                                  labelStyle: TextStyle(
+                                                    color: isSelected
+                                                        ? Colors.black
+                                                        : categoryInactiveTextColor,
+                                                  ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(16),
+                                                  ),
+                                                  side: BorderSide(
+                                                    color: isSelected
+                                                        ? const Color(0xFFEAE38C)
+                                                        : categoryInactiveBgColor,
+                                                  ),
+                                                ),
+                                              );
+                                            }),
                                           ),
                                         ),
-                                      )
-                                    : ListView.builder(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16.0,
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.filter_list,
+                                          color: Color(0xFF656359),
                                         ),
-                                        itemCount: _filteredOrders.length,
-                                        itemBuilder: (context, index) {
-                                          final order = _filteredOrders[index];
-
-                                          Widget leadingWidget;
-                                          if (order.imagePaths != null &&
-                                              order.imagePaths!.isNotEmpty &&
-                                              order.imagePaths!.first.isNotEmpty &&
-                                              File(order.imagePaths!.first)
-                                                  .existsSync()) {
-                                            leadingWidget = ClipRRect(
-                                              borderRadius: BorderRadius.circular(8),
-                                              child: Image.file(
-                                                File(order.imagePaths!.first),
-                                                width: 80,
-                                                height: 80,
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (context, error,
-                                                        stackTrace) =>
-                                                    const Icon(
-                                                  Icons.image_not_supported,
-                                                  size: 32,
-                                                  color: Colors.grey,
-                                                ),
+                                        tooltip: "Filter",
+                                        onPressed: _openFilterSheet,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxHeight:
+                                        MediaQuery.of(context).size.height -
+                                        AppBar().preferredSize.height -
+                                        MediaQuery.of(context).padding.top -
+                                        (10.0 + 12.0 * 2 + 16.0 * 2) -
+                                        100.0 -
+                                        (8.0 * 2 + 20.0 + 16.0 * 2) -
+                                        (8.0 * 2 + 20.0 + 16.0 * 2) -
+                                        MediaQuery.of(
+                                          context,
+                                        ).viewInsets.bottom -
+                                        80,
+                                  ),
+                                  child:
+                                      _filteredOrders.isEmpty
+                                          ? Center(
+                                            child: Text(
+                                              _searchQuery.isNotEmpty
+                                                  ? 'Tidak ada pesanan cocok dengan pencarian Anda.'
+                                                  : 'Tidak ada pesanan aktif.',
+                                              style: const TextStyle(
+                                                color: Colors.white70,
                                               ),
-                                            );
-                                          } else {
-                                            leadingWidget = const CircleAvatar(
-                                              backgroundColor: Colors.blueGrey,
-                                              radius: 40,
-                                              child: Icon(
-                                                Icons.image,
-                                                color: Colors.white,
-                                                size: 40,
-                                              ),
-                                            );
-                                          }
-
-                                          return Card(
-                                            margin: const EdgeInsets.symmetric(
-                                              vertical: 8.0,
                                             ),
-                                            elevation: 4,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(10),
+                                          )
+                                          : ListView.builder(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16.0,
                                             ),
-                                            color: Colors.white.withOpacity(0.9),
-                                            child: ListTile(
-                                              leading: leadingWidget,
-                                              minLeadingWidth: 90,
-                                              contentPadding:
-                                                  const EdgeInsets.all(8),
-                                              title: Text(
-                                                order.customerName,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              subtitle: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                      'Jenis: ${order.jewelryType}'),
-                                                  Text(
-                                                    'Status: ${order.workflowStatus.label}',
-                                                    style: TextStyle(
-                                                      color: order.workflowStatus ==
-                                                              OrderWorkflowStatus
-                                                                  .waitingCarving
-                                                          ? Colors.orange
-                                                          : order.workflowStatus ==
-                                                                  OrderWorkflowStatus
-                                                                      .carving
-                                                              ? Colors.blue
-                                                              : Colors.green,
+                                            itemCount: _filteredOrders.length,
+                                            itemBuilder: (context, index) {
+                                              final order =
+                                                  _filteredOrders[index];
+
+                                              Widget leadingWidget;
+                                              if (order.imagePaths != null &&
+                                                  order
+                                                      .imagePaths!
+                                                      .isNotEmpty &&
+                                                  order
+                                                      .imagePaths!
+                                                      .first
+                                                      .isNotEmpty &&
+                                                  File(
+                                                    order.imagePaths!.first,
+                                                  ).existsSync()) {
+                                                leadingWidget = ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  child: Image.file(
+                                                    File(
+                                                      order.imagePaths!.first,
                                                     ),
-                                                  ),
-                                                  Text(
-                                                    'Tanggal Order: ${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
-                                                    style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color: Colors.lightGreen),
-                                                  ),
-                                                  if (order.readyDate != null)
-                                                    Text(
-                                                      'Tanggal Siap: ${order.readyDate!.day}/${order.readyDate!.month}/${order.readyDate!.year}',
-                                                      style: const TextStyle(
-                                                          fontSize: 12,
-                                                          color: Colors.redAccent,
-                                                          fontWeight:
-                                                              FontWeight.bold),
-                                                    ),
-                                                ],
-                                              ),
-                                              trailing: const Icon(
-                                                Icons.arrow_forward_ios,
-                                                color: Colors.grey,
-                                              ),
-                                              onTap: () async {
-                                                final result =
-                                                    await Navigator.of(context).push(
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        CarverDetailScreen(
-                                                            order: order),
+                                                    width: 80,
+                                                    height: 80,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder:
+                                                        (
+                                                          context,
+                                                          error,
+                                                          stackTrace,
+                                                        ) => const Icon(
+                                                          Icons
+                                                              .image_not_supported,
+                                                          size: 32,
+                                                          color: Colors.grey,
+                                                        ),
                                                   ),
                                                 );
-                                                if (result == true) _fetchOrders();
-                                              },
-                                            ),
-                                          );
-                                        },
-                                      ),
-                              ),
-                            ],
+                                              } else {
+                                                leadingWidget =
+                                                    const CircleAvatar(
+                                                      backgroundColor:
+                                                          Colors.blueGrey,
+                                                      radius: 40,
+                                                      child: Icon(
+                                                        Icons.image,
+                                                        color: Colors.white,
+                                                        size: 40,
+                                                      ),
+                                                    );
+                                              }
+
+                                              return Card(
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 8.0,
+                                                    ),
+                                                elevation: 4,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                color: Colors.white.withAlpha((0.9 * 255).toInt()),
+                                                child: ListTile(
+                                                  leading: leadingWidget,
+                                                  minLeadingWidth: 90,
+                                                  contentPadding:
+                                                      const EdgeInsets.all(8),
+                                                  title: Text(
+                                                    order.customerName,
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                  subtitle: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        'Jenis: ${order.jewelryType}',
+                                                      ),
+                                                      Text(
+                                                        'Status: ${order.workflowStatus.label}',
+                                                        style: TextStyle(
+                                                          color:
+                                                              order.workflowStatus ==
+                                                                      OrderWorkflowStatus
+                                                                          .waitingCarving
+                                                                  ? Colors
+                                                                      .orange
+                                                                  : order.workflowStatus ==
+                                                                      OrderWorkflowStatus
+                                                                          .carving
+                                                                  ? Colors.blue
+                                                                  : Colors
+                                                                      .green,
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        'Tanggal Order: ${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color:
+                                                              Colors.lightGreen,
+                                                        ),
+                                                      ),
+                                                      if (order.readyDate !=
+                                                          null)
+                                                        Text(
+                                                          'Tanggal Siap: ${order.readyDate!.day}/${order.readyDate!.month}/${order.readyDate!.year}',
+                                                          style: const TextStyle(
+                                                            fontSize: 12,
+                                                            color:
+                                                                Colors
+                                                                    .redAccent,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                  trailing: const Icon(
+                                                    Icons.arrow_forward_ios,
+                                                    color: Colors.grey,
+                                                  ),
+                                                  onTap: () async {
+                                                    final result =
+                                                        await Navigator.of(
+                                                          context,
+                                                        ).push(
+                                                          MaterialPageRoute(
+                                                            builder:
+                                                                (context) =>
+                                                                    CarverDetailScreen(
+                                                                      order:
+                                                                          order,
+                                                                    ),
+                                                          ),
+                                                        );
+                                                    if (result == true) {
+                                                      _fetchOrders();
+                                                    }
+                                                  },
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-        ],
+              ],
+            );
+          },
+        ),
       ),
     );
   }
