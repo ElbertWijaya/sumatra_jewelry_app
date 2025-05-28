@@ -497,8 +497,8 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
           Navigator.pushNamed(context, '/sales/create');
         },
         backgroundColor: Colors.amber[700],
-        child: const Icon(Icons.add, color: Colors.black),
         tooltip: 'Buat Pesanan Baru',
+        child: const Icon(Icons.add, color: Colors.black),
       ),
       body: Stack(
         children: [

@@ -23,7 +23,7 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   String _searchQuery = '';
-  Object? _selectedStatusFilter = 'waiting';
+  final Object? _selectedStatusFilter = 'waiting';
 
   // Filter sheet
   List<String> selectedJewelryTypes = [];
