@@ -416,8 +416,165 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // ...filter sheet UI (tidak berubah)...
-                        // (kode filter sheet tetap seperti sebelumnya)
+                        // Jenis Perhiasan
+                        Text("Jenis Perhiasan", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Wrap(
+                          spacing: 8,
+                          children: jewelryTypes.map((type) => FilterChip(
+                            label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
+                            selected: selectedJewelryTypes.contains(type),
+                            showCheckmark: false,
+                            backgroundColor: categoryInactiveBgColor,
+                            selectedColor: categoryActiveBgColor,
+                            side: BorderSide(
+                              color: selectedJewelryTypes.contains(type)
+                                  ? categoryActiveBgColor
+                                  : categoryInactiveBgColor,
+                            ),
+                            onSelected: (selected) {
+                              setModalState(() {
+                                selected
+                                    ? selectedJewelryTypes.add(type)
+                                    : selectedJewelryTypes.remove(type);
+                              });
+                            },
+                          )).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        // Warna Emas
+                        Text("Warna Emas", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Wrap(
+                          spacing: 8,
+                          children: goldColors.map((color) => FilterChip(
+                            label: Text(color, style: const TextStyle(color: categoryInactiveTextColor)),
+                            selected: selectedGoldColors.contains(color),
+                            showCheckmark: false,
+                            backgroundColor: categoryInactiveBgColor,
+                            selectedColor: categoryActiveBgColor,
+                            side: BorderSide(
+                              color: selectedGoldColors.contains(color)
+                                  ? categoryActiveBgColor
+                                  : categoryInactiveBgColor,
+                            ),
+                            onSelected: (selected) {
+                              setModalState(() {
+                                selected
+                                    ? selectedGoldColors.add(color)
+                                    : selectedGoldColors.remove(color);
+                              });
+                            },
+                          )).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        // Harga Min - Max
+                        Text("Harga Min - Max", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(hintText: "Min"),
+                                onChanged: (v) {
+                                  setModalState(() {
+                                    priceMin = double.tryParse(v);
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(hintText: "Max"),
+                                onChanged: (v) {
+                                  setModalState(() {
+                                    priceMax = double.tryParse(v);
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Jenis Emas
+                        Text("Jenis Emas", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Wrap(
+                          spacing: 8,
+                          children: goldTypes.map((type) => FilterChip(
+                            label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
+                            selected: selectedGoldTypes.contains(type),
+                            showCheckmark: false,
+                            backgroundColor: categoryInactiveBgColor,
+                            selectedColor: categoryActiveBgColor,
+                            side: BorderSide(
+                              color: selectedGoldTypes.contains(type)
+                                  ? categoryActiveBgColor
+                                  : categoryInactiveBgColor,
+                            ),
+                            onSelected: (selected) {
+                              setModalState(() {
+                                selected
+                                    ? selectedGoldTypes.add(type)
+                                    : selectedGoldTypes.remove(type);
+                              });
+                            },
+                          )).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        // Jenis Batu
+                        Text("Jenis Batu", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Wrap(
+                          spacing: 8,
+                          children: stoneTypes.map((type) => FilterChip(
+                            label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
+                            selected: selectedStoneTypes.contains(type),
+                            showCheckmark: false,
+                            backgroundColor: categoryInactiveBgColor,
+                            selectedColor: categoryActiveBgColor,
+                            side: BorderSide(
+                              color: selectedStoneTypes.contains(type)
+                                  ? categoryActiveBgColor
+                                  : categoryInactiveBgColor,
+                            ),
+                            onSelected: (selected) {
+                              setModalState(() {
+                                selected
+                                    ? selectedStoneTypes.add(type)
+                                    : selectedStoneTypes.remove(type);
+                              });
+                            },
+                          )).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        // Ring Size
+                        Text("Ring Size", style: TextStyle(fontWeight: FontWeight.bold)),
+                        TextField(
+                          keyboardType: TextInputType.text,
+                          decoration: const InputDecoration(hintText: "Ring Size"),
+                          onChanged: (v) {
+                            setModalState(() {
+                              ringSize = v;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  setState(() {
+                                    _isRandomCategoryActive = false;
+                                  });
+                                },
+                                child: const Text("Terapkan Filter"),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Reset icon sudah ada di atas (pojok kanan atas)
+                          ],
+                        ),
                       ],
                     ),
                   ),

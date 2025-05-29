@@ -1,5 +1,5 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
-
 
 enum OrderWorkflowStatus {
   waitingSalesCheck,
@@ -207,6 +207,11 @@ class Order {
     this.stoneSettingWorkChecklist,
     this.finishingWorkChecklist,
     this.inventoryWorkChecklist,
+    this.inventoryProductName,
+    this.inventoryProductCode,
+    this.inventoryShelfLocation,
+    this.inventoryNotes,
+    this.inventoryLocation,
     this.assignedDesigner,
     this.assignedCaster,
     this.assignedCarver,
@@ -287,6 +292,11 @@ class Order {
       stoneSettingWorkChecklist: stoneSettingWorkChecklist ?? this.stoneSettingWorkChecklist,
       finishingWorkChecklist: finishingWorkChecklist ?? this.finishingWorkChecklist,
       inventoryWorkChecklist: inventoryWorkChecklist ?? this.inventoryWorkChecklist,
+      inventoryProductName: inventoryProductName ?? this.inventoryProductName,
+      inventoryProductCode: inventoryProductCode ?? this.inventoryProductCode,
+      inventoryShelfLocation: inventoryShelfLocation ?? this.inventoryShelfLocation,
+      inventoryNotes: inventoryNotes ?? this.inventoryNotes,
+      inventoryLocation: inventoryLocation ?? this.inventoryLocation,
       assignedDesigner: assignedDesigner ?? this.assignedDesigner,
       assignedCaster: assignedCaster ?? this.assignedCaster,
       assignedCarver: assignedCarver ?? this.assignedCarver,
@@ -298,6 +308,108 @@ class Order {
     );
   }
 
+  // Untuk SQLite
+  factory Order.fromMap(Map<String, dynamic> map) {
+    return Order(
+      imagePaths: map['image_paths'] != null && map['image_paths'] != ''
+          ? List<String>.from(jsonDecode(map['image_paths']))
+          : null,
+      id: map['id'],
+      customerName: map['customer_name'],
+      customerContact: map['customer_contact'],
+      address: map['address'],
+      jewelryType: map['jewelry_type'],
+      goldColor: map['gold_color'],
+      goldType: map['gold_type'],
+      stoneType: map['stone_type'],
+      stoneSize: map['stone_size'],
+      ringSize: map['ring_size'],
+      readyDate: map['ready_date'] != null ? DateTime.tryParse(map['ready_date']) : null,
+      pickupDate: map['pickup_date'] != null ? DateTime.tryParse(map['pickup_date']) : null,
+      goldPricePerGram: map['gold_price_per_gram'] != null ? (map['gold_price_per_gram'] as num).toDouble() : null,
+      finalPrice: map['final_price'] != null ? (map['final_price'] as num).toDouble() : null,
+      dp: map['dp'] != null ? (map['dp'] as num).toDouble() : null,
+      sisaLunas: map['sisa_lunas'] != null ? (map['sisa_lunas'] as num).toDouble() : null,
+      notes: map['notes'],
+      workflowStatus: OrderWorkflowStatusX.fromString(map['workflow_status']),
+      designerWorkChecklist: map['designer_work_checklist'] != null && map['designer_work_checklist'] != ''
+          ? List<String>.from(jsonDecode(map['designer_work_checklist']))
+          : null,
+      castingWorkChecklist: map['casting_work_checklist'] != null && map['casting_work_checklist'] != ''
+          ? List<String>.from(jsonDecode(map['casting_work_checklist']))
+          : null,
+      carvingWorkChecklist: map['carving_work_checklist'] != null && map['carving_work_checklist'] != ''
+          ? List<String>.from(jsonDecode(map['carving_work_checklist']))
+          : null,
+      stoneSettingWorkChecklist: map['stone_setting_work_checklist'] != null && map['stone_setting_work_checklist'] != ''
+          ? List<String>.from(jsonDecode(map['stone_setting_work_checklist']))
+          : null,
+      finishingWorkChecklist: map['finishing_work_checklist'] != null && map['finishing_work_checklist'] != ''
+          ? List<String>.from(jsonDecode(map['finishing_work_checklist']))
+          : null,
+      inventoryWorkChecklist: map['inventory_work_checklist'] != null && map['inventory_work_checklist'] != ''
+          ? List<String>.from(jsonDecode(map['inventory_work_checklist']))
+          : null,
+      inventoryProductName: map['inventory_product_name'],
+      inventoryProductCode: map['inventory_product_code'],
+      inventoryShelfLocation: map['inventory_shelf_location'],
+      inventoryNotes: map['inventory_notes'],
+      inventoryLocation: map['inventory_location'],
+      assignedDesigner: map['assigned_designer'],
+      assignedCaster: map['assigned_caster'],
+      assignedCarver: map['assigned_carver'],
+      assignedDiamondSetter: map['assigned_diamond_setter'],
+      assignedFinisher: map['assigned_finisher'],
+      assignedInventory: map['assigned_inventory'],
+      createdAt: map['created_at'] != null ? DateTime.parse(map['created_at']) : DateTime.now(),
+      updatedAt: map['updated_at'] != null ? DateTime.tryParse(map['updated_at']) : null,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'image_paths': imagePaths != null ? jsonEncode(imagePaths) : null,
+      'id': id,
+      'customer_name': customerName,
+      'customer_contact': customerContact,
+      'address': address,
+      'jewelry_type': jewelryType,
+      'gold_color': goldColor,
+      'gold_type': goldType,
+      'stone_type': stoneType,
+      'stone_size': stoneSize,
+      'ring_size': ringSize,
+      'ready_date': readyDate?.toIso8601String(),
+      'pickup_date': pickupDate?.toIso8601String(),
+      'gold_price_per_gram': goldPricePerGram,
+      'final_price': finalPrice,
+      'dp': dp,
+      'sisa_lunas': sisaLunas,
+      'notes': notes,
+      'workflow_status': workflowStatus.name,
+      'designer_work_checklist': designerWorkChecklist != null ? jsonEncode(designerWorkChecklist) : null,
+      'casting_work_checklist': castingWorkChecklist != null ? jsonEncode(castingWorkChecklist) : null,
+      'carving_work_checklist': carvingWorkChecklist != null ? jsonEncode(carvingWorkChecklist) : null,
+      'stone_setting_work_checklist': stoneSettingWorkChecklist != null ? jsonEncode(stoneSettingWorkChecklist) : null,
+      'finishing_work_checklist': finishingWorkChecklist != null ? jsonEncode(finishingWorkChecklist) : null,
+      'inventory_work_checklist': inventoryWorkChecklist != null ? jsonEncode(inventoryWorkChecklist) : null,
+      'inventory_product_name': inventoryProductName,
+      'inventory_product_code': inventoryProductCode,
+      'inventory_shelf_location': inventoryShelfLocation,
+      'inventory_notes': inventoryNotes,
+      'inventory_location': inventoryLocation,
+      'assigned_designer': assignedDesigner,
+      'assigned_caster': assignedCaster,
+      'assigned_carver': assignedCarver,
+      'assigned_diamond_setter': assignedDiamondSetter,
+      'assigned_finisher': assignedFinisher,
+      'assigned_inventory': assignedInventory,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
+    };
+  }
+
+  // Fungsi JSON tetap bisa dipakai untuk API/backup
   factory Order.fromJson(Map<String, dynamic> json) {
     return Order(
       imagePaths: (json['imagePaths'] as List?)?.map((e) => e as String).toList(),
@@ -362,6 +474,11 @@ class Order {
         'stoneSettingWorkChecklist': stoneSettingWorkChecklist,
         'finishingWorkChecklist': finishingWorkChecklist,
         'inventoryWorkChecklist': inventoryWorkChecklist,
+        'inventoryProductName': inventoryProductName,
+        'inventoryProductCode': inventoryProductCode,
+        'inventoryShelfLocation': inventoryShelfLocation,
+        'inventoryNotes': inventoryNotes,
+        'inventoryLocation': inventoryLocation,
         'assignedDesigner': assignedDesigner,
         'assignedCaster': assignedCaster,
         'assignedCarver': assignedCarver,

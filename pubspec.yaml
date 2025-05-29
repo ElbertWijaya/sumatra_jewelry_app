@@ -32,7 +32,8 @@ dependencies:
     sdk: flutter
   
   flutter_multi_formatter: ^2.13.7
-
+  sqflite: ^2.0.0
+  path_provider: ^2.0.14
   uuid: ^4.0.0
   shared_preferences: ^2.5.3
   http: ^1.2.1

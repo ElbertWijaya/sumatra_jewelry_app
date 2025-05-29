@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
-import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
 import 'sales_detail_screen.dart';
 
@@ -20,7 +19,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   String _searchQuery = '';
-  String _selectedTab = 'all'; // 'all', 'waiting', 'onprogress'
+  String _selectedTab = 'waiting'; // default tab sama seperti designer
 
   // Filter state
   List<String> selectedJewelryTypes = [];
@@ -40,8 +39,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     OrderWorkflowStatus.waitingSalesCompletion,
   ];
 
-  final List<OrderWorkflowStatus> activeStatuses = [
-    OrderWorkflowStatus.waitingSalesCheck,
+  final List<OrderWorkflowStatus> onProgressStatuses = [
     OrderWorkflowStatus.waitingDesigner,
     OrderWorkflowStatus.designing,
     OrderWorkflowStatus.waitingCasting,
@@ -55,7 +53,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     OrderWorkflowStatus.finishing,
     OrderWorkflowStatus.waitingInventory,
     OrderWorkflowStatus.inventory,
-    OrderWorkflowStatus.waitingSalesCompletion,
   ];
 
   // Daftar pilihan filter
@@ -69,7 +66,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     "Opal", "Sapphire", "Jade", "Emerald", "Ruby", "Amethyst", "Diamond",
   ];
 
-  static const Color categoryActiveBgColor = Color(0xFFFAF5E0);
+  static const Color categoryActiveBgColor = Color(0xFFEAE38C);
   static const Color categoryInactiveBgColor = Colors.white;
   static const Color categoryInactiveTextColor = Color(0xFF656359);
 
@@ -157,15 +154,17 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       order.workflowStatus != OrderWorkflowStatus.cancelled
     ).toList();
 
+    // Tab logic mirip designer
     if (_selectedTab == 'waiting') {
       filtered = filtered.where((order) =>
         waitingStatuses.contains(order.workflowStatus)
       ).toList();
     } else if (_selectedTab == 'onprogress') {
       filtered = filtered.where((order) =>
-        activeStatuses.contains(order.workflowStatus) &&
-        !waitingStatuses.contains(order.workflowStatus)
+        onProgressStatuses.contains(order.workflowStatus)
       ).toList();
+    } else if (_selectedTab == 'all') {
+      // tampilkan semua yang bukan done/cancelled (sudah di atas)
     }
 
     // Filter kategori dari filter bar/sheet
@@ -419,27 +418,63 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
 
   Widget _buildTabButton(String label, String value, Color color) {
     final bool selected = _selectedTab == value;
+    int count = 0;
+    if (value == 'waiting') {
+      count = _orders.where((order) => waitingStatuses.contains(order.workflowStatus)).length;
+    } else if (value == 'onprogress') {
+      count = _orders.where((order) => onProgressStatuses.contains(order.workflowStatus)).length;
+    } else if (value == 'all') {
+      count = _orders.where((order) =>
+        order.workflowStatus != OrderWorkflowStatus.done &&
+        order.workflowStatus != OrderWorkflowStatus.cancelled
+      ).length;
+    }
     return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedTab = value),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: selected ? color : Colors.grey[200],
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: selected ? color : Colors.grey,
-              width: 1.5,
-            ),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: selected ? Colors.white : Colors.black87,
-                fontWeight: FontWeight.bold,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _selectedTab = value;
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+            decoration: BoxDecoration(
+              color: selected ? color.withOpacity(0.8) : Colors.grey[200],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: selected ? color : Colors.grey,
+                width: 1.5,
               ),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: selected ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: selected ? Colors.white : color,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '$count',
+                    style: TextStyle(
+                      color: selected ? color : Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -486,15 +521,17 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
         elevation: 0,
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
-          IconButton(icon: const Icon(Icons.filter_alt), onPressed: _openFilterSheet),
           IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
         ],
       ),
       extendBodyBehindAppBar: true,
       resizeToAvoidBottomInset: false,
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/sales/create');
+        onPressed: () async {
+          final result = await Navigator.pushNamed(context, '/sales/create');
+          if (result == true) {
+            await _fetchOrders();
+          }
         },
         backgroundColor: Colors.amber[700],
         tooltip: 'Buat Pesanan Baru',
@@ -538,7 +575,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.white.withAlpha((0.2 * 255).toInt()),
+                      fillColor: Colors.white.withOpacity(0.2),
                       contentPadding: const EdgeInsets.symmetric(
                         vertical: 12,
                         horizontal: 16,
@@ -550,90 +587,97 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                     style: const TextStyle(color: Colors.white),
                   ),
                 ),
-                const SizedBox(height: 10.0),
+                const SizedBox(height: 70.0),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Row(
                     children: [
-                      ...List.generate(filterBarList.length, (index) {
-                        final cat = filterBarList[index];
-                        final isSelected = selectedFilters.contains(cat);
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 4.0),
-                          child: ChoiceChip(
-                            label: Text(
-                              cat,
-                              style: TextStyle(
-                                color: isSelected
-                                    ? Colors.black
-                                    : categoryInactiveTextColor,
-                              ),
-                            ),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              setState(() {
-                                if (selected) {
-                                  _isRandomCategoryActive = false;
-                                  if (jewelryTypes.contains(cat)) {
-                                    if (!selectedJewelryTypes.contains(cat)) {
-                                      selectedJewelryTypes.add(cat);
-                                    }
-                                  } else if (goldColors.contains(cat)) {
-                                    if (!selectedGoldColors.contains(cat)) {
-                                      selectedGoldColors.add(cat);
-                                    }
-                                  } else if (goldTypes.contains(cat)) {
-                                    if (!selectedGoldTypes.contains(cat)) {
-                                      selectedGoldTypes.add(cat);
-                                    }
-                                  } else if (stoneTypes.contains(cat)) {
-                                    if (!selectedStoneTypes.contains(cat)) {
-                                      selectedStoneTypes.add(cat);
-                                    }
-                                  } else if (cat.startsWith('Ring Size:')) {
-                                    ringSize = cat.replaceFirst('Ring Size: ', '');
-                                  }
-                                } else {
-                                  selectedJewelryTypes.remove(cat);
-                                  selectedGoldColors.remove(cat);
-                                  selectedGoldTypes.remove(cat);
-                                  selectedStoneTypes.remove(cat);
-                                  if (ringSize != null && 'Ring Size: $ringSize' == cat) {
-                                    ringSize = null;
-                                  }
-                                  if (selectedJewelryTypes.isEmpty &&
-                                      selectedGoldColors.isEmpty &&
-                                      selectedGoldTypes.isEmpty &&
-                                      selectedStoneTypes.isEmpty &&
-                                      (ringSize == null || ringSize!.isEmpty)) {
-                                    _isRandomCategoryActive = true;
-                                  }
-                                }
-                              });
-                            },
-                            backgroundColor: isSelected
-                                ? const Color(0xFFEAE38C)
-                                : categoryInactiveBgColor,
-                            selectedColor: const Color(0xFFEAE38C),
-                            labelStyle: TextStyle(
-                              color: isSelected
-                                  ? Colors.black
-                                  : categoryInactiveTextColor,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            side: BorderSide(
-                              color: isSelected
-                                  ? const Color(0xFFEAE38C)
-                                  : categoryInactiveBgColor,
-                            ),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: List.generate(filterBarList.length, (index) {
+                              final cat = filterBarList[index];
+                              final isSelected = selectedFilters.contains(cat);
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 4.0),
+                                child: ChoiceChip(
+                                  label: Text(
+                                    cat,
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.black
+                                          : categoryInactiveTextColor,
+                                    ),
+                                  ),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _isRandomCategoryActive = false;
+                                        if (jewelryTypes.contains(cat)) {
+                                          if (!selectedJewelryTypes.contains(cat)) {
+                                            selectedJewelryTypes.add(cat);
+                                          }
+                                        } else if (goldColors.contains(cat)) {
+                                          if (!selectedGoldColors.contains(cat)) {
+                                            selectedGoldColors.add(cat);
+                                          }
+                                        } else if (goldTypes.contains(cat)) {
+                                          if (!selectedGoldTypes.contains(cat)) {
+                                            selectedGoldTypes.add(cat);
+                                          }
+                                        } else if (stoneTypes.contains(cat)) {
+                                          if (!selectedStoneTypes.contains(cat)) {
+                                            selectedStoneTypes.add(cat);
+                                          }
+                                        } else if (cat.startsWith('Ring Size:')) {
+                                          ringSize = cat.replaceFirst('Ring Size: ', '');
+                                        }
+                                      } else {
+                                        selectedJewelryTypes.remove(cat);
+                                        selectedGoldColors.remove(cat);
+                                        selectedGoldTypes.remove(cat);
+                                        selectedStoneTypes.remove(cat);
+                                        if (ringSize != null && 'Ring Size: $ringSize' == cat) {
+                                          ringSize = null;
+                                        }
+                                        if (selectedJewelryTypes.isEmpty &&
+                                            selectedGoldColors.isEmpty &&
+                                            selectedGoldTypes.isEmpty &&
+                                            selectedStoneTypes.isEmpty &&
+                                            (ringSize == null || ringSize!.isEmpty)) {
+                                          _isRandomCategoryActive = true;
+                                        }
+                                      }
+                                    });
+                                  },
+                                  backgroundColor: isSelected
+                                      ? const Color(0xFFEAE38C)
+                                      : categoryInactiveBgColor,
+                                  selectedColor: const Color(0xFFEAE38C),
+                                  labelStyle: TextStyle(
+                                    color: isSelected
+                                        ? Colors.black
+                                        : categoryInactiveTextColor,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? const Color(0xFFEAE38C)
+                                        : categoryInactiveBgColor,
+                                  ),
+                                ),
+                              );
+                            }),
                           ),
-                        );
-                      }),
+                        ),
+                      ),
                       IconButton(
-                        icon: const Icon(Icons.filter_alt, color: Colors.amber),
-                        tooltip: "Filter Lanjutan",
+                        icon: const Icon(Icons.filter_list, color: Color(0xFF656359)),
+                        tooltip: "Filter",
                         onPressed: _openFilterSheet,
                       ),
                     ],
@@ -643,10 +687,12 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildTabButton('All', 'all', Colors.blueGrey),
                       _buildTabButton('Waiting', 'waiting', Colors.orange),
                       _buildTabButton('On Progress', 'onprogress', Colors.green),
+                      
                     ],
                   ),
                 ),
