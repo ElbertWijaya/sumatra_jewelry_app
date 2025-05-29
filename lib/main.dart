@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/auth/splash_screen.dart';
 import 'screens/sales/sales_dashboard_screen.dart';
 import 'screens/sales/sales_create_screen.dart';
 import 'screens/sales/sales_edit_screen.dart';
@@ -11,7 +12,6 @@ import 'screens/cor/cor_dashboard_screen.dart';
 import 'screens/carver/carver_dashboard_screen.dart';
 import 'screens/diamond_setter/diamond_setter_dashboard_screen.dart';
 import 'screens/inventory/inventory_dashboard_screen.dart';
-import 'test/test_dashboard.dart';
 import 'models/order.dart';
 
 void main() {
@@ -26,8 +26,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Sumatra Jewelry App',
       debugShowCheckedModeBanner: false,
-      // home: const SplashScreen(),
-      home: TestDashboard(), // Ganti dengan SplashScreen() jika ingin menggunakan splash screen
+      home: const SplashScreen(),
+      // home: TestDashboard(), // Ganti dengan SplashScreen() jika ingin menggunakan splash screen
       routes: {
         '/login': (context) => const LoginScreen(),
         '/sales/edit': (context) {

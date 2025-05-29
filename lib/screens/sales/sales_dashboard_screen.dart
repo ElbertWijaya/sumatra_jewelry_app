@@ -134,8 +134,8 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       order.ringSize ?? '',
       order.readyDate?.toIso8601String() ?? '',
       order.pickupDate?.toIso8601String() ?? '',
-      order.goldPricePerGram?.toString() ?? '',
-      order.finalPrice?.toString() ?? '',
+      order.goldPricePerGram.toString() ?? '',
+      order.finalPrice.toString() ?? '',
       order.notes ?? '',
       order.workflowStatus.label,
     ].join(' ').toLowerCase();
@@ -727,105 +727,134 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                     itemBuilder: (context, index) {
                                       final order = _filteredOrders[index];
 
-                                      Widget leadingWidget;
-                                      if (order.imagePaths != null &&
-                                          order.imagePaths!.isNotEmpty &&
-                                          order.imagePaths!.first.isNotEmpty &&
-                                          File(order.imagePaths!.first).existsSync()) {
-                                        leadingWidget = ClipRRect(
-                                          borderRadius: BorderRadius.circular(8),
-                                          child: Image.file(
-                                            File(order.imagePaths!.first),
-                                            width: 80,
-                                            height: 80,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) =>
-                                                const Icon(
-                                                  Icons.image_not_supported,
-                                                  size: 32,
-                                                  color: Colors.grey,
-                                                ),
-                                          ),
-                                        );
-                                      } else {
-                                        leadingWidget = const CircleAvatar(
-                                          backgroundColor: Colors.blueGrey,
-                                          radius: 40,
-                                          child: Icon(
-                                            Icons.image,
-                                            color: Colors.white,
-                                            size: 40,
-                                          ),
-                                        );
-                                      }
-
                                       return Card(
-                                        margin: const EdgeInsets.symmetric(
-                                          vertical: 8.0,
-                                        ),
-                                        elevation: 4,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        color: Colors.white.withOpacity(0.9),
-                                        child: ListTile(
-                                          leading: leadingWidget,
-                                          minLeadingWidth: 90,
-                                          contentPadding: const EdgeInsets.all(8),
-                                          title: Text(
-                                            order.customerName,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          subtitle: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                        margin: const EdgeInsets.symmetric(vertical: 12.0),
+                                        elevation: 5,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                        color: const Color(0xFFFDF6E3), // luxurious light gold background
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Column(
                                             children: [
-                                              Text('Jenis: ${order.jewelryType}'),
-                                              Text(
-                                                'Status: ${order.workflowStatus.label}',
-                                                style: TextStyle(
-                                                  color: order.workflowStatus == OrderWorkflowStatus.waitingSalesCheck
-                                                      ? Colors.orange
-                                                      : order.workflowStatus == OrderWorkflowStatus.waitingSalesCompletion
-                                                          ? Colors.blue
-                                                          : Colors.green,
-                                                ),
-                                              ),
-                                              Text(
-                                                'Tanggal Order: ${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.lightGreen,
-                                                ),
-                                              ),
-                                              if (order.readyDate != null)
-                                                Text(
-                                                  'Tanggal Siap: ${order.readyDate!.day}/${order.readyDate!.month}/${order.readyDate!.year}',
-                                                  style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.redAccent,
-                                                    fontWeight: FontWeight.bold,
+                                              // Row pertama: gambar dan info utama
+                                              Row(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  // Gambar 1:1
+                                                  ClipRRect(
+                                                    borderRadius: BorderRadius.circular(12),
+                                                    child: order.imagePaths.isNotEmpty &&
+                                                            order.imagePaths.first.isNotEmpty &&
+                                                            File(order.imagePaths.first).existsSync()
+                                                        ? Image.file(
+                                                            File(order.imagePaths.first),
+                                                            width: 90,
+                                                            height: 90,
+                                                            fit: BoxFit.cover,
+                                                          )
+                                                        : Container(
+                                                            width: 90,
+                                                            height: 90,
+                                                            color: Colors.brown[100],
+                                                            child: const Icon(Icons.image, size: 40, color: Colors.brown),
+                                                          ),
                                                   ),
-                                                ),
+                                                  const SizedBox(width: 18),
+                                                  // Nama & jenis perhiasan
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          order.customerName ?? '-',
+                                                          style: const TextStyle(
+                                                            fontWeight: FontWeight.bold,
+                                                            fontSize: 18,
+                                                            color: Color(0xFF7C5E2C), // deep gold
+                                                            letterSpacing: 0.5,
+                                                          ),
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
+                                                        const SizedBox(height: 8),
+                                                        Row(
+                                                          children: [
+                                                            const Icon(Icons.category, color: Color(0xFFD4AF37), size: 18),
+                                                            const SizedBox(width: 6),
+                                                            Text(
+                                                              order.jewelryType.isNotEmpty == true ? order.jewelryType : "-",
+                                                              style: const TextStyle(
+                                                                fontSize: 15,
+                                                                color: Color(0xFF7C5E2C),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 18),
+                                              // Row kedua: info tanggal, status, tombol
+                                              Row(
+                                                children: [
+                                                  const Icon(Icons.calendar_today, color: Color(0xFFBFA14A), size: 18),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    'Order: ${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
+                                                    style: const TextStyle(fontSize: 13, color: Color(0xFF7C5E2C)),
+                                                  ),
+                                                  const SizedBox(width: 18),
+                                                  if (order.pickupDate != null)
+                                                    Row(
+                                                      children: [
+                                                        const Icon(Icons.assignment_turned_in, color: Color(0xFFBFA14A), size: 18),
+                                                        const SizedBox(width: 6),
+                                                        Text(
+                                                          'Ambil: ${order.pickupDate!.day}/${order.pickupDate!.month}/${order.pickupDate!.year}',
+                                                          style: const TextStyle(fontSize: 13, color: Color(0xFF7C5E2C)),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 12),
+                                              Row(
+                                                children: [
+                                                  Chip(
+                                                    label: Text(
+                                                      order.workflowStatus.label,
+                                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                                    ),
+                                                    backgroundColor: const Color(0xFFD4AF37), // gold
+                                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                                                  ),
+                                                  const Spacer(),
+                                                  ElevatedButton.icon(
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: const Color(0xFFD4AF37), // gold
+                                                      foregroundColor: Colors.white,
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius: BorderRadius.circular(12),
+                                                      ),
+                                                      elevation: 0,
+                                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                                    ),
+                                                    icon: const Icon(Icons.arrow_forward_ios, size: 16),
+                                                    label: const Text('Detail', style: TextStyle(fontSize: 13)),
+                                                    onPressed: () async {
+                                                      final result = await Navigator.of(context).push(
+                                                        MaterialPageRoute(
+                                                          builder: (context) => SalesDetailScreen(order: order),
+                                                        ),
+                                                      );
+                                                      if (result == true) _fetchOrders();
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
                                             ],
                                           ),
-                                          trailing: const Icon(
-                                            Icons.arrow_forward_ios,
-                                            color: Colors.grey,
-                                          ),
-                                          onTap: () async {
-                                            final result = await Navigator.of(
-                                              context,
-                                            ).push(
-                                              MaterialPageRoute(
-                                                builder: (context) => SalesDetailScreen(
-                                                  order: order,
-                                                ),
-                                              ),
-                                            );
-                                            if (result == true) _fetchOrders();
-                                          },
                                         ),
                                       );
                                     },

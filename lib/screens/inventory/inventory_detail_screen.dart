@@ -36,9 +36,7 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
     _catatanController.text = _order.inventoryNotes ?? '';
 
     // Check if data was already saved (e.g., if revisiting the screen)
-    _dataSaved = _order.inventoryProductCode != null &&
-        _order.inventoryProductName != null &&
-        _order.inventoryShelfLocation != null; // Check required fields
+    _dataSaved = _order.inventoryProductName != null; // Check required fields
 
     // Listen to changes to trigger rebuild for button enable/disable
     _kodeBarangController.addListener(_onFormChanged);

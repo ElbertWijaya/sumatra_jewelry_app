@@ -85,19 +85,19 @@ class _FinisherTaskScreenState extends State<FinisherTaskScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (_order.imagePaths != null && _order.imagePaths!.isNotEmpty)
+            if (_order.imagePaths.isNotEmpty)
               SizedBox(
                 height: 110,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: _order.imagePaths!.length,
+                  itemCount: _order.imagePaths.length,
                   itemBuilder: (context, idx) {
                     return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.file(
-                          File(_order.imagePaths![idx]),
+                          File(_order.imagePaths[idx]),
                           width: 110,
                           height: 110,
                           fit: BoxFit.cover,

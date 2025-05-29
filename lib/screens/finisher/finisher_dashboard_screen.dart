@@ -142,8 +142,8 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
       order.ringSize ?? '',
       order.readyDate?.toIso8601String() ?? '',
       order.pickupDate?.toIso8601String() ?? '',
-      order.goldPricePerGram?.toString() ?? '',
-      order.finalPrice?.toString() ?? '',
+      order.goldPricePerGram.toString() ?? '',
+      order.finalPrice.toString() ?? '',
       order.notes ?? '',
       order.workflowStatus.label,
 
@@ -889,14 +889,13 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                       final order = _filteredOrders[index];
 
                                       Widget leadingWidget;
-                                      if (order.imagePaths != null &&
-                                          order.imagePaths!.isNotEmpty &&
-                                          order.imagePaths!.first.isNotEmpty &&
-                                          File(order.imagePaths!.first).existsSync()) {
+                                      if (order.imagePaths.isNotEmpty &&
+                                          order.imagePaths.first.isNotEmpty &&
+                                          File(order.imagePaths.first).existsSync()) {
                                         leadingWidget = ClipRRect(
                                           borderRadius: BorderRadius.circular(8),
                                           child: Image.file(
-                                            File(order.imagePaths!.first),
+                                            File(order.imagePaths.first),
                                             width: 80,
                                             height: 80,
                                             fit: BoxFit.cover,

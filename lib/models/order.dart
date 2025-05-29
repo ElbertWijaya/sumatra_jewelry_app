@@ -333,70 +333,79 @@ class Order {
 
     return Order(
       id: json['id'] as String? ?? '',
-      customerName: json['customerName'] as String? ?? '',
-      customerContact: json['customerContact'] as String? ?? '',
+      customerName: json['customer_name'] as String? ?? '',
+      customerContact: json['customer_contact'] as String? ?? '',
       address: json['address'] as String? ?? '',
-      jewelryType: json['jewelryType'] as String? ?? '',
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
+      jewelryType: json['jewelry_type'] as String? ?? '',
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
-      goldColor: json['goldColor'] as String? ?? '',
-      goldType: json['goldType'] as String? ?? '',
-      stoneType: json['stoneType'] as String? ?? '',
-      stoneSize: json['stoneSize'] as String? ?? '',
-      ringSize: json['ringSize'] as String? ?? '',
-      readyDate: json['readyDate'] != null
-          ? DateTime.tryParse(json['readyDate'] as String)
+      goldColor: json['gold_color'] as String? ?? '',
+      goldType: json['gold_type'] as String? ?? '',
+      stoneType: json['stone_type'] as String? ?? '',
+      stoneSize: json['stone_size'] as String? ?? '',
+      ringSize: json['ring_size'] as String? ?? '',
+      readyDate: json['ready_date'] != null && json['ready_date'] != ''
+          ? DateTime.tryParse(json['ready_date'] as String)
           : null,
-      pickupDate: json['pickupDate'] != null
-          ? DateTime.tryParse(json['pickupDate'] as String)
+      pickupDate: json['pickup_date'] != null && json['pickup_date'] != ''
+          ? DateTime.tryParse(json['pickup_date'] as String)
           : null,
-      goldPricePerGram: (json['goldPricePerGram'] as num?)?.toDouble() ?? 0,
-      finalPrice: (json['finalPrice'] as num?)?.toDouble() ?? 0,
-      dp: (json['dp'] as num?)?.toDouble() ?? 0,
-      sisaLunas: (json['sisaLunas'] as num?)?.toDouble() ?? 0,
+      goldPricePerGram: json['gold_price_per_gram'] != null
+          ? double.tryParse(json['gold_price_per_gram'].toString()) ?? 0
+          : 0,
+      finalPrice: json['final_price'] != null
+          ? double.tryParse(json['final_price'].toString()) ?? 0
+          : 0,
+      dp: json['dp'] != null
+          ? double.tryParse(json['dp'].toString()) ?? 0
+          : 0,
+      sisaLunas: json['sisa_lunas'] != null
+          ? double.tryParse(json['sisa_lunas'].toString()) ?? 0
+          : 0,
       notes: json['notes'] as String? ?? '',
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.tryParse(json['updatedAt'] as String)
+      updatedAt: json['updated_at'] != null && json['updated_at'] != ''
+          ? DateTime.tryParse(json['updated_at'] as String)
           : null,
       imagePaths: parseList(json['imagePaths']),
-      workflowStatus: OrderWorkflowStatusX.fromString(json['workflowStatus'] as String?),
+      workflowStatus: OrderWorkflowStatusX.fromString(json['workflow_status'] as String?),
       designerWorkChecklist: parseList(json['designerWorkChecklist']),
       castingWorkChecklist: parseList(json['castingWorkChecklist']),
       carvingWorkChecklist: parseList(json['carvingWorkChecklist']),
       diamondSettingWorkChecklist: parseList(json['diamondSettingWorkChecklist']),
       finishingWorkChecklist: parseList(json['finishingWorkChecklist']),
       inventoryWorkChecklist: parseList(json['inventoryWorkChecklist']),
-      inventoryProductCode: json['inventoryProductCode'] as String? ?? '',
-      inventoryProductName: json['inventoryProductName'] as String? ?? '',
-      inventoryShelfLocation: json['inventoryShelfLocation'] as String? ?? '',
-      inventoryNotes: json['inventoryNotes'] as String? ?? '',
+      // Field inventoryProductCode, inventoryProductName, inventoryShelfLocation, inventoryNotes tidak ada di tabel utama, bisa diisi default:
+      inventoryProductCode: '',
+      inventoryProductName: '',
+      inventoryShelfLocation: '',
+      inventoryNotes: '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'customerName': customerName,
-      'customerContact': customerContact,
+      'customer_name': customerName,
+      'customer_contact': customerContact,
       'address': address,
-      'jewelryType': jewelryType,
-      'createdAt': createdAt.toIso8601String(),
-      'goldColor': goldColor,
-      'goldType': goldType,
-      'stoneType': stoneType,
-      'stoneSize': stoneSize,
-      'ringSize': ringSize,
-      'readyDate': readyDate?.toIso8601String(),
-      'pickupDate': pickupDate?.toIso8601String(),
-      'goldPricePerGram': goldPricePerGram,
-      'finalPrice': finalPrice,
+      'jewelry_type': jewelryType,
+      'created_at': createdAt.toIso8601String(),
+      'gold_color': goldColor,
+      'gold_type': goldType,
+      'stone_type': stoneType,
+      'stone_size': stoneSize,
+      'ring_size': ringSize,
+      'ready_date': readyDate?.toIso8601String(),
+      'pickup_date': pickupDate?.toIso8601String(),
+      'gold_price_per_gram': goldPricePerGram,
+      'final_price': finalPrice,
       'dp': dp,
-      'sisaLunas': sisaLunas,
+      'sisa_lunas': sisaLunas,
       'notes': notes,
-      'updatedAt': updatedAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
       'imagePaths': imagePaths,
-      'workflowStatus': workflowStatus.name,
+      'workflow_status': workflowStatus.name,
       'designerWorkChecklist': designerWorkChecklist,
       'castingWorkChecklist': castingWorkChecklist,
       'carvingWorkChecklist': carvingWorkChecklist,

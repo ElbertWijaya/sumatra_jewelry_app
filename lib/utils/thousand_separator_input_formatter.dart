@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
-class ThousandsSeparatorInputFormatter extends TextInputFormatter {
+class ThousandSeparatorInputFormatter extends TextInputFormatter {
   final NumberFormat _formatter = NumberFormat.decimalPattern('id');
 
   @override

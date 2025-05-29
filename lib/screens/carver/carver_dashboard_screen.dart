@@ -147,8 +147,8 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
       order.ringSize ?? '',
       order.readyDate?.toIso8601String() ?? '',
       order.pickupDate?.toIso8601String() ?? '',
-      order.goldPricePerGram?.toString() ?? '',
-      order.finalPrice?.toString() ?? '',
+      order.goldPricePerGram.toString() ?? '',
+      order.finalPrice.toString() ?? '',
       order.notes ?? '',
       order.workflowStatus.label,
 
@@ -894,23 +894,22 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
                                       final order = _filteredOrders[index];
 
                                       Widget leadingWidget;
-                                      if (order.imagePaths != null &&
-                                          order
-                                              .imagePaths!
+                                      if (order
+                                              .imagePaths
                                               .isNotEmpty &&
                                           order
-                                              .imagePaths!
+                                              .imagePaths
                                               .first
                                               .isNotEmpty &&
                                           File(
-                                            order.imagePaths!.first,
+                                            order.imagePaths.first,
                                           ).existsSync()) {
                                         leadingWidget = ClipRRect(
                                           borderRadius:
                                               BorderRadius.circular(8),
                                           child: Image.file(
                                             File(
-                                              order.imagePaths!.first,
+                                              order.imagePaths.first,
                                             ),
                                             width: 80,
                                             height: 80,

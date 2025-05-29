@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:photo_view/photo_view.dart';
 
 import '../../models/order.dart';
-import '../../utils/thousand_seperator_input_formatter.dart';
+import '../../utils/thousand_separator_input_formatter.dart';
 
 final _currencyFormatter = NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0);
 
@@ -192,17 +192,17 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
           'jewelry_type': order.jewelryType,
           'gold_type': order.goldType,
           'gold_color': order.goldColor,
-          'final_price': order.finalPrice?.toString() ?? '',
+          'final_price': order.finalPrice.toString() ?? '',
           'notes': order.notes,
           'pickup_date': order.pickupDate != null ? DateFormat('yyyy-MM-dd').format(order.pickupDate!) : '',
           'created_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(order.createdAt),
-          'gold_price_per_gram': order.goldPricePerGram?.toString() ?? '',
+          'gold_price_per_gram': order.goldPricePerGram.toString() ?? '',
           'stone_type': order.stoneType ?? '',
           'stone_size': order.stoneSize ?? '',
           'ring_size': order.ringSize ?? '',
           'ready_date': order.readyDate != null ? DateFormat('yyyy-MM-dd').format(order.readyDate!) : '',
-          'dp': order.dp?.toString() ?? '',
-          'sisa_lunas': order.sisaLunas?.toString() ?? '',
+          'dp': order.dp.toString() ?? '',
+          'sisa_lunas': order.sisaLunas.toString() ?? '',
           'imagePaths': jsonEncode(_uploadedImageUrls),
         },
       );
@@ -339,7 +339,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                 decoration: _luxuryDecoration('Harga Perkiraan', required: true, icon: Icons.attach_money),
                 keyboardType: TextInputType.number,
                 onChanged: (_) => setState(() {}),
-                inputFormatters: [ThousandsSeparatorInputFormatter()],
+                inputFormatters: [ThousandSeparatorInputFormatter()],
                 validator: (value) => value == null || value.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 12),
@@ -347,7 +347,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                 controller: _goldPricePerGramController,
                 decoration: _luxuryDecoration('Harga Emas per Gram', icon: Icons.scale),
                 keyboardType: TextInputType.number,
-                inputFormatters: [ThousandsSeparatorInputFormatter()],
+                inputFormatters: [ThousandSeparatorInputFormatter()],
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -355,7 +355,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
                 decoration: _luxuryDecoration('DP', icon: Icons.payments),
                 keyboardType: TextInputType.number,
                 onChanged: (_) => setState(() {}),
-                inputFormatters: [ThousandsSeparatorInputFormatter()],
+                inputFormatters: [ThousandSeparatorInputFormatter()],
               ),
               const SizedBox(height: 12),
               Container(

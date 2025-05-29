@@ -40,12 +40,13 @@ class _TestDashboardState extends State<TestDashboard> {
             itemCount: orders.length,
             itemBuilder: (context, index) {
               final order = orders[index];
+              final imageUrl = order.imagePaths.isNotEmpty ? order.imagePaths[0] : null;
               return Card(
                 margin: const EdgeInsets.all(8),
                 child: ListTile(
-                  leading: (order.imagePaths is List && (order.imagePaths as List).isNotEmpty)
+                  leading: imageUrl != null && imageUrl.isNotEmpty
                       ? Image.network(
-                          (order.imagePaths as List)[0].toString(),
+                          imageUrl,
                           width: 56,
                           height: 56,
                           fit: BoxFit.cover,
@@ -56,9 +57,11 @@ class _TestDashboardState extends State<TestDashboard> {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text ('Nama Customer: ${order.customerName}'),
                       Text('Jenis: ${order.jewelryType}'),
-                      Text('Tgl Order: ${order.createdAt.toString().split(' ').first}'),
-                      Text('Tgl Siap: ${order.readyDate ?? "-"}'),
+                      Text('Tgl Pesan: ${order.createdAt.toString().split(' ').first}'),
+                      Text('Tgl Siap: ${order.readyDate != null ? "${order.readyDate!.day}/${order.readyDate!.month}/${order.readyDate!.year}" : "-"}'),
+                      Text('Status: ${order.workflowStatus.label}'),
                     ],
                   ),
                 ),

@@ -54,12 +54,12 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
       _ringSizeController = TextEditingController(text: _order.ringSize ?? "");
       _notesController = TextEditingController(text: _order.notes ?? "");
       _finalPriceController = TextEditingController(
-        text: _order.finalPrice != null && _order.finalPrice != 0
+        text: _order.finalPrice != 0
             ? _rupiahFormat.format(_order.finalPrice)
             : '',
       );
       _dpController = TextEditingController(
-        text: _order.dp != null && _order.dp != 0
+        text: _order.dp != 0
             ? _rupiahFormat.format(_order.dp)
             : '',
       );
