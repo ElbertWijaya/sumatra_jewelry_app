@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/order.dart';
 
 class OrderService {
-  static const String baseUrl = 'http://192.168.176.165/sumatra_api/orders.php';
+  static const String baseUrl = 'http://192.168.176.165/sumatra_api/get_orders.php';
 
   Future<List<Order>> getOrders() async {
     final response = await http.get(Uri.parse(baseUrl));

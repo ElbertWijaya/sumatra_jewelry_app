@@ -161,16 +161,20 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
       jewelryType: _selectedJewelryType ?? '',
       goldType: _selectedGoldType ?? '',
       goldColor: _selectedGoldColor ?? '',
-      finalPrice: double.tryParse(_finalPriceController.text.replaceAll('.', '')),
+      finalPrice: double.tryParse(_finalPriceController.text.replaceAll('.', '')) ?? 0,
       notes: _notesController.text,
       pickupDate: _selectedPickupDate,
       createdAt: DateTime.now(),
-      goldPricePerGram: _goldPricePerGramController.text.isNotEmpty ? double.tryParse(_goldPricePerGramController.text.replaceAll('.', '')) : null,
-      stoneType: _stoneTypeController.text.isNotEmpty ? _stoneTypeController.text : null,
-      stoneSize: _stoneSizeController.text.isNotEmpty ? _stoneSizeController.text : null,
-      ringSize: _ringSizeController.text.isNotEmpty ? _ringSizeController.text : null,
+      goldPricePerGram: _goldPricePerGramController.text.isNotEmpty
+          ? double.tryParse(_goldPricePerGramController.text.replaceAll('.', '')) ?? 0
+          : 0,
+      stoneType: _stoneTypeController.text.isNotEmpty ? _stoneTypeController.text : '',
+      stoneSize: _stoneSizeController.text.isNotEmpty ? _stoneSizeController.text : '',
+      ringSize: _ringSizeController.text.isNotEmpty ? _ringSizeController.text : '',
       readyDate: _selectedReadyDate,
-      dp: _dpController.text.isNotEmpty ? double.tryParse(_dpController.text.replaceAll('.', '')) : null,
+      dp: _dpController.text.isNotEmpty
+          ? double.tryParse(_dpController.text.replaceAll('.', '')) ?? 0
+          : 0,
       sisaLunas: _sisaLunas,
       imagePaths: _uploadedImageUrls,
 
