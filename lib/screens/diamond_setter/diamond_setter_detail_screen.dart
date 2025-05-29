@@ -46,7 +46,7 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
     if (latestOrder == null) return;
     setState(() {
       _order = latestOrder;
-      checkedTodos = List<String>.from(_order.stoneSettingWorkChecklist ?? []);
+      checkedTodos = List<String>.from(_order.diamondSettingWorkChecklist ?? []);
       _images = List<String>.from(_order.imagePaths ?? []);
       _nameController = TextEditingController(text: _order.customerName);
       _contactController = TextEditingController(text: _order.customerContact);
@@ -156,7 +156,7 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
     });
     try {
       final updatedOrder = _order.copyWith(
-        stoneSettingWorkChecklist: checkedTodos,
+        diamondSettingWorkChecklist: checkedTodos,
         workflowStatus: OrderWorkflowStatus.waitingFinishing,
         updatedAt: DateTime.now(),
       );
@@ -322,10 +322,10 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                     (task) => Row(
                       children: [
                         Icon(
-                          (_order.stoneSettingWorkChecklist ?? []).contains(task)
+                          (_order.diamondSettingWorkChecklist ?? []).contains(task)
                               ? Icons.check_box
                               : Icons.check_box_outline_blank,
-                          color: (_order.stoneSettingWorkChecklist ?? []).contains(task)
+                          color: (_order.diamondSettingWorkChecklist ?? []).contains(task)
                               ? Colors.green
                               : Colors.grey,
                         ),

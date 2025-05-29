@@ -88,9 +88,25 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
       (value == null || value.trim().isEmpty) ? 'Belum diisi' : value;
 
   double getOrderProgress(Order order) {
+    final fullWorkflowStatuses = [
+      OrderWorkflowStatus.waitingDesigner,
+      OrderWorkflowStatus.designing,
+      OrderWorkflowStatus.waitingCasting,
+      OrderWorkflowStatus.casting,
+      OrderWorkflowStatus.waitingCarving,
+      OrderWorkflowStatus.carving,
+      OrderWorkflowStatus.waitingDiamondSetting,
+      OrderWorkflowStatus.stoneSetting,
+      OrderWorkflowStatus.waitingFinishing,
+      OrderWorkflowStatus.finishing,
+      OrderWorkflowStatus.waitingInventory,
+      OrderWorkflowStatus.inventory,
+      OrderWorkflowStatus.waitingSalesCompletion,
+      OrderWorkflowStatus.done,
+    ];
     final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
     final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
-    if (idx < 0) return 0.0;
+    if (idx < 0 || maxIdx <= 0) return 0.0;
     return idx / maxIdx;
   }
 

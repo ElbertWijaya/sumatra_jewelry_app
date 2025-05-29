@@ -151,12 +151,7 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
       order.finalPrice?.toString() ?? '',
       order.notes ?? '',
       order.workflowStatus.label,
-      order.assignedDesigner ?? '',
-      order.assignedCaster ?? '',
-      order.assignedCarver ?? '',
-      order.assignedDiamondSetter ?? '',
-      order.assignedFinisher ?? '',
-      order.assignedInventory ?? '',
+
     ].join(' ').toLowerCase();
   }
 
@@ -607,6 +602,10 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
 
   double getOrderProgress(Order order) {
     final fullWorkflowStatuses = [
+      OrderWorkflowStatus.waitingDesigner,
+      OrderWorkflowStatus.designing,
+      OrderWorkflowStatus.waitingCasting,
+      OrderWorkflowStatus.casting,
       OrderWorkflowStatus.waitingCarving,
       OrderWorkflowStatus.carving,
       OrderWorkflowStatus.waitingDiamondSetting,
@@ -620,7 +619,7 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
     ];
     final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
     final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
-    if (idx < 0) return 0.0;
+    if (idx < 0 || maxIdx <= 0) return 0.0;
     return idx / maxIdx;
   }
 

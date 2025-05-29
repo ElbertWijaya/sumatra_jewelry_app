@@ -148,12 +148,7 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
       order.finalPrice?.toString() ?? '',
       order.notes ?? '',
       order.workflowStatus.label,
-      order.assignedDesigner ?? '',
-      order.assignedCaster ?? '',
-      order.assignedCarver ?? '',
-      order.assignedDiamondSetter ?? '',
-      order.assignedFinisher ?? '',
-      order.assignedInventory ?? '',
+
     ].join(' ').toLowerCase();
   }
 

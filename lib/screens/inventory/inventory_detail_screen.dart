@@ -176,7 +176,22 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
       _lokasiRakController.text.trim().isNotEmpty;
 
   double getOrderProgress(Order order) {
-    // Pastikan fullWorkflowStatuses sudah diimport dari order_workflow.dart
+    final fullWorkflowStatuses = [
+      OrderWorkflowStatus.waitingDesigner,
+      OrderWorkflowStatus.designing,
+      OrderWorkflowStatus.waitingCasting,
+      OrderWorkflowStatus.casting,
+      OrderWorkflowStatus.waitingCarving,
+      OrderWorkflowStatus.carving,
+      OrderWorkflowStatus.waitingDiamondSetting,
+      OrderWorkflowStatus.stoneSetting,
+      OrderWorkflowStatus.waitingFinishing,
+      OrderWorkflowStatus.finishing,
+      OrderWorkflowStatus.waitingInventory,
+      OrderWorkflowStatus.inventory,
+      OrderWorkflowStatus.waitingSalesCompletion,
+      OrderWorkflowStatus.done,
+    ];
     final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
     final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
     if (idx < 0 || maxIdx <= 0) return 0.0;
@@ -408,7 +423,22 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
 
 // Ensure this helper function is accessible or defined here if not global
 double getOrderProgress(Order order) {
-  // Pastikan fullWorkflowStatuses sudah diimport dari order_workflow.dart
+  final fullWorkflowStatuses = [
+    OrderWorkflowStatus.waitingDesigner,
+    OrderWorkflowStatus.designing,
+    OrderWorkflowStatus.waitingCasting,
+    OrderWorkflowStatus.casting,
+    OrderWorkflowStatus.waitingCarving,
+    OrderWorkflowStatus.carving,
+    OrderWorkflowStatus.waitingDiamondSetting,
+    OrderWorkflowStatus.stoneSetting,
+    OrderWorkflowStatus.waitingFinishing,
+    OrderWorkflowStatus.finishing,
+    OrderWorkflowStatus.waitingInventory,
+    OrderWorkflowStatus.inventory,
+    OrderWorkflowStatus.waitingSalesCompletion,
+    OrderWorkflowStatus.done,
+  ];
   final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
   final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
   if (idx < 0 || maxIdx <= 0) return 0.0;

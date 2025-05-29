@@ -1,84 +1,61 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 
 enum OrderWorkflowStatus {
   waitingSalesCheck,
   waitingDesigner,
-  pending,
   designing,
   waitingCasting,
-  readyForCasting,
   casting,
   waitingCarving,
-  readyForCarving,
   carving,
   waitingDiamondSetting,
-  readyForStoneSetting,
   stoneSetting,
   waitingFinishing,
-  readyForFinishing,
   finishing,
   waitingInventory,
-  readyForInventory,
   inventory,
   waitingSalesCompletion,
   done,
   cancelled,
   unknown,
-  debut,
 }
 
 extension OrderWorkflowStatusX on OrderWorkflowStatus {
-  static OrderWorkflowStatus fromString(String? status) {
-    switch ((status ?? '').replaceAll('_', '').toLowerCase()) {
-      case 'waitingsalescheck':
+  static OrderWorkflowStatus fromString(String? value) {
+    switch (value) {
+      case 'waiting_sales_check':
         return OrderWorkflowStatus.waitingSalesCheck;
-      case 'waitingdesigner':
+      case 'waiting_designer':
         return OrderWorkflowStatus.waitingDesigner;
-      case 'pending':
-        return OrderWorkflowStatus.pending;
       case 'designing':
         return OrderWorkflowStatus.designing;
-      case 'waitingcasting':
+      case 'waiting_casting':
         return OrderWorkflowStatus.waitingCasting;
-      case 'readyforcasting':
-        return OrderWorkflowStatus.readyForCasting;
       case 'casting':
         return OrderWorkflowStatus.casting;
-      case 'waitingcarving':
+      case 'waiting_carving':
         return OrderWorkflowStatus.waitingCarving;
-      case 'readyforcarving':
-        return OrderWorkflowStatus.readyForCarving;
       case 'carving':
         return OrderWorkflowStatus.carving;
-      case 'waitingdiamondsetting':
+      case 'waiting_diamond_setting':
         return OrderWorkflowStatus.waitingDiamondSetting;
-      case 'readyforstonesetting':
-        return OrderWorkflowStatus.readyForStoneSetting;
-      case 'stonesetting':
+      case 'stone_setting':
         return OrderWorkflowStatus.stoneSetting;
-      case 'waitingfinishing':
+      case 'waiting_finishing':
         return OrderWorkflowStatus.waitingFinishing;
-      case 'readyforfinishing':
-        return OrderWorkflowStatus.readyForFinishing;
       case 'finishing':
         return OrderWorkflowStatus.finishing;
-      case 'waitinginventory':
+      case 'waiting_inventory':
         return OrderWorkflowStatus.waitingInventory;
-      case 'readyforinventory':
-        return OrderWorkflowStatus.readyForInventory;
       case 'inventory':
         return OrderWorkflowStatus.inventory;
-      case 'waitingsalescompletion':
+      case 'waiting_sales_completion':
         return OrderWorkflowStatus.waitingSalesCompletion;
       case 'done':
         return OrderWorkflowStatus.done;
       case 'cancelled':
         return OrderWorkflowStatus.cancelled;
-      case 'debut':
-        return OrderWorkflowStatus.debut;
       default:
-        debugPrint('Status workflow pesanan tidak diketahui: $status');
         return OrderWorkflowStatus.unknown;
     }
   }
@@ -86,64 +63,53 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
   String get label {
     switch (this) {
       case OrderWorkflowStatus.waitingSalesCheck:
-        return 'Cek & Submit Sales';
+        return 'Waiting Sales Check';
       case OrderWorkflowStatus.waitingDesigner:
-        return 'Menunggu Designer';
-      case OrderWorkflowStatus.pending:
-        return 'Menunggu Desain';
+        return 'Waiting Designer';
       case OrderWorkflowStatus.designing:
-        return 'Proses Desain';
+        return 'Designing';
       case OrderWorkflowStatus.waitingCasting:
-        return 'Menunggu Cor';
-      case OrderWorkflowStatus.readyForCasting:
-        return 'Siap Cor';
+        return 'Waiting Casting';
       case OrderWorkflowStatus.casting:
-        return 'Proses Cor';
+        return 'Casting';
       case OrderWorkflowStatus.waitingCarving:
-        return 'Menunggu Carver';
-      case OrderWorkflowStatus.readyForCarving:
-        return 'Siap Ukir';
+        return 'Waiting Carving';
       case OrderWorkflowStatus.carving:
-        return 'Proses Ukir';
+        return 'Carving';
       case OrderWorkflowStatus.waitingDiamondSetting:
-        return 'Menunggu Diamond Setting';
-      case OrderWorkflowStatus.readyForStoneSetting:
-        return 'Siap Pasang Batu';
+        return 'Waiting Diamond Setting';
       case OrderWorkflowStatus.stoneSetting:
-        return 'Proses Pasang Batu';
+        return 'Stone Setting';
       case OrderWorkflowStatus.waitingFinishing:
-        return 'Menunggu Finishing';
-      case OrderWorkflowStatus.readyForFinishing:
-        return 'Siap Finishing';
+        return 'Waiting Finishing';
       case OrderWorkflowStatus.finishing:
-        return 'Proses Finishing';
+        return 'Finishing';
       case OrderWorkflowStatus.waitingInventory:
-        return 'Menunggu Inventaris';
-      case OrderWorkflowStatus.readyForInventory:
-        return 'Siap Inventory';
+        return 'Waiting Inventory';
       case OrderWorkflowStatus.inventory:
-        return 'Input Inventaris';
+        return 'Inventory';
       case OrderWorkflowStatus.waitingSalesCompletion:
-        return 'Menunggu Konfirmasi Sales';
+        return 'Waiting Sales Completion';
       case OrderWorkflowStatus.done:
         return 'Selesai';
       case OrderWorkflowStatus.cancelled:
-        return 'Batal';
-      case OrderWorkflowStatus.debut:
-        return 'Debut';
-      case OrderWorkflowStatus.unknown:
-        return 'Tidak Diketahui';
+        return 'Dibatalkan';
+      default:
+        return 'Unknown';
     }
   }
 }
 
 class Order {
-  final List<String>? imagePaths;
+  // Non-nullable (WAJIB)
   final String id;
   final String customerName;
   final String customerContact;
   final String address;
   final String jewelryType;
+  final DateTime createdAt;
+
+  // Nullable (BOLEH NULL)
   final String? goldColor;
   final String? goldType;
   final String? stoneType;
@@ -156,38 +122,25 @@ class Order {
   final double? dp;
   final double? sisaLunas;
   final String? notes;
+  final DateTime? updatedAt;
+  final List<String>? imagePaths;
   final OrderWorkflowStatus workflowStatus;
 
+  // Checklist tiap pekerja (boleh null)
   final List<String>? designerWorkChecklist;
   final List<String>? castingWorkChecklist;
   final List<String>? carvingWorkChecklist;
-  final List<String>? stoneSettingWorkChecklist;
+  final List<String>? diamondSettingWorkChecklist;
   final List<String>? finishingWorkChecklist;
   final List<String>? inventoryWorkChecklist;
 
-  String? inventoryProductName;
-  String? inventoryProductCode;
-  String? inventoryLocation;
-  String? inventoryNotes;
-  String? inventoryShelfLocation;
-
-  final String? assignedDesigner;
-  final String? assignedCaster;
-  final String? assignedCarver;
-  final String? assignedDiamondSetter;
-  final String? assignedFinisher;
-  final String? assignedInventory;
-
-  final DateTime createdAt;
-  final DateTime? updatedAt;
-
   Order({
-    this.imagePaths,
     required this.id,
     required this.customerName,
     required this.customerContact,
     required this.address,
     required this.jewelryType,
+    required this.createdAt,
     this.goldColor,
     this.goldType,
     this.stoneType,
@@ -200,39 +153,89 @@ class Order {
     this.dp,
     this.sisaLunas,
     this.notes,
-    this.workflowStatus = OrderWorkflowStatus.pending,
+    this.updatedAt,
+    this.imagePaths,
+    this.workflowStatus = OrderWorkflowStatus.unknown,
     this.designerWorkChecklist,
     this.castingWorkChecklist,
     this.carvingWorkChecklist,
-    this.stoneSettingWorkChecklist,
+    this.diamondSettingWorkChecklist,
     this.finishingWorkChecklist,
     this.inventoryWorkChecklist,
-    this.inventoryProductName,
-    this.inventoryProductCode,
-    this.inventoryShelfLocation,
-    this.inventoryNotes,
-    this.inventoryLocation,
-    this.assignedDesigner,
-    this.assignedCaster,
-    this.assignedCarver,
-    this.assignedDiamondSetter,
-    this.assignedFinisher,
-    this.assignedInventory,
-    DateTime? createdAt,
-    this.updatedAt,
-  })  : assert(customerName.isNotEmpty, 'Nama pelanggan wajib diisi'),
-        assert(customerContact.isNotEmpty, 'Nomor telepon wajib diisi'),
-        assert(address.isNotEmpty, 'Alamat wajib diisi'),
-        assert(jewelryType.isNotEmpty, 'Jenis perhiasan wajib diisi'),
-        createdAt = createdAt ?? DateTime.now();
+  });
+
+  factory Order.fromMap(Map<String, dynamic> map) {
+    List<String>? parseChecklist(dynamic val) {
+      if (val == null) return null;
+      if (val is List) return List<String>.from(val);
+      if (val is String && val.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(val);
+          if (decoded is List) return List<String>.from(decoded);
+        } catch (_) {}
+      }
+      return null;
+    }
+
+    return Order(
+      id: map['id']?.toString() ?? '',
+      customerName: map['customer_name']?.toString() ?? '',
+      customerContact: map['customer_contact']?.toString() ?? '',
+      address: map['address']?.toString() ?? '',
+      jewelryType: map['jewelry_type']?.toString() ?? '',
+      createdAt: map['created_at'] != null && map['created_at'] != ''
+          ? DateTime.parse(map['created_at'])
+          : DateTime.now(),
+
+      goldColor: map['gold_color']?.toString(),
+      goldType: map['gold_type']?.toString(),
+      stoneType: map['stone_type']?.toString(),
+      stoneSize: map['stone_size']?.toString(),
+      ringSize: map['ring_size']?.toString(),
+      readyDate: map['ready_date'] != null && map['ready_date'] != ''
+          ? DateTime.tryParse(map['ready_date'])
+          : null,
+      pickupDate: map['pickup_date'] != null && map['pickup_date'] != ''
+          ? DateTime.tryParse(map['pickup_date'])
+          : null,
+      goldPricePerGram: map['gold_price_per_gram'] != null
+          ? double.tryParse(map['gold_price_per_gram'].toString())
+          : null,
+      finalPrice: map['final_price'] != null
+          ? double.tryParse(map['final_price'].toString())
+          : null,
+      dp: map['dp'] != null
+          ? double.tryParse(map['dp'].toString())
+          : null,
+      sisaLunas: map['sisa_lunas'] != null
+          ? double.tryParse(map['sisa_lunas'].toString())
+          : null,
+      notes: map['notes']?.toString(),
+      updatedAt: map['updated_at'] != null && map['updated_at'] != ''
+          ? DateTime.tryParse(map['updated_at'])
+          : null,
+      imagePaths: map['imagePaths'] is List
+          ? List<String>.from(map['imagePaths'])
+          : (map['imagePaths'] is String && map['imagePaths'] != null && map['imagePaths'] != ''
+              ? List<String>.from(jsonDecode(map['imagePaths']))
+              : null),
+      workflowStatus: OrderWorkflowStatusX.fromString(map['workflow_status']),
+      designerWorkChecklist: parseChecklist(map['designerWorkChecklist']),
+      castingWorkChecklist: parseChecklist(map['castingWorkChecklist']),
+      carvingWorkChecklist: parseChecklist(map['carvingWorkChecklist']),
+      diamondSettingWorkChecklist: parseChecklist(map['diamondSettingWorkChecklist']),
+      finishingWorkChecklist: parseChecklist(map['finishingWorkChecklist']),
+      inventoryWorkChecklist: parseChecklist(map['inventoryWorkChecklist']),
+    );
+  }
 
   Order copyWith({
-    List<String>? imagePaths,
     String? id,
     String? customerName,
     String? customerContact,
     String? address,
     String? jewelryType,
+    DateTime? createdAt,
     String? goldColor,
     String? goldType,
     String? stoneType,
@@ -245,34 +248,23 @@ class Order {
     double? dp,
     double? sisaLunas,
     String? notes,
+    DateTime? updatedAt,
+    List<String>? imagePaths,
     OrderWorkflowStatus? workflowStatus,
     List<String>? designerWorkChecklist,
     List<String>? castingWorkChecklist,
     List<String>? carvingWorkChecklist,
-    List<String>? stoneSettingWorkChecklist,
+    List<String>? diamondSettingWorkChecklist,
     List<String>? finishingWorkChecklist,
     List<String>? inventoryWorkChecklist,
-    String? inventoryProductCode,
-    String? inventoryProductName,
-    String? inventoryShelfLocation,
-    String? inventoryNotes,
-    String? inventoryLocation,
-    String? assignedDesigner,
-    String? assignedCaster,
-    String? assignedCarver,
-    String? assignedDiamondSetter,
-    String? assignedFinisher,
-    String? assignedInventory,
-    DateTime? createdAt,
-    DateTime? updatedAt,
   }) {
     return Order(
-      imagePaths: imagePaths ?? this.imagePaths,
       id: id ?? this.id,
       customerName: customerName ?? this.customerName,
       customerContact: customerContact ?? this.customerContact,
       address: address ?? this.address,
       jewelryType: jewelryType ?? this.jewelryType,
+      createdAt: createdAt ?? this.createdAt,
       goldColor: goldColor ?? this.goldColor,
       goldType: goldType ?? this.goldType,
       stoneType: stoneType ?? this.stoneType,
@@ -285,207 +277,15 @@ class Order {
       dp: dp ?? this.dp,
       sisaLunas: sisaLunas ?? this.sisaLunas,
       notes: notes ?? this.notes,
+      updatedAt: updatedAt ?? this.updatedAt,
+      imagePaths: imagePaths ?? this.imagePaths,
       workflowStatus: workflowStatus ?? this.workflowStatus,
       designerWorkChecklist: designerWorkChecklist ?? this.designerWorkChecklist,
       castingWorkChecklist: castingWorkChecklist ?? this.castingWorkChecklist,
       carvingWorkChecklist: carvingWorkChecklist ?? this.carvingWorkChecklist,
-      stoneSettingWorkChecklist: stoneSettingWorkChecklist ?? this.stoneSettingWorkChecklist,
+      diamondSettingWorkChecklist: diamondSettingWorkChecklist ?? this.diamondSettingWorkChecklist,
       finishingWorkChecklist: finishingWorkChecklist ?? this.finishingWorkChecklist,
       inventoryWorkChecklist: inventoryWorkChecklist ?? this.inventoryWorkChecklist,
-      inventoryProductName: inventoryProductName ?? this.inventoryProductName,
-      inventoryProductCode: inventoryProductCode ?? this.inventoryProductCode,
-      inventoryShelfLocation: inventoryShelfLocation ?? this.inventoryShelfLocation,
-      inventoryNotes: inventoryNotes ?? this.inventoryNotes,
-      inventoryLocation: inventoryLocation ?? this.inventoryLocation,
-      assignedDesigner: assignedDesigner ?? this.assignedDesigner,
-      assignedCaster: assignedCaster ?? this.assignedCaster,
-      assignedCarver: assignedCarver ?? this.assignedCarver,
-      assignedDiamondSetter: assignedDiamondSetter ?? this.assignedDiamondSetter,
-      assignedFinisher: assignedFinisher ?? this.assignedFinisher,
-      assignedInventory: assignedInventory ?? this.assignedInventory,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
-
-  // Untuk SQLite
-  factory Order.fromMap(Map<String, dynamic> map) {
-    return Order(
-      imagePaths: map['image_paths'] != null && map['image_paths'] != ''
-          ? List<String>.from(jsonDecode(map['image_paths']))
-          : null,
-      id: map['id'],
-      customerName: map['customer_name'],
-      customerContact: map['customer_contact'],
-      address: map['address'],
-      jewelryType: map['jewelry_type'],
-      goldColor: map['gold_color'],
-      goldType: map['gold_type'],
-      stoneType: map['stone_type'],
-      stoneSize: map['stone_size'],
-      ringSize: map['ring_size'],
-      readyDate: map['ready_date'] != null ? DateTime.tryParse(map['ready_date']) : null,
-      pickupDate: map['pickup_date'] != null ? DateTime.tryParse(map['pickup_date']) : null,
-      goldPricePerGram: map['gold_price_per_gram'] != null ? (map['gold_price_per_gram'] as num).toDouble() : null,
-      finalPrice: map['final_price'] != null ? (map['final_price'] as num).toDouble() : null,
-      dp: map['dp'] != null ? (map['dp'] as num).toDouble() : null,
-      sisaLunas: map['sisa_lunas'] != null ? (map['sisa_lunas'] as num).toDouble() : null,
-      notes: map['notes'],
-      workflowStatus: OrderWorkflowStatusX.fromString(map['workflow_status']),
-      designerWorkChecklist: map['designer_work_checklist'] != null && map['designer_work_checklist'] != ''
-          ? List<String>.from(jsonDecode(map['designer_work_checklist']))
-          : null,
-      castingWorkChecklist: map['casting_work_checklist'] != null && map['casting_work_checklist'] != ''
-          ? List<String>.from(jsonDecode(map['casting_work_checklist']))
-          : null,
-      carvingWorkChecklist: map['carving_work_checklist'] != null && map['carving_work_checklist'] != ''
-          ? List<String>.from(jsonDecode(map['carving_work_checklist']))
-          : null,
-      stoneSettingWorkChecklist: map['stone_setting_work_checklist'] != null && map['stone_setting_work_checklist'] != ''
-          ? List<String>.from(jsonDecode(map['stone_setting_work_checklist']))
-          : null,
-      finishingWorkChecklist: map['finishing_work_checklist'] != null && map['finishing_work_checklist'] != ''
-          ? List<String>.from(jsonDecode(map['finishing_work_checklist']))
-          : null,
-      inventoryWorkChecklist: map['inventory_work_checklist'] != null && map['inventory_work_checklist'] != ''
-          ? List<String>.from(jsonDecode(map['inventory_work_checklist']))
-          : null,
-      inventoryProductName: map['inventory_product_name'],
-      inventoryProductCode: map['inventory_product_code'],
-      inventoryShelfLocation: map['inventory_shelf_location'],
-      inventoryNotes: map['inventory_notes'],
-      inventoryLocation: map['inventory_location'],
-      assignedDesigner: map['assigned_designer'],
-      assignedCaster: map['assigned_caster'],
-      assignedCarver: map['assigned_carver'],
-      assignedDiamondSetter: map['assigned_diamond_setter'],
-      assignedFinisher: map['assigned_finisher'],
-      assignedInventory: map['assigned_inventory'],
-      createdAt: map['created_at'] != null ? DateTime.parse(map['created_at']) : DateTime.now(),
-      updatedAt: map['updated_at'] != null ? DateTime.tryParse(map['updated_at']) : null,
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'image_paths': imagePaths != null ? jsonEncode(imagePaths) : null,
-      'id': id,
-      'customer_name': customerName,
-      'customer_contact': customerContact,
-      'address': address,
-      'jewelry_type': jewelryType,
-      'gold_color': goldColor,
-      'gold_type': goldType,
-      'stone_type': stoneType,
-      'stone_size': stoneSize,
-      'ring_size': ringSize,
-      'ready_date': readyDate?.toIso8601String(),
-      'pickup_date': pickupDate?.toIso8601String(),
-      'gold_price_per_gram': goldPricePerGram,
-      'final_price': finalPrice,
-      'dp': dp,
-      'sisa_lunas': sisaLunas,
-      'notes': notes,
-      'workflow_status': workflowStatus.name,
-      'designer_work_checklist': designerWorkChecklist != null ? jsonEncode(designerWorkChecklist) : null,
-      'casting_work_checklist': castingWorkChecklist != null ? jsonEncode(castingWorkChecklist) : null,
-      'carving_work_checklist': carvingWorkChecklist != null ? jsonEncode(carvingWorkChecklist) : null,
-      'stone_setting_work_checklist': stoneSettingWorkChecklist != null ? jsonEncode(stoneSettingWorkChecklist) : null,
-      'finishing_work_checklist': finishingWorkChecklist != null ? jsonEncode(finishingWorkChecklist) : null,
-      'inventory_work_checklist': inventoryWorkChecklist != null ? jsonEncode(inventoryWorkChecklist) : null,
-      'inventory_product_name': inventoryProductName,
-      'inventory_product_code': inventoryProductCode,
-      'inventory_shelf_location': inventoryShelfLocation,
-      'inventory_notes': inventoryNotes,
-      'inventory_location': inventoryLocation,
-      'assigned_designer': assignedDesigner,
-      'assigned_caster': assignedCaster,
-      'assigned_carver': assignedCarver,
-      'assigned_diamond_setter': assignedDiamondSetter,
-      'assigned_finisher': assignedFinisher,
-      'assigned_inventory': assignedInventory,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
-    };
-  }
-
-  // Fungsi JSON tetap bisa dipakai untuk API/backup
-  factory Order.fromJson(Map<String, dynamic> json) {
-    return Order(
-      imagePaths: (json['imagePaths'] as List?)?.map((e) => e as String).toList(),
-      id: json['id'] as String,
-      customerName: json['customerName'] as String,
-      customerContact: json['customerContact'] as String,
-      address: json['address'] as String,
-      jewelryType: json['jewelryType'] as String,
-      goldColor: json['goldColor'] as String?,
-      goldType: json['goldType'] as String?,
-      stoneType: json['stoneType'] as String?,
-      stoneSize: json['stoneSize'] as String?,
-      ringSize: json['ringSize'] as String?,
-      readyDate: json['readyDate'] != null ? DateTime.tryParse(json['readyDate']) : null,
-      pickupDate: json['pickupDate'] != null ? DateTime.tryParse(json['pickupDate']) : null,
-      goldPricePerGram: (json['goldPricePerGram'] as num?)?.toDouble(),
-      finalPrice: (json['finalPrice'] as num?)?.toDouble(),
-      dp: (json['dp'] as num?)?.toDouble(),
-      sisaLunas: (json['sisaLunas'] as num?)?.toDouble(),
-      notes: json['notes'] as String?,
-      workflowStatus: OrderWorkflowStatusX.fromString(json['workflowStatus'] as String?),
-      designerWorkChecklist: (json['designerWorkChecklist'] as List?)?.map((e) => e as String).toList(),
-      castingWorkChecklist: (json['castingWorkChecklist'] as List?)?.map((e) => e as String).toList(),
-      carvingWorkChecklist: (json['carvingWorkChecklist'] as List?)?.map((e) => e as String).toList(),
-      stoneSettingWorkChecklist: (json['stoneSettingWorkChecklist'] as List?)?.map((e) => e as String).toList(),
-      finishingWorkChecklist: (json['finishingWorkChecklist'] as List?)?.map((e) => e as String).toList(),
-      inventoryWorkChecklist: (json['inventoryWorkChecklist'] as List?)?.map((e) => e as String).toList(),
-      assignedDesigner: json['assignedDesigner'] as String?,
-      assignedCaster: json['assignedCaster'] as String?,
-      assignedCarver: json['assignedCarver'] as String?,
-      assignedDiamondSetter: json['assignedDiamondSetter'] as String?,
-      assignedFinisher: json['assignedFinisher'] as String?,
-      assignedInventory: json['assignedInventory'] as String?,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt']) : null,
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-        'imagePaths': imagePaths,
-        'id': id,
-        'customerName': customerName,
-        'customerContact': customerContact,
-        'address': address,
-        'jewelryType': jewelryType,
-        'goldColor': goldColor,
-        'goldType': goldType,
-        'stoneType': stoneType,
-        'stoneSize': stoneSize,
-        'ringSize': ringSize,
-        'readyDate': readyDate?.toIso8601String(),
-        'pickupDate': pickupDate?.toIso8601String(),
-        'goldPricePerGram': goldPricePerGram,
-        'finalPrice': finalPrice,
-        'dp': dp,
-        'sisaLunas': sisaLunas,
-        'notes': notes,
-        'workflowStatus': workflowStatus.name,
-        'designerWorkChecklist': designerWorkChecklist,
-        'castingWorkChecklist': castingWorkChecklist,
-        'carvingWorkChecklist': carvingWorkChecklist,
-        'stoneSettingWorkChecklist': stoneSettingWorkChecklist,
-        'finishingWorkChecklist': finishingWorkChecklist,
-        'inventoryWorkChecklist': inventoryWorkChecklist,
-        'inventoryProductName': inventoryProductName,
-        'inventoryProductCode': inventoryProductCode,
-        'inventoryShelfLocation': inventoryShelfLocation,
-        'inventoryNotes': inventoryNotes,
-        'inventoryLocation': inventoryLocation,
-        'assignedDesigner': assignedDesigner,
-        'assignedCaster': assignedCaster,
-        'assignedCarver': assignedCarver,
-        'assignedDiamondSetter': assignedDiamondSetter,
-        'assignedFinisher': assignedFinisher,
-        'assignedInventory': assignedInventory,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt?.toIso8601String(),
-      };
 }

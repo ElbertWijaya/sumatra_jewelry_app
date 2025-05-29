@@ -31,6 +31,7 @@ class _FinisherTaskScreenState extends State<FinisherTaskScreen> {
     setState(() => _isProcessing = true);
     final updatedOrder = _order.copyWith(
       workflowStatus: OrderWorkflowStatus.finishing,
+      updatedAt: DateTime.now(),
     );
     try {
       await OrderService().updateOrder(updatedOrder);

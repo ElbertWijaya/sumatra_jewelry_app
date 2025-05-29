@@ -45,7 +45,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     OrderWorkflowStatus.waitingCasting,
     OrderWorkflowStatus.casting,
     OrderWorkflowStatus.waitingCarving,
-    OrderWorkflowStatus.readyForCarving,
     OrderWorkflowStatus.carving,
     OrderWorkflowStatus.waitingDiamondSetting,
     OrderWorkflowStatus.stoneSetting,
@@ -139,12 +138,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       order.finalPrice?.toString() ?? '',
       order.notes ?? '',
       order.workflowStatus.label,
-      order.assignedDesigner ?? '',
-      order.assignedCaster ?? '',
-      order.assignedCarver ?? '',
-      order.assignedDiamondSetter ?? '',
-      order.assignedFinisher ?? '',
-      order.assignedInventory ?? '',
     ].join(' ').toLowerCase();
   }
 

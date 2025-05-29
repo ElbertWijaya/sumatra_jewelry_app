@@ -47,9 +47,10 @@ class _DesignerTaskScreenState extends State<DesignerTaskScreen> {
       );
       Navigator.of(context).pop(true);
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Gagal menerima pesanan: $e')));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menerima pesanan: $e')),
+      );
     }
     setState(() => _isProcessing = false);
   }
@@ -74,9 +75,10 @@ class _DesignerTaskScreenState extends State<DesignerTaskScreen> {
       );
       Navigator.of(context).pop(true);
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Gagal submit: $e')));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal submit: $e')),
+      );
     }
     setState(() => _isProcessing = false);
   }

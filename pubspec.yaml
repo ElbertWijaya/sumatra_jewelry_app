@@ -38,6 +38,7 @@ dependencies:
   shared_preferences: ^2.5.3
   http: ^1.2.1
   image_picker: ^1.1.0
+  photo_view: ^0.14.0
   intl: ^0.20.2
   freezed_annotation: ^3.0.0
   json_annotation: ^4.9.0
