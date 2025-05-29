@@ -9,25 +9,25 @@ class OrderService {
     final response = await http.get(Uri.parse(baseUrl));
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
-      return data.map((json) => Order.fromJson(json)).toList();
+      return data.map((json) => Order.fromJson(json)).toList().cast<Order>();
     } else {
       throw Exception('Gagal memuat pesanan: ${response.statusCode}');
     }
   }
 
-  Future<void> addOrder(Order order) async {
+  Future<void> addOrders(Order order) async {
+    // Print isi imagePaths sebelum request
+    print('ImagePaths yang dikirim: ${jsonEncode(order.imagePaths)}');
+
     final response = await http.post(
-      Uri.parse(baseUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'id': order.id,
+      Uri.parse('http://192.168.176.165/sumatra_api/add_orders.php'),
+      body: {
         'customer_name': order.customerName,
         'customer_contact': order.customerContact,
-        'address': order.address,
-        'jewelry_type': order.jewelryType,
-        'created_at': order.createdAt.toIso8601String(),
-        // Tambahkan field lain jika endpoint PHP sudah mendukung
-      }),
+        // ... field lain ...
+        'imagePaths': jsonEncode(order.imagePaths), // pastikan dikirim sebagai JSON string
+        // ... field lain ...
+      },
     );
     if (response.statusCode != 200) {
       throw Exception('Gagal menambah pesanan: ${response.body}');
@@ -38,7 +38,7 @@ class OrderService {
     }
   }
 
-    Future<void> updateOrder(Order order) async {
+  Future<void> updateOrder(Order order) async {
     final response = await http.put(
       Uri.parse('$baseUrl?id=${order.id}'),
       headers: {'Content-Type': 'application/json'},
@@ -62,7 +62,7 @@ class OrderService {
     }
   }
 
-  Future<void> deleteOrder(String id) async {
+  Future<void> deleteOrders(String id) async {
     final response = await http.delete(
       Uri.parse('$baseUrl?id=$id'),
     );
@@ -75,7 +75,7 @@ class OrderService {
     }
   }
 
-  Future<Order?> getOrderById(String id) async {
+  Future<Order?> getOrdersById(String id) async {
     final response = await http.get(Uri.parse('$baseUrl?id=$id'));
     if (response.statusCode == 200) {
       if (response.body.isEmpty) return null;
@@ -83,8 +83,7 @@ class OrderService {
       if (data == null) return null;
       if (data is List && data.isNotEmpty) {
         return Order.fromJson(Map<String, dynamic>.from(data[0]));
-      }
-      if (data is Map && data.isNotEmpty) {
+      } else if (data is Map<String, dynamic>) {
         return Order.fromJson(Map<String, dynamic>.from(data));
       }
       return null;

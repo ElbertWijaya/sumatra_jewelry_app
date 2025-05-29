@@ -134,6 +134,12 @@ class Order {
   final List<String>? finishingWorkChecklist;
   final List<String>? inventoryWorkChecklist;
 
+  // Tambahan untuk penanganan error
+  final String? inventoryProductCode;
+  final String? inventoryProductName;
+  final String? inventoryShelfLocation;
+  final String? inventoryNotes;
+
   Order({
     required this.id,
     required this.customerName,
@@ -162,6 +168,10 @@ class Order {
     this.diamondSettingWorkChecklist,
     this.finishingWorkChecklist,
     this.inventoryWorkChecklist,
+    this.inventoryProductCode,
+    this.inventoryProductName,
+    this.inventoryShelfLocation,
+    this.inventoryNotes,
   });
 
   factory Order.fromMap(Map<String, dynamic> map) {
@@ -226,6 +236,10 @@ class Order {
       diamondSettingWorkChecklist: parseChecklist(map['diamondSettingWorkChecklist']),
       finishingWorkChecklist: parseChecklist(map['finishingWorkChecklist']),
       inventoryWorkChecklist: parseChecklist(map['inventoryWorkChecklist']),
+      inventoryProductCode: map['inventoryProductCode']?.toString(),
+      inventoryProductName: map['inventoryProductName']?.toString(),
+      inventoryShelfLocation: map['inventoryShelfLocation']?.toString(),
+      inventoryNotes: map['inventoryNotes']?.toString(),
     );
   }
 
@@ -257,6 +271,10 @@ class Order {
     List<String>? diamondSettingWorkChecklist,
     List<String>? finishingWorkChecklist,
     List<String>? inventoryWorkChecklist,
+    String? inventoryProductCode,
+    String? inventoryProductName,
+    String? inventoryShelfLocation,
+    String? inventoryNotes,
   }) {
     return Order(
       id: id ?? this.id,
@@ -286,6 +304,102 @@ class Order {
       diamondSettingWorkChecklist: diamondSettingWorkChecklist ?? this.diamondSettingWorkChecklist,
       finishingWorkChecklist: finishingWorkChecklist ?? this.finishingWorkChecklist,
       inventoryWorkChecklist: inventoryWorkChecklist ?? this.inventoryWorkChecklist,
+      inventoryProductCode: inventoryProductCode ?? this.inventoryProductCode,
+      inventoryProductName: inventoryProductName ?? this.inventoryProductName,
+      inventoryShelfLocation: inventoryShelfLocation ?? this.inventoryShelfLocation,
+      inventoryNotes: inventoryNotes ?? this.inventoryNotes,
     );
+  }
+
+  factory Order.fromJson(Map<String, dynamic> json) {
+    return Order(
+      id: json['id'] as String,
+      customerName: json['customerName'] as String,
+      customerContact: json['customerContact'] as String,
+      address: json['address'] as String,
+      jewelryType: json['jewelryType'] as String,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      goldColor: json['goldColor'] as String?,
+      goldType: json['goldType'] as String?,
+      stoneType: json['stoneType'] as String?,
+      stoneSize: json['stoneSize'] as String?,
+      ringSize: json['ringSize'] as String?,
+      readyDate: json['readyDate'] != null
+          ? DateTime.tryParse(json['readyDate'] as String)
+          : null,
+      pickupDate: json['pickupDate'] != null
+          ? DateTime.tryParse(json['pickupDate'] as String)
+          : null,
+      goldPricePerGram: (json['goldPricePerGram'] as num?)?.toDouble(),
+      finalPrice: (json['finalPrice'] as num?)?.toDouble(),
+      dp: (json['dp'] as num?)?.toDouble(),
+      sisaLunas: (json['sisaLunas'] as num?)?.toDouble(),
+      notes: json['notes'] as String?,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'] as String)
+          : null,
+      imagePaths: (json['imagePaths'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      workflowStatus: OrderWorkflowStatusX.fromString(json['workflowStatus'] as String?),
+      designerWorkChecklist: (json['designerWorkChecklist'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      castingWorkChecklist: (json['castingWorkChecklist'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      carvingWorkChecklist: (json['carvingWorkChecklist'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      diamondSettingWorkChecklist: (json['diamondSettingWorkChecklist'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      finishingWorkChecklist: (json['finishingWorkChecklist'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      inventoryWorkChecklist: (json['inventoryWorkChecklist'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      inventoryProductCode: json['inventoryProductCode'] as String?,
+      inventoryProductName: json['inventoryProductName'] as String?,
+      inventoryShelfLocation: json['inventoryShelfLocation'] as String?,
+      inventoryNotes: json['inventoryNotes'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'customerName': customerName,
+      'customerContact': customerContact,
+      'address': address,
+      'jewelryType': jewelryType,
+      'createdAt': createdAt.toIso8601String(),
+      'goldColor': goldColor,
+      'goldType': goldType,
+      'stoneType': stoneType,
+      'stoneSize': stoneSize,
+      'ringSize': ringSize,
+      'readyDate': readyDate?.toIso8601String(),
+      'pickupDate': pickupDate?.toIso8601String(),
+      'goldPricePerGram': goldPricePerGram,
+      'finalPrice': finalPrice,
+      'dp': dp,
+      'sisaLunas': sisaLunas,
+      'notes': notes,
+      'updatedAt': updatedAt?.toIso8601String(),
+      'imagePaths': imagePaths,
+      'workflowStatus': workflowStatus.name,
+      'designerWorkChecklist': designerWorkChecklist,
+      'castingWorkChecklist': castingWorkChecklist,
+      'carvingWorkChecklist': carvingWorkChecklist,
+      'diamondSettingWorkChecklist': diamondSettingWorkChecklist,
+      'finishingWorkChecklist': finishingWorkChecklist,
+      'inventoryWorkChecklist': inventoryWorkChecklist,
+      'inventoryProductCode': inventoryProductCode,
+      'inventoryProductName': inventoryProductName,
+      'inventoryShelfLocation': inventoryShelfLocation,
+      'inventoryNotes': inventoryNotes,
+    };
   }
 }

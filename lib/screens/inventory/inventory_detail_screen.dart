@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Import for date formatting
 import '../../models/order.dart';
-import '../../models/order_workflow.dart';
 import '../../services/order_service.dart';
 import 'inventory_task_screen.dart';
 
@@ -444,3 +443,5 @@ double getOrderProgress(Order order) {
   if (idx < 0 || maxIdx <= 0) return 0.0;
   return idx / maxIdx;
 }
+
+// Tidak perlu perubahan di file ini jika model sudah benar

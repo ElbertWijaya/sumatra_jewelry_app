@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/order_service.dart';
 import '../../models/order.dart';
-import '../../models/order_workflow.dart';
 
 class DesignerDetailScreen extends StatefulWidget {
   final Order order;
@@ -42,7 +41,7 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
   }
 
   Future<void> _fetchOrder() async {
-    final latestOrder = await OrderService().getOrderById(widget.order.id);
+    final latestOrder = await OrderService().getOrdersById(widget.order.id);
     if (latestOrder == null) return;
     setState(() {
       _order = latestOrder;

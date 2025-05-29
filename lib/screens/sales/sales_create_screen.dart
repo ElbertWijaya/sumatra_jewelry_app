@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import 'package:photo_view/photo_view.dart';
 
 import '../../models/order.dart';
-import '../../services/order_service.dart';
 import '../../utils/thousand_seperator_input_formatter.dart';
 
 final _currencyFormatter = NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0);
@@ -41,8 +40,8 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
   DateTime? _selectedPickupDate;
   DateTime? _selectedReadyDate;
   bool _isLoading = false;
-  List<File> _pickedImages = [];
-  List<String> _uploadedImageUrls = [];
+  final List<File> _pickedImages = [];
+  final List<String> _uploadedImageUrls = [];
 
   final _jewelryTypes = [
     'Bangle', 'Ring', 'Earrings', 'Necklace', 'Bracelet', 'Pendant', 'Other'

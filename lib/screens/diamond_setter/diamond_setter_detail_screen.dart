@@ -42,7 +42,7 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
   }
 
   Future<void> _fetchOrder() async {
-    final latestOrder = await OrderService().getOrderById(widget.order.id);
+    final latestOrder = await OrderService().getOrdersById(widget.order.id);
     if (latestOrder == null) return;
     setState(() {
       _order = latestOrder;
