@@ -130,7 +130,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
       // Upload ke server
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.176.165/sumatra_api/uploads/upload_image.php'), // Ganti dengan URL server kamu
+        Uri.parse('http://192.168.42.138/sumatra_api/uploads/upload_image.php'), // Ganti dengan URL server kamu
       );
       request.files.add(await http.MultipartFile.fromPath('image', picked.path));
       var response = await request.send();
@@ -181,11 +181,12 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
     );
 
     try {
+      print('Menjalankan _submit...');
       print('ImagePaths yang dikirim: ${jsonEncode(_uploadedImageUrls)}');
       final response = await http.post(
-        Uri.parse('http://192.168.176.165/sumatra_api/add_orders.php'),
+        Uri.parse('http://192.168.42.138/sumatra_api/add_orders.php'),
         body: {
-          'id': order.id,
+          'id': order.id.toString(),
           'customer_name': order.customerName,
           'customer_contact': order.customerContact,
           'address': order.address,
@@ -206,6 +207,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
           'imagePaths': jsonEncode(_uploadedImageUrls),
         },
       );
+      print('Response: ${response.body}');
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(

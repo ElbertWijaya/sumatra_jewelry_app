@@ -164,7 +164,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
       // Upload to server
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.176.165/sumatra_api/uploads/upload_image.php'),
+        Uri.parse('http://192.168.42.138/sumatra_api/uploads/upload_image.php'),
       );
       request.files.add(await http.MultipartFile.fromPath('image', picked.path));
       var response = await request.send();
@@ -213,42 +213,72 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
     );
 
     try {
+      // DEBUG: print data yang akan dikirim ke backend
+      print('DEBUG order.id: ${order.id}');
+      print('DEBUG body: ${{
+        'id': order.id,
+        'customer_name': order.customerName,
+        'customer_contact': order.customerContact,
+        'address': order.address,
+        'jewelry_type': order.jewelryType,
+        'gold_type': order.goldType,
+        'gold_color': order.goldColor,
+        'final_price': order.finalPrice.toString(),
+        'notes': order.notes,
+        'pickup_date': order.pickupDate != null ? DateFormat('yyyy-MM-dd').format(order.pickupDate!) : '',
+        'gold_price_per_gram': order.goldPricePerGram.toString(),
+        'stone_type': order.stoneType,
+        'stone_size': order.stoneSize,
+        'ring_size': order.ringSize,
+        'ready_date': order.readyDate != null ? DateFormat('yyyy-MM-dd').format(order.readyDate!) : '',
+        'dp': order.dp.toString(),
+        'sisa_lunas': order.sisaLunas.toString(),
+        'imagePaths': jsonEncode(order.imagePaths ?? []),
+      }}');
+
       final response = await http.post(
-        Uri.parse('http://192.168.176.165/sumatra_api/update_order.php'),
+        Uri.parse('http://192.168.42.138/sumatra_api/update_order.php'),
         body: {
           'id': order.id,
-          'customer_name': order.customerName,
-          'customer_contact': order.customerContact,
-          'address': order.address,
-          'jewelry_type': order.jewelryType,
-          'gold_type': order.goldType,
-          'gold_color': order.goldColor,
-          'final_price': order.finalPrice.toString(),
-          'notes': order.notes,
+          'customer_name': order.customerName ?? '',
+          'customer_contact': order.customerContact ?? '',
+          'address': order.address ?? '',
+          'jewelry_type': order.jewelryType ?? '',
+          'gold_type': order.goldType ?? '',
+          'gold_color': order.goldColor ?? '',
+          'final_price': order.finalPrice.toString() ?? '0',
+          'notes': order.notes ?? '',
           'pickup_date': order.pickupDate != null ? DateFormat('yyyy-MM-dd').format(order.pickupDate!) : '',
-          'gold_price_per_gram': order.goldPricePerGram.toString(),
+          'gold_price_per_gram': order.goldPricePerGram.toString() ?? '0',
           'stone_type': order.stoneType ?? '',
           'stone_size': order.stoneSize ?? '',
           'ring_size': order.ringSize ?? '',
           'ready_date': order.readyDate != null ? DateFormat('yyyy-MM-dd').format(order.readyDate!) : '',
-          'dp': order.dp.toString(),
-          'sisa_lunas': order.sisaLunas.toString(),
-          'imagePaths': jsonEncode(order.imagePaths),
+          'dp': order.dp.toString() ?? '0',
+          'sisa_lunas': order.sisaLunas.toString() ?? '0',
+          'imagePaths': jsonEncode(order.imagePaths ?? []),
         },
       );
+      print('Response: ${response.body}');
+      final result = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
+      if (result['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Pesanan berhasil diupdate!')),
         );
         Navigator.of(context).pop(true);
       } else {
-        throw Exception('Gagal update pesanan: ${response.body}');
+        // Tampilkan error detail dari backend
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal update pesanan: ${result['error']}')),
+        );
+        print('Error dari backend: ${result['error']}');
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal update pesanan: $e')),
       );
+      print('Exception: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

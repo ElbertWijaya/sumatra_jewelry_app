@@ -1,359 +1,245 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import '../../services/order_service.dart';
 import '../../models/order.dart';
+import '../../services/order_service.dart';
 
 class DesignerDetailScreen extends StatefulWidget {
-  final Order order;
-  const DesignerDetailScreen({super.key, required this.order});
+  final String orderId;
+  const DesignerDetailScreen({super.key, required this.orderId});
 
   @override
   State<DesignerDetailScreen> createState() => _DesignerDetailScreenState();
 }
 
 class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
-  late Order _order;
-  late List<String> _images;
-  DateTime? _readyDate;
-
-  // Controllers
-  late TextEditingController _nameController;
-  late TextEditingController _contactController;
-  late TextEditingController _addressController;
-  late TextEditingController _stoneSizeController;
-  late TextEditingController _ringSizeController;
-  late TextEditingController _notesController;
-  late TextEditingController _dateController;
-  late TextEditingController _finalPriceController;
-  late TextEditingController _dpController;
-
-  final _rupiahFormat = NumberFormat.currency(
-    locale: 'id',
-    symbol: 'Rp ',
-    decimalDigits: 0,
-  );
+  Order? _order;
+  bool _isLoading = true;
+  List<String> _checked = [];
+  final List<String> _tasks = ['Designing', '3D Printing', 'Pengecekan'];
 
   @override
   void initState() {
     super.initState();
-    _fetchOrder();
+    _fetchOrder(); // <-- setiap kali halaman detail dibuka, fetch data terbaru
   }
 
   Future<void> _fetchOrder() async {
-    final latestOrder = await OrderService().getOrdersById(widget.order.id);
-    if (latestOrder == null) return;
+    final order = await OrderService().getOrderById(widget.orderId);
     setState(() {
-      _order = latestOrder;
-      checkedTodos = List<String>.from(_order.designerWorkChecklist ?? []);
-      _images = List<String>.from(_order.imagePaths ?? []);
-      _nameController = TextEditingController(text: _order.customerName);
-      _contactController = TextEditingController(text: _order.customerContact);
-      _addressController = TextEditingController(text: _order.address);
-      _stoneSizeController = TextEditingController(text: _order.stoneSize ?? "");
-      _ringSizeController = TextEditingController(text: _order.ringSize ?? "");
-      _notesController = TextEditingController(text: _order.notes ?? "");
-      _finalPriceController = TextEditingController(
-        text: _order.finalPrice != 0
-            ? _rupiahFormat.format(_order.finalPrice)
-            : '',
-      );
-      _dpController = TextEditingController(
-        text: _order.dp != 0
-            ? _rupiahFormat.format(_order.dp)
-            : '',
-      );
-      _readyDate = _order.readyDate;
-      _dateController = TextEditingController(
-        text: _readyDate == null
-            ? ""
-            : "${_readyDate!.day}/${_readyDate!.month}/${_readyDate!.year}",
-      );
+      _order = order;
+      _checked = List<String>.from(order.designerWorkChecklist ?? []);
+      _isLoading = false;
     });
   }
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _contactController.dispose();
-    _addressController.dispose();
-    _stoneSizeController.dispose();
-    _ringSizeController.dispose();
-    _notesController.dispose();
-    _dateController.dispose();
-    _finalPriceController.dispose();
-    _dpController.dispose();
-    super.dispose();
-  }
-
-  String showField(String? value) =>
-      (value == null || value.trim().isEmpty) ? 'Belum diisi' : value;
-  String showDouble(double? value) =>
-      value == null ? 'Belum diisi' : _rupiahFormat.format(value);
-  String showDate(DateTime? date) =>
-      date == null ? 'Belum diisi' : "${date.day}/${date.month}/${date.year}";
-
-  Widget _buildDisplayField(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: Text(value)),
-        ],
-      ),
+  Future<void> _updateChecklist(String task, bool checked) async {
+    setState(() {
+      if (checked) {
+        if (!_checked.contains(task)) _checked.add(task);
+      } else {
+        _checked.remove(task);
+      }
+    });
+    await OrderService().updateOrder(
+      _order!.copyWith(designerWorkChecklist: _checked),
     );
   }
 
-  bool _isProcessing = false;
-  final List<String> designerTodoList = [
-    'Designing',
-    '3D Printing',
-    'Pengecekan',
-  ];
-  List<String> checkedTodos = [];
-
-  double getOrderProgress(Order order) {
-    final fullWorkflowStatuses = [
-      OrderWorkflowStatus.waitingDesigner,
-      OrderWorkflowStatus.designing,
-      OrderWorkflowStatus.waitingCasting,
-      OrderWorkflowStatus.casting,
-      OrderWorkflowStatus.waitingCarving,
-      OrderWorkflowStatus.carving,
-      OrderWorkflowStatus.waitingDiamondSetting,
-      OrderWorkflowStatus.stoneSetting,
-      OrderWorkflowStatus.waitingFinishing,
-      OrderWorkflowStatus.finishing,
-      OrderWorkflowStatus.waitingInventory,
-      OrderWorkflowStatus.inventory,
-      OrderWorkflowStatus.waitingSalesCompletion,
-      OrderWorkflowStatus.done,
-    ];
-    final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
-    final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
-    if (idx < 0 || maxIdx <= 0) return 0.0;
-    return idx / maxIdx;
-  }
-
-  Future<void> _acceptOrder() async {
-    setState(() {
-      _isProcessing = true;
-    });
-    try {
-      final updatedOrder = _order.copyWith(
-        workflowStatus: OrderWorkflowStatus.designing,
-        updatedAt: DateTime.now(),
+  Future<void> _startDesign() async {
+    final success = await OrderService().updateOrder(
+      _order!.copyWith(workflowStatus: OrderWorkflowStatus.designing),
+    );
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pesanan masuk tahap Designing!')),
       );
-      await OrderService().updateOrder(updatedOrder);
-      if (!mounted) return;
-      Navigator.of(context).pop(true);
-    } catch (e) {
-      // Handle error
-    } finally {
-      setState(() {
-        _isProcessing = false;
-      });
+      await _fetchOrder();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal memulai design!')),
+      );
     }
   }
 
-  Future<void> _submitToNext() async {
-    setState(() {
-      _isProcessing = true;
-    });
-    try {
-      final updatedOrder = _order.copyWith(
-        designerWorkChecklist: checkedTodos,
+  Future<void> _submitToCor() async {
+    final success = await OrderService().updateOrder(
+      _order!.copyWith(
         workflowStatus: OrderWorkflowStatus.waitingCasting,
-        updatedAt: DateTime.now(),
+        designerWorkChecklist: _checked,
+      ),
+    );
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pesanan berhasil dikirim ke Cor!')),
       );
-      await OrderService().updateOrder(updatedOrder);
-      if (!mounted) return;
       Navigator.of(context).pop(true);
-    } catch (e) {
-      // Handle error
-    } finally {
-      setState(() {
-        _isProcessing = false;
-      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal submit!')),
+      );
     }
+  }
+
+  Widget _buildChecklist(String title, List<String>? checklist) {
+    if (checklist == null || checklist.isEmpty) return const SizedBox();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ...checklist.map((item) => Row(
+          children: [
+            const Icon(Icons.check, color: Colors.green, size: 18),
+            const SizedBox(width: 4),
+            Text(item),
+          ],
+        )),
+        const SizedBox(height: 8),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Detail Pesanan')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (_images.isNotEmpty)
-              SizedBox(
-                height: 110,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _images.length,
-                  itemBuilder: (context, idx) {
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          File(_images[idx]),
-                          width: 110,
-                          height: 110,
-                          fit: BoxFit.cover,
-                          errorBuilder: (c, e, s) => Container(
-                            width: 110,
-                            height: 110,
-                            color: Colors.grey[200],
-                            child: const Icon(
-                              Icons.broken_image,
-                              size: 40,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            const SizedBox(height: 16),
-            _buildDisplayField(
-              'Nama Pelanggan',
-              showField(_order.customerName),
-            ),
-            _buildDisplayField(
-              'Nomor Telepon',
-              showField(_order.customerContact),
-            ),
-            _buildDisplayField('Alamat', showField(_order.address)),
-            _buildDisplayField(
-              'Jenis Perhiasan',
-              showField(_order.jewelryType),
-            ),
-            _buildDisplayField('Warna Emas', showField(_order.goldColor)),
-            _buildDisplayField('Jenis Emas', showField(_order.goldType)),
-            _buildDisplayField('Jenis Batu', showField(_order.stoneType)),
-            _buildDisplayField('Ukuran Batu', showField(_order.stoneSize)),
-            _buildDisplayField('Ukuran Cincin', showField(_order.ringSize)),
-            _buildDisplayField(
-              'Harga Barang / Perkiraan',
-              showDouble(_order.finalPrice),
-            ),
-            _buildDisplayField('Jumlah DP', showDouble(_order.dp)),
-            _buildDisplayField(
-              'Sisa harga untuk lunas',
-              showDouble(_order.sisaLunas),
-            ),
-            _buildDisplayField('Catatan Tambahan', showField(_order.notes)),
-            _buildDisplayField('Tanggal Siap', showDate(_order.readyDate)),
-            _buildDisplayField('Status', _order.workflowStatus.label),
-            if (_order.workflowStatus != OrderWorkflowStatus.done &&
-                _order.workflowStatus != OrderWorkflowStatus.cancelled)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    LinearProgressIndicator(
-                      value: getOrderProgress(_order),
-                      minHeight: 10,
-                      backgroundColor: Colors.grey[300],
-                      color: Colors.blue,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Progress: ${(getOrderProgress(_order) * 100).toStringAsFixed(0)}%',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black54,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            // Tombol terima pesanan (Waiting)
-            if (_order.workflowStatus == OrderWorkflowStatus.waitingDesigner)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: ElevatedButton(
-                  onPressed: _isProcessing ? null : _acceptOrder,
-                  child: const Text('Terima & Mulai Kerjakan Pesanan'),
-                ),
-              ),
+    if (_isLoading || _order == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-            // Checklist dan tombol submit (Working)
-            if (_order.workflowStatus == OrderWorkflowStatus.designing) ...[
-              Text(
-                'To Do Work',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              ...designerTodoList.map(
-                (task) => CheckboxListTile(
-                  title: Text(task),
-                  value: checkedTodos.contains(task),
-                  onChanged: (val) {
-                    setState(() {
-                      if (val == true && !checkedTodos.contains(task)) {
-                        checkedTodos.add(task);
-                      } else if (val == false && checkedTodos.contains(task)) {
-                        checkedTodos.remove(task);
-                      }
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: checkedTodos.length == designerTodoList.length && !_isProcessing
-                    ? _submitToNext
-                    : null,
-                child: const Text('Submit ke Casting'),
-              ),
-            ],
-            // Checklist readonly jika sudah lewat dari designing
-            if (_order.workflowStatus != OrderWorkflowStatus.waitingDesigner &&
-                _order.workflowStatus != OrderWorkflowStatus.designing)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    final isWaitingDesigner = _order?.workflowStatus == OrderWorkflowStatus.waitingDesigner;
+    final isDesigning = _order?.workflowStatus == OrderWorkflowStatus.designing;
+    final allChecked = _tasks.every((task) => _checked.contains(task));
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Detail Pesanan'),
+        backgroundColor: const Color(0xFFD4AF37),
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: ListView(
+          children: [
+            // --- Informasi Pesanan ---
+            const Text('Informasi Pelanggan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF7C5E2C))),
+            const Divider(),
+            Text('Nama: ${_order!.customerName}', style: const TextStyle(color: Color(0xFF7C5E2C))),
+            Text('Kontak: ${_order!.customerContact}', style: const TextStyle(color: Color(0xFF7C5E2C))),
+            Text('Alamat: ${_order!.address}', style: const TextStyle(color: Color(0xFF7C5E2C))),
+            const SizedBox(height: 12),
+            const Text('Informasi Barang', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF7C5E2C))),
+            const Divider(),
+            Text('Jenis Perhiasan: ${_order!.jewelryType}', style: const TextStyle(color: Color(0xFF7C5E2C))),
+            Text('Jenis Emas: ${_order!.goldType}', style: const TextStyle(color: Color(0xFF7C5E2C))),
+            Text('Warna Emas: ${_order!.goldColor}', style: const TextStyle(color: Color(0xFF7C5E2C))),
+            Text('Ukuran Cincin: ${_order!.ringSize}', style: const TextStyle(color: Color(0xFF7C5E2C))),
+            Text('Tipe Batu: ${_order!.stoneType}', style: const TextStyle(color: Color(0xFF7C5E2C))),
+            Text('Ukuran Batu: ${_order!.stoneSize}', style: const TextStyle(color: Color(0xFF7C5E2C))),
+            const SizedBox(height: 12),
+            const Text('Informasi Harga', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF7C5E2C))),
+            const Divider(),
+            Text('Harga Perkiraan: Rp ${_order!.finalPrice.toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFF7C5E2C))),
+            Text('Harga Emas per Gram: Rp ${_order!.goldPricePerGram.toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFF7C5E2C))),
+            Text('DP: Rp ${_order!.dp.toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFF7C5E2C))),
+            Text('Sisa Lunas: Rp ${(_order!.finalPrice - _order!.dp).clamp(0, double.infinity).toStringAsFixed(0)}', style: const TextStyle(color: Colors.redAccent)),
+            const SizedBox(height: 12),
+            const Text('Informasi Tanggal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF7C5E2C))),
+            const Divider(),
+            Text('Tanggal Order: ${_order!.createdAt.day}/${_order!.createdAt.month}/${_order!.createdAt.year}', style: const TextStyle(color: Color(0xFF7C5E2C))),
+            Text('Tanggal Ambil: ${_order!.pickupDate != null ? "${_order!.pickupDate!.day}/${_order!.pickupDate!.month}/${_order!.pickupDate!.year}" : "-"}', style: const TextStyle(color: Color(0xFF7C5E2C))),
+            Text('Tanggal Jadi: ${_order!.readyDate != null ? "${_order!.readyDate!.day}/${_order!.readyDate!.month}/${_order!.readyDate!.year}" : "-"}', style: const TextStyle(color: Color(0xFF7C5E2C))),
+            const SizedBox(height: 12),
+            const Text('Referensi Gambar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF7C5E2C))),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 90,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
                 children: [
-                  const SizedBox(height: 16),
-                  Text(
-                    'Checklist Designer',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  ...designerTodoList.map(
-                    (task) => Row(
-                      children: [
-                        Icon(
-                          (_order.designerWorkChecklist ?? []).contains(task)
-                              ? Icons.check_box
-                              : Icons.check_box_outline_blank,
-                          color: (_order.designerWorkChecklist ?? []).contains(task)
-                              ? Colors.green
-                              : Colors.grey,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(task),
-                      ],
+                  ..._order!.imagePaths.map((img) => Container(
+                    margin: const EdgeInsets.only(right: 10),
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber),
+                      image: DecorationImage(
+                        image: img.startsWith('http') ? NetworkImage(img) : AssetImage('assets/images/no_image.png') as ImageProvider,
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                  ),
+                  )),
                 ],
               ),
+            ),
+            const SizedBox(height: 12),
+            const Text('Catatan (Memo)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF7C5E2C))),
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.amber[50],
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.amber[200]!),
+              ),
+              child: Text(_order!.notes, style: const TextStyle(fontFamily: 'Courier', fontSize: 14)),
+            ),
+            const SizedBox(height: 8),
+            Text('Status: ${_order!.workflowStatus.label}', style: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold)),
+            const Divider(),
+
+            // Checklist lain (readonly)
+            _buildChecklist('Checklist Designer', _order!.designerWorkChecklist),
+            _buildChecklist('Checklist Casting', _order!.castingWorkChecklist),
+            _buildChecklist('Checklist Carving', _order!.carvingWorkChecklist),
+            _buildChecklist('Checklist Diamond Setting', _order!.diamondSettingWorkChecklist),
+            _buildChecklist('Checklist Finishing', _order!.finishingWorkChecklist),
+            _buildChecklist('Checklist Inventory', _order!.inventoryWorkChecklist),
+
+            const SizedBox(height: 24),
+
+            // --- Workflow Button & Checklist ---
+            if (isWaitingDesigner)
+              ElevatedButton.icon(
+                icon: const Icon(Icons.play_arrow),
+                label: const Text('Mulai Design!'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 48),
+                ),
+                onPressed: _startDesign,
+              ),
+
+            if (isDesigning) ...[
+              const Text('Checklist Tugas Designer', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const Divider(),
+              ..._tasks.map((task) => CheckboxListTile(
+                    value: _checked.contains(task),
+                    title: Text(task),
+                    onChanged: (val) {
+                      _updateChecklist(task, val ?? false);
+                    },
+                  )),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.send),
+                label: const Text('Submit ke Cor'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: allChecked ? Colors.green : Colors.grey,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 48),
+                ),
+                onPressed: allChecked ? _submitToCor : null,
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 }
+
+// Checklist sudah sesuai designer
+// Tab sudah sesuai designer

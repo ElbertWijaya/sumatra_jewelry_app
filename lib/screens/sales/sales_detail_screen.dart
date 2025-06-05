@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../../models/order.dart';
 
 class SalesDetailScreen extends StatelessWidget {
@@ -6,6 +8,9 @@ class SalesDetailScreen extends StatelessWidget {
   const SalesDetailScreen({super.key, required this.order});
 
   Widget _buildChecklist(String title, List<String>? checklist) {
+    print(order.designerWorkChecklist);
+    print(order.designerWorkChecklist.runtimeType);
+    
     if (checklist == null || checklist.isEmpty) return const SizedBox();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -14,6 +19,29 @@ class SalesDetailScreen extends StatelessWidget {
         ...checklist.map((item) => Row(
           children: [
             const Icon(Icons.check, color: Colors.green, size: 18),
+            const SizedBox(width: 4),
+            Text(item),
+          ],
+        )),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+
+
+  Widget _buildFullChecklist(String title, List<String> allTasks, List<String>? checkedTasks) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ...allTasks.map((item) => Row(
+          children: [
+            Icon(
+              (checkedTasks ?? []).contains(item) ? Icons.check_circle : Icons.radio_button_unchecked,
+              color: (checkedTasks ?? []).contains(item) ? Colors.green : Colors.grey,
+              size: 18,
+            ),
             const SizedBox(width: 4),
             Text(item),
           ],
@@ -120,12 +148,36 @@ class SalesDetailScreen extends StatelessWidget {
             const Divider(),
 
             // Checklist
-            _buildChecklist('Checklist Designer', order.designerWorkChecklist),
-            _buildChecklist('Checklist Casting', order.castingWorkChecklist),
-            _buildChecklist('Checklist Carving', order.carvingWorkChecklist),
-            _buildChecklist('Checklist Diamond Setting', order.diamondSettingWorkChecklist),
-            _buildChecklist('Checklist Finishing', order.finishingWorkChecklist),
-            _buildChecklist('Checklist Inventory', order.inventoryWorkChecklist),
+            _buildFullChecklist(
+              'Checklist Designer',
+              ['Designing', '3D Printing', 'Pengecekan'],
+              order.designerWorkChecklist,
+            ),
+            _buildFullChecklist(
+              'Checklist Casting',
+              ['Tempel pohon', 'Cor'],
+              order.castingWorkChecklist,
+            ),
+            _buildFullChecklist(
+              'Checklist Carving',
+              ['Bom', 'Polish', 'Pengecekan', 'Kasih ke Olivia',],
+              order.carvingWorkChecklist,
+            ),
+            _buildFullChecklist(
+              'Checklist Diamond Setting',
+              ['Milih Berlian', 'Pasang Berlian', 'Kasih ke Olivia'],
+              order.diamondSettingWorkChecklist,
+            ),
+            _buildFullChecklist(
+              'Checklist Finishing',
+              ['Finishing', 'Kasih ke Olivia'],
+              order.finishingWorkChecklist,
+            ),
+            _buildFullChecklist(
+              'Checklist Inventory',
+              ['Inventory'],
+              order.inventoryWorkChecklist,
+            ),
 
             const SizedBox(height: 24),
             if (isWaitingSalesCheck) ...[
@@ -180,9 +232,20 @@ class SalesDetailScreen extends StatelessWidget {
                           ),
                         );
                         if (confirm == true) {
-                          // TODO: Panggil service hapus pesanan dari database
-                          // await OrderService().deleteOrder(order.id);
-                          Navigator.pop(context, true);
+                          print('Mengirim request hapus...');
+                          final response = await http.post(
+                            Uri.parse('http://192.168.42.138/sumatra_api/delete_orders.php'),
+                            body: {'id': order.id},
+                          );
+                          print('Response: ${response.body}');
+                          final result = jsonDecode(response.body);
+                          if (result['success'] == true) {
+                            Navigator.pop(context, true);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Gagal menghapus: ${result['error']}')),
+                            );
+                          }
                         }
                       },
                     ),
@@ -202,10 +265,56 @@ class SalesDetailScreen extends StatelessWidget {
                   icon: const Icon(Icons.send),
                   label: const Text('Submit ke Designer', style: TextStyle(fontSize: 16)),
                   onPressed: () async {
-                    // TODO: Update status pesanan ke waitingDesigner di database
-                    // await OrderService().updateOrderStatus(order.id, 'waiting_designer');
-                    Navigator.pop(context, true);
-                  },
+                    // Update status pesanan ke waitingDesigner di database
+                    final response = await http.post(
+                      Uri.parse('http://192.168.42.138/sumatra_api/update_order.php'),
+                      body: {
+                        'id': order.id,
+                        'workflow_status': 'waitingDesigner',
+                        // Sertakan field lain yang diperlukan agar query update tidak error
+                        'customer_name': order.customerName,
+                        'customer_contact': order.customerContact,
+                        'address': order.address,
+                        'jewelry_type': order.jewelryType,
+                        'gold_type': order.goldType,
+                        'gold_color': order.goldColor,
+                        'final_price': order.finalPrice.toString(),
+                        'notes': order.notes,
+                        'pickup_date': order.pickupDate != null
+    ? "${order.pickupDate!.year.toString().padLeft(4, '0')}-${order.pickupDate!.month.toString().padLeft(2, '0')}-${order.pickupDate!.day.toString().padLeft(2, '0')}"
+    : '',
+                        'gold_price_per_gram': order.goldPricePerGram.toString(),
+                        'stone_type': order.stoneType,
+                        'stone_size': order.stoneSize,
+                        'ring_size': order.ringSize,
+                        'ready_date': order.readyDate != null
+    ? "${order.readyDate!.year.toString().padLeft(4, '0')}-${order.readyDate!.month.toString().padLeft(2, '0')}-${order.readyDate!.day.toString().padLeft(2, '0')}"
+    : '',
+                        'dp': order.dp.toString(),
+                        'sisa_lunas': order.sisaLunas.toString(),
+                        'imagePaths': jsonEncode(order.imagePaths ?? []),
+                        // Sertakan checklist jika perlu
+                        'designerWorkChecklist': jsonEncode(order.designerWorkChecklist ?? []),
+                        'castingWorkChecklist': jsonEncode(order.castingWorkChecklist ?? []),
+                        'carvingWorkChecklist': jsonEncode(order.carvingWorkChecklist ?? []),
+                        'diamondSettingWorkChecklist': jsonEncode(order.diamondSettingWorkChecklist ?? []),
+                        'finishingWorkChecklist': jsonEncode(order.finishingWorkChecklist ?? []),
+                        'inventoryWorkChecklist': jsonEncode(order.inventoryWorkChecklist ?? []),
+                      },
+                    );
+                    print('Response: ${response.body}');
+                    final result = jsonDecode(response.body);
+                    if (result['success'] == true) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Pesanan berhasil dikirim ke Designer!')),
+                      );
+                      Navigator.pop(context, true);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Gagal update status: ${result['error']}')),
+                      );
+                    }
+                  }
                 ),
               ),
             ],

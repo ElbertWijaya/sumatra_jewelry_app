@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/order.dart';
 
 class OrderService {
-  static const String baseUrl = 'http://192.168.176.165/sumatra_api/get_orders.php';
+  static const String baseUrl = 'http://192.168.42.138/sumatra_api/get_orders.php';
 
   Future<List<Order>> getOrders() async {
     final response = await http.get(Uri.parse(baseUrl));
@@ -20,7 +20,7 @@ class OrderService {
     print('ImagePaths yang dikirim: ${jsonEncode(order.imagePaths)}');
 
     final response = await http.post(
-      Uri.parse('http://192.168.176.165/sumatra_api/add_orders.php'),
+      Uri.parse('http://192.168.42.138/sumatra_api/add_orders.php'),
       body: {
         'customer_name': order.customerName,
         'customer_contact': order.customerContact,
@@ -38,28 +38,40 @@ class OrderService {
     }
   }
 
-  Future<void> updateOrder(Order order) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl?id=${order.id}'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
+  Future<bool> updateOrder(Order order) async {
+    final response = await http.post(
+      Uri.parse('http://192.168.42.138/sumatra_api/update_order.php'),
+      body: {
         'id': order.id,
         'customer_name': order.customerName,
         'customer_contact': order.customerContact,
         'address': order.address,
         'jewelry_type': order.jewelryType,
-        'created_at': order.createdAt.toIso8601String(),
-        'updated_at': order.updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
-        // Tambahkan field lain sesuai kebutuhan dan endpoint PHP
-      }),
+        'gold_type': order.goldType,
+        'gold_color': order.goldColor,
+        'final_price': order.finalPrice.toString(),
+        'notes': order.notes,
+        'pickup_date': order.pickupDate != null
+            ? "${order.pickupDate!.year.toString().padLeft(4, '0')}-${order.pickupDate!.month.toString().padLeft(2, '0')}-${order.pickupDate!.day.toString().padLeft(2, '0')}"
+            : '',
+        'gold_price_per_gram': order.goldPricePerGram.toString(),
+        'stone_type': order.stoneType,
+        'stone_size': order.stoneSize,
+        'ring_size': order.ringSize,
+        'ready_date': order.readyDate != null
+            ? "${order.readyDate!.year.toString().padLeft(4, '0')}-${order.readyDate!.month.toString().padLeft(2, '0')}-${order.readyDate!.day.toString().padLeft(2, '0')}"
+            : '',
+        'dp': order.dp.toString(),
+        'sisa_lunas': order.sisaLunas.toString(),
+        'imagePaths': jsonEncode(order.imagePaths ?? []),
+        'workflow_status': order.workflowStatus.name,
+        'designerWorkChecklist': jsonEncode(order.designerWorkChecklist ?? []),
+        // Tambahkan checklist lain jika perlu
+      },
     );
-    if (response.statusCode != 200) {
-      throw Exception('Gagal update pesanan: ${response.body}');
-    }
+    if (response.statusCode != 200) return false;
     final result = json.decode(response.body);
-    if (result['success'] != true) {
-      throw Exception('Gagal update pesanan (API): ${response.body}');
-    }
+    return result['success'] == true;
   }
 
   Future<void> deleteOrders(String id) async {
@@ -75,20 +87,11 @@ class OrderService {
     }
   }
 
-  Future<Order?> getOrdersById(String id) async {
-    final response = await http.get(Uri.parse('$baseUrl?id=$id'));
-    if (response.statusCode == 200) {
-      if (response.body.isEmpty) return null;
-      final dynamic data = json.decode(response.body);
-      if (data == null) return null;
-      if (data is List && data.isNotEmpty) {
-        return Order.fromJson(Map<String, dynamic>.from(data[0]));
-      } else if (data is Map<String, dynamic>) {
-        return Order.fromJson(Map<String, dynamic>.from(data));
-      }
-      return null;
-    } else {
-      throw Exception('Gagal memuat pesanan: ${response.statusCode}');
-    }
+  Future<Order> getOrderById(String id) async {
+    final response = await http.get(
+      Uri.parse('http://192.168.42.138/sumatra_api/get_order_by_id.php?id=$id'),
+    );
+    final data = jsonDecode(response.body);
+    return Order.fromJson(data);
   }
 }

@@ -14,6 +14,7 @@ class CarverDetailScreen extends StatefulWidget {
 class _CarverDetailScreenState extends State<CarverDetailScreen> {
   late Order _order;
   bool _isProcessing = false;
+  // Ubah checklist dan workflow sesuai carver
   final List<String> todoList = [
     'Bom',
     'Polish',

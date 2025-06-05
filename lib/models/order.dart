@@ -24,32 +24,41 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
   static OrderWorkflowStatus fromString(String? value) {
     switch (value) {
       case 'waiting_sales_check':
+      case 'waitingSalesCheck':
         return OrderWorkflowStatus.waitingSalesCheck;
       case 'waiting_designer':
+      case 'waitingDesigner':
         return OrderWorkflowStatus.waitingDesigner;
       case 'designing':
         return OrderWorkflowStatus.designing;
       case 'waiting_casting':
+      case 'waitingCasting':
         return OrderWorkflowStatus.waitingCasting;
       case 'casting':
         return OrderWorkflowStatus.casting;
       case 'waiting_carving':
+      case 'waitingCarving':
         return OrderWorkflowStatus.waitingCarving;
       case 'carving':
         return OrderWorkflowStatus.carving;
       case 'waiting_diamond_setting':
+      case 'waitingDiamondSetting':
         return OrderWorkflowStatus.waitingDiamondSetting;
       case 'stone_setting':
+      case 'stoneSetting':
         return OrderWorkflowStatus.stoneSetting;
       case 'waiting_finishing':
+      case 'waitingFinishing':
         return OrderWorkflowStatus.waitingFinishing;
       case 'finishing':
         return OrderWorkflowStatus.finishing;
       case 'waiting_inventory':
+      case 'waitingInventory':
         return OrderWorkflowStatus.waitingInventory;
       case 'inventory':
         return OrderWorkflowStatus.inventory;
       case 'waiting_sales_completion':
+      case 'waitingSalesCompletion':
         return OrderWorkflowStatus.waitingSalesCompletion;
       case 'done':
         return OrderWorkflowStatus.done;
@@ -206,7 +215,7 @@ class Order {
     }
 
     return Order(
-      id: map['id']?.toString() ?? '',
+      id: map['id']?.toString() ?? '', // <-- ubah jadi String
       customerName: map['customer_name']?.toString() ?? '',
       customerContact: map['customer_contact']?.toString() ?? '',
       address: map['address']?.toString() ?? '',
@@ -332,7 +341,7 @@ class Order {
     }
 
     return Order(
-      id: json['id'] as String? ?? '',
+      id: json['id']?.toString() ?? '', // <-- ubah jadi String
       customerName: json['customer_name'] as String? ?? '',
       customerContact: json['customer_contact'] as String? ?? '',
       address: json['address'] as String? ?? '',
