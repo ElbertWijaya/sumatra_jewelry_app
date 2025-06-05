@@ -14,6 +14,8 @@ import 'screens/diamond_setter/diamond_setter_dashboard_screen.dart';
 import 'screens/inventory/inventory_dashboard_screen.dart';
 import 'models/order.dart';
 
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
 void main() {
   runApp(const MyApp());
 }
@@ -28,6 +30,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: const SplashScreen(),
       // home: TestDashboard(), // Ganti dengan SplashScreen() jika ingin menggunakan splash screen
+      navigatorObservers: [routeObserver],
       routes: {
         '/login': (context) => const LoginScreen(),
         '/sales/edit': (context) {
