@@ -192,11 +192,11 @@ class Order {
   factory Order.fromMap(Map<String, dynamic> map) {
     List<String> parseChecklist(dynamic val) {
       if (val == null) return [];
-      if (val is List) return List<String>.from(val);
+      if (val is List) return List<String>.from(val.map((e) => e.toString()));
       if (val is String && val.isNotEmpty) {
         try {
           final decoded = jsonDecode(val);
-          if (decoded is List) return List<String>.from(decoded);
+          if (decoded is List) return List<String>.from(decoded.map((e) => e.toString()));
         } catch (_) {}
       }
       return [];
@@ -204,18 +204,18 @@ class Order {
 
     List<String> parseImagePaths(dynamic val) {
       if (val == null) return [];
-      if (val is List) return List<String>.from(val);
+      if (val is List) return List<String>.from(val.map((e) => e.toString()));
       if (val is String && val.isNotEmpty) {
         try {
           final decoded = jsonDecode(val);
-          if (decoded is List) return List<String>.from(decoded);
+          if (decoded is List) return List<String>.from(decoded.map((e) => e.toString()));
         } catch (_) {}
       }
       return [];
     }
 
     return Order(
-      id: map['id']?.toString() ?? '', // <-- ubah jadi String
+      id: map['id']?.toString() ?? '',
       customerName: map['customer_name']?.toString() ?? '',
       customerContact: map['customer_contact']?.toString() ?? '',
       address: map['address']?.toString() ?? '',
@@ -334,31 +334,49 @@ class Order {
   }
 
   factory Order.fromJson(Map<String, dynamic> json) {
-    List<String> parseList(dynamic val) {
+    List<String> parseChecklist(dynamic val) {
       if (val == null) return [];
-      if (val is List) return List<String>.from(val);
+      if (val is List) return List<String>.from(val.map((e) => e.toString()));
+      if (val is String && val.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(val);
+          if (decoded is List) return List<String>.from(decoded.map((e) => e.toString()));
+        } catch (_) {}
+      }
+      return [];
+    }
+
+    List<String> parseImagePaths(dynamic val) {
+      if (val == null) return [];
+      if (val is List) return List<String>.from(val.map((e) => e.toString()));
+      if (val is String && val.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(val);
+          if (decoded is List) return List<String>.from(decoded.map((e) => e.toString()));
+        } catch (_) {}
+      }
       return [];
     }
 
     return Order(
-      id: json['id']?.toString() ?? '', // <-- ubah jadi String
-      customerName: json['customer_name'] as String? ?? '',
-      customerContact: json['customer_contact'] as String? ?? '',
-      address: json['address'] as String? ?? '',
-      jewelryType: json['jewelry_type'] as String? ?? '',
+      id: json['id']?.toString() ?? '',
+      customerName: json['customer_name']?.toString() ?? '',
+      customerContact: json['customer_contact']?.toString() ?? '',
+      address: json['address']?.toString() ?? '',
+      jewelryType: json['jewelry_type']?.toString() ?? '',
       createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+          ? DateTime.parse(json['created_at'].toString())
           : DateTime.now(),
-      goldColor: json['gold_color'] as String? ?? '',
-      goldType: json['gold_type'] as String? ?? '',
-      stoneType: json['stone_type'] as String? ?? '',
-      stoneSize: json['stone_size'] as String? ?? '',
-      ringSize: json['ring_size'] as String? ?? '',
+      goldColor: json['gold_color']?.toString() ?? '',
+      goldType: json['gold_type']?.toString() ?? '',
+      stoneType: json['stone_type']?.toString() ?? '',
+      stoneSize: json['stone_size']?.toString() ?? '',
+      ringSize: json['ring_size']?.toString() ?? '',
       readyDate: json['ready_date'] != null && json['ready_date'] != ''
-          ? DateTime.tryParse(json['ready_date'] as String)
+          ? DateTime.tryParse(json['ready_date'].toString())
           : null,
       pickupDate: json['pickup_date'] != null && json['pickup_date'] != ''
-          ? DateTime.tryParse(json['pickup_date'] as String)
+          ? DateTime.tryParse(json['pickup_date'].toString())
           : null,
       goldPricePerGram: json['gold_price_per_gram'] != null
           ? double.tryParse(json['gold_price_per_gram'].toString()) ?? 0
@@ -372,23 +390,22 @@ class Order {
       sisaLunas: json['sisa_lunas'] != null
           ? double.tryParse(json['sisa_lunas'].toString()) ?? 0
           : 0,
-      notes: json['notes'] as String? ?? '',
+      notes: json['notes']?.toString() ?? '',
       updatedAt: json['updated_at'] != null && json['updated_at'] != ''
-          ? DateTime.tryParse(json['updated_at'] as String)
+          ? DateTime.tryParse(json['updated_at'].toString())
           : null,
-      imagePaths: parseList(json['imagePaths']),
-      workflowStatus: OrderWorkflowStatusX.fromString(json['workflow_status'] as String?),
-      designerWorkChecklist: parseList(json['designerWorkChecklist']),
-      castingWorkChecklist: parseList(json['castingWorkChecklist']),
-      carvingWorkChecklist: parseList(json['carvingWorkChecklist']),
-      diamondSettingWorkChecklist: parseList(json['diamondSettingWorkChecklist']),
-      finishingWorkChecklist: parseList(json['finishingWorkChecklist']),
-      inventoryWorkChecklist: parseList(json['inventoryWorkChecklist']),
-      // Field inventoryProductCode, inventoryProductName, inventoryShelfLocation, inventoryNotes tidak ada di tabel utama, bisa diisi default:
-      inventoryProductCode: '',
-      inventoryProductName: '',
-      inventoryShelfLocation: '',
-      inventoryNotes: '',
+      imagePaths: parseImagePaths(json['imagePaths']),
+      workflowStatus: OrderWorkflowStatusX.fromString(json['workflow_status']),
+      designerWorkChecklist: parseChecklist(json['designerWorkChecklist']),
+      castingWorkChecklist: parseChecklist(json['castingWorkChecklist']),
+      carvingWorkChecklist: parseChecklist(json['carvingWorkChecklist']),
+      diamondSettingWorkChecklist: parseChecklist(json['diamondSettingWorkChecklist']),
+      finishingWorkChecklist: parseChecklist(json['finishingWorkChecklist']),
+      inventoryWorkChecklist: parseChecklist(json['inventoryWorkChecklist']),
+      inventoryProductCode: json['inventoryProductCode']?.toString() ?? '',
+      inventoryProductName: json['inventoryProductName']?.toString() ?? '',
+      inventoryShelfLocation: json['inventoryShelfLocation']?.toString() ?? '',
+      inventoryNotes: json['inventoryNotes']?.toString() ?? '',
     );
   }
 
