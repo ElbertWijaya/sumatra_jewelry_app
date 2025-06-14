@@ -148,6 +148,10 @@ class Order {
   final String inventoryShelfLocation;
   final String inventoryNotes;
 
+  // Tambahan properti baru
+  final String productId;
+  final List<Map<String, String>> stoneUsed;
+
   Order({
     required this.id,
     required this.customerName,
@@ -180,13 +184,16 @@ class Order {
     this.inventoryProductName = '',
     this.inventoryShelfLocation = '',
     this.inventoryNotes = '',
+    this.productId = '',
+    List<Map<String, String>>? stoneUsed,
   })  : imagePaths = imagePaths ?? const [],
         designerWorkChecklist = designerWorkChecklist ?? const [],
         castingWorkChecklist = castingWorkChecklist ?? const [],
         carvingWorkChecklist = carvingWorkChecklist ?? const [],
         diamondSettingWorkChecklist = diamondSettingWorkChecklist ?? const [],
         finishingWorkChecklist = finishingWorkChecklist ?? const [],
-        inventoryWorkChecklist = inventoryWorkChecklist ?? const [];
+        inventoryWorkChecklist = inventoryWorkChecklist ?? const [],
+        stoneUsed = stoneUsed ?? const [];
 
   factory Order.fromMap(Map<String, dynamic> map) {
     List<String> parseChecklist(dynamic val) {
@@ -208,6 +215,22 @@ class Order {
         try {
           final decoded = jsonDecode(val);
           if (decoded is List) return List<String>.from(decoded.map((e) => e.toString()));
+        } catch (_) {}
+      }
+      return [];
+    }
+
+    List<Map<String, String>> parseStoneUsed(dynamic val) {
+      if (val == null) return [];
+      if (val is List) {
+        return val.map<Map<String, String>>((e) => Map<String, String>.from(e as Map)).toList();
+      }
+      if (val is String && val.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(val);
+          if (decoded is List) {
+            return decoded.map<Map<String, String>>((e) => Map<String, String>.from(e as Map)).toList();
+          }
         } catch (_) {}
       }
       return [];
@@ -261,6 +284,8 @@ class Order {
       inventoryProductName: map['inventoryProductName']?.toString() ?? '',
       inventoryShelfLocation: map['inventoryShelfLocation']?.toString() ?? '',
       inventoryNotes: map['inventoryNotes']?.toString() ?? '',
+      productId: map['productId']?.toString() ?? '',
+      stoneUsed: parseStoneUsed(map['stoneUsed']),
     );
   }
 
@@ -296,6 +321,8 @@ class Order {
     String? inventoryProductName,
     String? inventoryShelfLocation,
     String? inventoryNotes,
+    String? productId,
+    List<Map<String, String>>? stoneUsed,
   }) {
     return Order(
       id: id ?? this.id,
@@ -329,6 +356,8 @@ class Order {
       inventoryProductName: inventoryProductName ?? this.inventoryProductName,
       inventoryShelfLocation: inventoryShelfLocation ?? this.inventoryShelfLocation,
       inventoryNotes: inventoryNotes ?? this.inventoryNotes,
+      productId: productId ?? this.productId,
+      stoneUsed: stoneUsed ?? this.stoneUsed,
     );
   }
 
@@ -352,6 +381,22 @@ class Order {
         try {
           final decoded = jsonDecode(val);
           if (decoded is List) return List<String>.from(decoded.map((e) => e.toString()));
+        } catch (_) {}
+      }
+      return [];
+    }
+
+    List<Map<String, String>> parseStoneUsed(dynamic val) {
+      if (val == null) return [];
+      if (val is List) {
+        return val.map<Map<String, String>>((e) => Map<String, String>.from(e as Map)).toList();
+      }
+      if (val is String && val.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(val);
+          if (decoded is List) {
+            return decoded.map<Map<String, String>>((e) => Map<String, String>.from(e as Map)).toList();
+          }
         } catch (_) {}
       }
       return [];
@@ -405,6 +450,8 @@ class Order {
       inventoryProductName: json['inventoryProductName']?.toString() ?? '',
       inventoryShelfLocation: json['inventoryShelfLocation']?.toString() ?? '',
       inventoryNotes: json['inventoryNotes']?.toString() ?? '',
+      productId: json['productId']?.toString() ?? '',
+      stoneUsed: parseStoneUsed(json['stoneUsed']),
     );
   }
 
@@ -441,6 +488,8 @@ class Order {
       'inventoryProductName': inventoryProductName,
       'inventoryShelfLocation': inventoryShelfLocation,
       'inventoryNotes': inventoryNotes,
+      'productId': productId,
+      'stoneUsed': stoneUsed,
     };
   }
 }

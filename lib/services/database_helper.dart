@@ -5,12 +5,13 @@ import 'package:sqflite/sqflite.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
-  factory DatabaseHelper() => _instance;
+  static DatabaseHelper get instance => _instance;
+
   DatabaseHelper._internal();
 
   static Database? _db;
 
-  Future<Database> get db async {
+  Future<Database> get database async {
     if (_db != null) return _db!;
     _db = await _initDb();
     return _db!;

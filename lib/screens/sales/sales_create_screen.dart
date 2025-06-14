@@ -47,7 +47,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
     'Bangle', 'Ring', 'Earrings', 'Necklace', 'Bracelet', 'Pendant', 'Other'
   ];
   final _goldTypes = [
-    '24k', '22k', '18k', '14k', '9k'
+    '24K', '22K', '18K', '14K', '10K', '9K'
   ];
   final _goldColors = [
     'White Gold', 'Rose Gold', 'Yellow Gold'
