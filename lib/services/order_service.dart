@@ -1,9 +1,10 @@
 import 'dart:convert';
+import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import '../models/order.dart';
 
 class OrderService {
-  static const String baseUrl = 'http://192.168.42.138/sumatra_api/get_orders.php';
+  static const String baseUrl = 'http://192.168.187.174/sumatra_api/get_orders.php';
 
   Future<List<Order>> getOrders() async {
     final response = await http.get(Uri.parse(baseUrl));
@@ -20,13 +21,28 @@ class OrderService {
     print('ImagePaths yang dikirim: ${jsonEncode(order.imagePaths)}');
 
     final response = await http.post(
-      Uri.parse('http://192.168.42.138/sumatra_api/add_orders.php'),
+      Uri.parse('http://192.168.187.174/sumatra_api/add_orders.php'),
       body: {
+        'id': order.id.toString(),
         'customer_name': order.customerName,
         'customer_contact': order.customerContact,
-        // ... field lain ...
-        'imagePaths': jsonEncode(order.imagePaths), // pastikan dikirim sebagai JSON string
-        // ... field lain ...
+        'address': order.address,
+        'jewelry_type': order.jewelryType,
+        'gold_type': order.goldType,
+        'gold_color': order.goldColor,
+        'final_price': order.finalPrice.toString(),
+        'notes': order.notes,
+        'pickup_date': order.pickupDate != null ? DateFormat('yyyy-MM-dd').format(order.pickupDate!) : '',
+        'created_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(order.createdAt),
+        'gold_price_per_gram': order.goldPricePerGram.toString(),
+        'stone_type': order.stoneType ?? '',
+        'stone_size': order.stoneSize ?? '',
+        'ring_size': order.ringSize ?? '',
+        'ready_date': order.readyDate != null ? DateFormat('yyyy-MM-dd').format(order.readyDate!) : '',
+        'dp': order.dp.toString(),
+        'sisa_lunas': order.sisaLunas.toString(),
+        'imagePaths': jsonEncode(order.imagePaths ?? []),
+        'workflow_status': order.workflowStatus.name, // <-- Tambahkan baris ini!
       },
     );
     if (response.statusCode != 200) {
@@ -40,7 +56,7 @@ class OrderService {
 
   Future<bool> updateOrder(Order order) async {
     final response = await http.post(
-      Uri.parse('http://192.168.42.138/sumatra_api/update_order.php'),
+      Uri.parse('http://192.168.187.174/sumatra_api/update_order.php'),
       body: {
         'id': order.id,
         'customer_name': order.customerName,
@@ -66,6 +82,12 @@ class OrderService {
         'imagePaths': jsonEncode(order.imagePaths ?? []),
         'workflow_status': order.workflowStatus.name,
         'designerWorkChecklist': jsonEncode(order.designerWorkChecklist ?? []),
+        'castingWorkChecklist': jsonEncode(order.castingWorkChecklist ?? []),
+        'carvingWorkChecklist': jsonEncode(order.carvingWorkChecklist ?? []),
+        'diamondSettingWorkChecklist': jsonEncode(order.diamondSettingWorkChecklist ?? []),
+        'finishingWorkChecklist': jsonEncode(order.finishingWorkChecklist ?? []),
+        'inventoryChecklist': jsonEncode(order.inventoryWorkChecklist ?? []),
+
         // Tambahkan checklist lain jika perlu
       },
     );
@@ -89,7 +111,7 @@ class OrderService {
 
   Future<Order> getOrderById(String id) async {
     final response = await http.get(
-      Uri.parse('http://192.168.42.138/sumatra_api/get_order_by_id.php?id=$id'),
+      Uri.parse('http://192.168.187.174/sumatra_api/get_order_by_id.php?id=$id'),
     );
     final data = jsonDecode(response.body);
     return Order.fromJson(data);

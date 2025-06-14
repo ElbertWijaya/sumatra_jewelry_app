@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
 
@@ -257,13 +255,14 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
                     ),
                     const SizedBox(height: 8),
                     ElevatedButton(
-                      onPressed: (_isProcessing || !_designerTasks.every((task) => _designerChecklist.contains(task)))
+                      onPressed: (_isProcessing ||
+                          !_designerTasks.every((task) => _order.designerWorkChecklist.contains(task)))
                           ? null
                           : () async {
                               setState(() => _isProcessing = true);
                               try {
                                 final updatedOrder = _order.copyWith(
-                                  workflowStatus: OrderWorkflowStatus.casting,
+                                  workflowStatus: OrderWorkflowStatus.waitingCasting,
                                 );
                                 await OrderService().updateOrder(updatedOrder);
                                 await _fetchOrderDetail();
@@ -281,6 +280,38 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
                       child: const Text('Submit ke Cor'),
                     ),
                     const SizedBox(height: 16),
+                  ],
+
+                  // Tombol Terima Pesanan
+                  if (_order.workflowStatus == OrderWorkflowStatus.waitingDesigner) ...[
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('Terima Pesanan'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(48),
+                      ),
+                      onPressed: _isProcessing
+                          ? null
+                          : () async {
+                              setState(() => _isProcessing = true);
+                              try {
+                                final updatedOrder = _order.copyWith(
+                                  workflowStatus: OrderWorkflowStatus.designing,
+                                );
+                                await OrderService().updateOrder(updatedOrder);
+                                await _fetchOrderDetail();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Pesanan diterima, status menjadi Designing')),
+                                );
+                                Navigator.of(context).pop(true); // Kembali ke dashboard dan trigger refresh
+                              } finally {
+                                setState(() => _isProcessing = false);
+                              }
+                            },
+                    ),
                   ],
                 ],
               ),

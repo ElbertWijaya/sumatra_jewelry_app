@@ -164,7 +164,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
       // Upload to server
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.42.138/sumatra_api/uploads/upload_image.php'),
+        Uri.parse('http://192.168.187.174/sumatra_api/uploads/upload_image.php'),
       );
       request.files.add(await http.MultipartFile.fromPath('image', picked.path));
       var response = await request.send();
@@ -237,7 +237,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
       }}');
 
       final response = await http.post(
-        Uri.parse('http://192.168.42.138/sumatra_api/update_order.php'),
+        Uri.parse('http://192.168.187.174/sumatra_api/update_order.php'),
         body: {
           'id': order.id,
           'customer_name': order.customerName ?? '',

@@ -155,7 +155,7 @@ class SalesDetailScreen extends StatelessWidget {
             ),
             _buildFullChecklist(
               'Checklist Casting',
-              ['Tempel pohon', 'Cor'],
+              ['Casting', 'Pengecoran', 'Kasih ke Olivia'],
               order.castingWorkChecklist,
             ),
             _buildFullChecklist(
@@ -234,7 +234,7 @@ class SalesDetailScreen extends StatelessWidget {
                         if (confirm == true) {
                           print('Mengirim request hapus...');
                           final response = await http.post(
-                            Uri.parse('http://192.168.42.138/sumatra_api/delete_orders.php'),
+                            Uri.parse('http://192.168.187.174/sumatra_api/delete_orders.php'),
                             body: {'id': order.id},
                           );
                           print('Response: ${response.body}');
@@ -267,7 +267,7 @@ class SalesDetailScreen extends StatelessWidget {
                   onPressed: () async {
                     // Update status pesanan ke waitingDesigner di database
                     final response = await http.post(
-                      Uri.parse('http://192.168.42.138/sumatra_api/update_order.php'),
+                      Uri.parse('http://192.168.187.174/sumatra_api/update_order.php'),
                       body: {
                         'id': order.id,
                         'workflow_status': 'waitingDesigner',

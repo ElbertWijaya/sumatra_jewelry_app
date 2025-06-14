@@ -130,7 +130,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
       // Upload ke server
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.42.138/sumatra_api/uploads/upload_image.php'), // Ganti dengan URL server kamu
+        Uri.parse('http://192.168.187.174/sumatra_api/uploads/upload_image.php'), // Ganti dengan URL server kamu
       );
       request.files.add(await http.MultipartFile.fromPath('image', picked.path));
       var response = await request.send();
@@ -177,6 +177,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
           : 0,
       sisaLunas: _sisaLunas,
       imagePaths: _uploadedImageUrls,
+      workflowStatus: OrderWorkflowStatus.waitingSalesCheck,
 
     );
 
@@ -184,7 +185,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
       print('Menjalankan _submit...');
       print('ImagePaths yang dikirim: ${jsonEncode(_uploadedImageUrls)}');
       final response = await http.post(
-        Uri.parse('http://192.168.42.138/sumatra_api/add_orders.php'),
+        Uri.parse('http://192.168.187.174/sumatra_api/add_orders.php'),
         body: {
           'id': order.id.toString(),
           'customer_name': order.customerName,

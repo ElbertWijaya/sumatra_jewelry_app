@@ -17,7 +17,6 @@ enum OrderWorkflowStatus {
   waitingSalesCompletion,
   done,
   cancelled,
-  unknown,
 }
 
 extension OrderWorkflowStatusX on OrderWorkflowStatus {
@@ -65,7 +64,7 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
       case 'cancelled':
         return OrderWorkflowStatus.cancelled;
       default:
-        return OrderWorkflowStatus.unknown;
+        return OrderWorkflowStatus.waitingSalesCheck; // Default case
     }
   }
 
@@ -104,7 +103,7 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
       case OrderWorkflowStatus.cancelled:
         return 'Dibatalkan';
       default:
-        return 'Unknown';
+        return 'Waiting Sales Check'; // Default case
     }
   }
 }
@@ -170,7 +169,7 @@ class Order {
     this.notes = '',
     this.updatedAt,
     List<String>? imagePaths,
-    this.workflowStatus = OrderWorkflowStatus.unknown,
+    this.workflowStatus = OrderWorkflowStatus.waitingSalesCheck,
     List<String>? designerWorkChecklist,
     List<String>? castingWorkChecklist,
     List<String>? carvingWorkChecklist,

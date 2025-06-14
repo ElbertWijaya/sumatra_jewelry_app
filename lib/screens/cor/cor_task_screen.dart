@@ -2,59 +2,99 @@ import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
 
-class CorTaskScreen extends StatefulWidget {
+class CasterTaskScreen extends StatefulWidget {
   final Order order;
-  final Function(List<String> checklist) onSubmit;
-  const CorTaskScreen({super.key, required this.order, required this.onSubmit});
+  const CasterTaskScreen({super.key, required this.order});
+
   @override
-  State<CorTaskScreen> createState() => _CorTaskScreenState();
+  State<CasterTaskScreen> createState() => _CasterTaskScreenState();
 }
 
-class _CorTaskScreenState extends State<CorTaskScreen> {
-  final List<String> _tasks = ['Casting', 'Pengecekan', 'Serah ke Carver'];
-  late List<String> _checked;
+class _CasterTaskScreenState extends State<CasterTaskScreen> {
+  late Order _order;
+  bool _isProcessing = false;
+  List<String> _casterChecklist = [];
+
   @override
   void initState() {
     super.initState();
-    _checked = List<String>.from(widget.order.castingWorkChecklist ?? []);
+    _order = widget.order;
+    _casterChecklist = List<String>.from(_order.castingWorkChecklist ?? []);
   }
-  bool get _allChecked => _tasks.every((task) => _checked.contains(task));
+
+  Future<void> _updateChecklist() async {
+    setState(() => _isProcessing = true);
+    try {
+      final updatedOrder = _order.copyWith(
+        castingWorkChecklist: _casterChecklist,
+      );
+      await OrderService().updateOrder(updatedOrder);
+      setState(() {
+        _order = updatedOrder;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Checklist berhasil diupdate')),
+      );
+    } finally {
+      setState(() => _isProcessing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ..._tasks.map((task) => CheckboxListTile(
-          value: _checked.contains(task),
-          title: Text(task),
-          onChanged: (val) async {
-            setState(() {
-              if (val == true) {
-                if (!_checked.contains(task)) _checked.add(task);
-              } else {
-                _checked.remove(task);
-              }
-            });
-            await OrderService().updateOrder(
-              widget.order.copyWith(castingWorkChecklist: _checked),
-            );
-          },
-        )),
-        const SizedBox(height: 16),
-        ElevatedButton.icon(
-          icon: const Icon(Icons.send),
-          label: const Text('Submit ke Carver'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: _allChecked ? Colors.green : Colors.grey,
-            foregroundColor: Colors.white,
-            minimumSize: const Size(double.infinity, 48),
-          ),
-          onPressed: _allChecked
-              ? () {
-                  widget.onSubmit(_checked);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Task Caster')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          CheckboxListTile(
+            value: _casterChecklist.contains('Casting'),
+            title: const Text('Casting'),
+            onChanged: (val) {
+              setState(() {
+                if (val == true) {
+                  _casterChecklist.add('Casting');
+                } else {
+                  _casterChecklist.remove('Casting');
                 }
-              : null,
-        ),
-      ],
+              });
+            },
+          ),
+          CheckboxListTile(
+            value: _casterChecklist.contains('Pengecoran'),
+            title: const Text('Pengecoran'),
+            onChanged: (val) {
+              setState(() {
+                if (val == true) {
+                  _casterChecklist.add('Pengecoran');
+                } else {
+                  _casterChecklist.remove('Pengecoran');
+                }
+              });
+            },
+          ),
+          CheckboxListTile(
+            value: _casterChecklist.contains('Pengecekan Cor'),
+            title: const Text('Pengecekan Cor'),
+            onChanged: (val) {
+              setState(() {
+                if (val == true) {
+                  _casterChecklist.add('Pengecekan Cor');
+                } else {
+                  _casterChecklist.remove('Pengecekan Cor');
+                }
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _isProcessing ? null : _updateChecklist,
+            child: _isProcessing
+                ? const CircularProgressIndicator()
+                : const Text('Update Checklist'),
+          ),
+        ],
+      ),
     );
   }
 }
