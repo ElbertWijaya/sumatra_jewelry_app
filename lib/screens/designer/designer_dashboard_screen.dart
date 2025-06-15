@@ -136,9 +136,9 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
       order.ringSize ?? '',
       order.readyDate?.toIso8601String() ?? '',
       order.pickupDate?.toIso8601String() ?? '',
-      order.goldPricePerGram.toString() ?? '',
-      order.finalPrice.toString() ?? '',
-      order.notes ?? '',
+      order.goldPricePerGram.toString(),
+      order.finalPrice.toString(),
+      order.notes,
       order.workflowStatus.label,
     ].join(' ').toLowerCase();
   }

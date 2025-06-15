@@ -12,14 +12,15 @@ class InventoryTaskScreen extends StatefulWidget {
 
 class _InventoryTaskScreenState extends State<InventoryTaskScreen> {
   late Order _order;
-  List<String> _inventoryChecklist = [];
   bool _isProcessing = false;
+  List<String> _inventoryChecklist = [];
 
-  final List<String> _tasks = [
-    'Cek stok',
-    'Input data inventory',
-    'Foto produk',
-    'Verifikasi kualitas',
+  final List<String> _inventoryTasks = [
+    'Cek Barang Masuk',
+    'Cek Kelengkapan',
+    'Input Stok',
+    'Cek Kualitas',
+    'Serahkan ke Finishing',
   ];
 
   @override
@@ -49,35 +50,35 @@ class _InventoryTaskScreenState extends State<InventoryTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Checklist Worklist Inventory', style: TextStyle(fontWeight: FontWeight.bold)),
-        ..._tasks.map((task) => CheckboxListTile(
+    return Scaffold(
+      appBar: AppBar(title: const Text('Task Inventory')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          ..._inventoryTasks.map(
+            (task) => CheckboxListTile(
               value: _inventoryChecklist.contains(task),
               title: Text(task),
-              onChanged: _isProcessing
-                  ? null
-                  : (val) {
-                      setState(() {
-                        if (val == true) {
-                          if (!_inventoryChecklist.contains(task)) {
-                            _inventoryChecklist.add(task);
-                          }
-                        } else {
-                          _inventoryChecklist.remove(task);
-                        }
-                      });
-                    },
-            )),
-        const SizedBox(height: 8),
-        ElevatedButton(
-          onPressed: _isProcessing ? null : _updateChecklist,
-          child: _isProcessing
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Update Checklist'),
-        ),
-      ],
+              onChanged: (val) {
+                setState(() {
+                  if (val == true) {
+                    _inventoryChecklist.add(task);
+                  } else {
+                    _inventoryChecklist.remove(task);
+                  }
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _isProcessing ? null : _updateChecklist,
+            child: _isProcessing
+                ? const CircularProgressIndicator()
+                : const Text('Update Checklist'),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -233,7 +233,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
         'ready_date': order.readyDate != null ? DateFormat('yyyy-MM-dd').format(order.readyDate!) : '',
         'dp': order.dp.toString(),
         'sisa_lunas': order.sisaLunas.toString(),
-        'imagePaths': jsonEncode(order.imagePaths ?? []),
+        'imagePaths': jsonEncode(order.imagePaths),
       }}');
 
       final response = await http.post(
@@ -256,7 +256,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
           'ready_date': order.readyDate != null ? DateFormat('yyyy-MM-dd').format(order.readyDate!) : '',
           'dp': order.dp.toString() ?? '0',
           'sisa_lunas': order.sisaLunas.toString() ?? '0',
-          'imagePaths': jsonEncode(order.imagePaths ?? []),
+          'imagePaths': jsonEncode(order.imagePaths),
         },
       );
       print('Response: ${response.body}');

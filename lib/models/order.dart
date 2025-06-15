@@ -142,15 +142,15 @@ class Order {
   final List<String> finishingWorkChecklist;
   final List<String> inventoryWorkChecklist;
 
-  // Tambahan untuk penanganan error
-  final String inventoryProductCode;
-  final String inventoryProductName;
-  final String inventoryShelfLocation;
-  final String inventoryNotes;
-
-  // Tambahan properti baru
-  final String productId;
-  final List<Map<String, String>> stoneUsed;
+  // Data inventory (hanya yang perlu)
+  final String? inventoryProductId;
+  final String? inventoryJewelryType;
+  final String? inventoryGoldColor;
+  final String? inventoryGoldType;
+  final List<Map<String, dynamic>>? inventoryStoneUsed;
+  final List<String>? inventoryImagePaths;
+  final double? inventoryItemsPrice;
+  final String? inventoryRingSize;
 
   Order({
     required this.id,
@@ -180,20 +180,21 @@ class Order {
     List<String>? diamondSettingWorkChecklist,
     List<String>? finishingWorkChecklist,
     List<String>? inventoryWorkChecklist,
-    this.inventoryProductCode = '',
-    this.inventoryProductName = '',
-    this.inventoryShelfLocation = '',
-    this.inventoryNotes = '',
-    this.productId = '',
-    List<Map<String, String>>? stoneUsed,
+    this.inventoryProductId,
+    this.inventoryJewelryType,
+    this.inventoryGoldColor,
+    this.inventoryGoldType,
+    this.inventoryStoneUsed,
+    this.inventoryImagePaths,
+    this.inventoryItemsPrice,
+    this.inventoryRingSize,
   })  : imagePaths = imagePaths ?? const [],
         designerWorkChecklist = designerWorkChecklist ?? const [],
         castingWorkChecklist = castingWorkChecklist ?? const [],
         carvingWorkChecklist = carvingWorkChecklist ?? const [],
         diamondSettingWorkChecklist = diamondSettingWorkChecklist ?? const [],
         finishingWorkChecklist = finishingWorkChecklist ?? const [],
-        inventoryWorkChecklist = inventoryWorkChecklist ?? const [],
-        stoneUsed = stoneUsed ?? const [];
+        inventoryWorkChecklist = inventoryWorkChecklist ?? const [];
 
   factory Order.fromMap(Map<String, dynamic> map) {
     List<String> parseChecklist(dynamic val) {
@@ -215,22 +216,6 @@ class Order {
         try {
           final decoded = jsonDecode(val);
           if (decoded is List) return List<String>.from(decoded.map((e) => e.toString()));
-        } catch (_) {}
-      }
-      return [];
-    }
-
-    List<Map<String, String>> parseStoneUsed(dynamic val) {
-      if (val == null) return [];
-      if (val is List) {
-        return val.map<Map<String, String>>((e) => Map<String, String>.from(e as Map)).toList();
-      }
-      if (val is String && val.isNotEmpty) {
-        try {
-          final decoded = jsonDecode(val);
-          if (decoded is List) {
-            return decoded.map<Map<String, String>>((e) => Map<String, String>.from(e as Map)).toList();
-          }
         } catch (_) {}
       }
       return [];
@@ -280,12 +265,18 @@ class Order {
       diamondSettingWorkChecklist: parseChecklist(map['diamondSettingWorkChecklist']),
       finishingWorkChecklist: parseChecklist(map['finishingWorkChecklist']),
       inventoryWorkChecklist: parseChecklist(map['inventoryWorkChecklist']),
-      inventoryProductCode: map['inventoryProductCode']?.toString() ?? '',
-      inventoryProductName: map['inventoryProductName']?.toString() ?? '',
-      inventoryShelfLocation: map['inventoryShelfLocation']?.toString() ?? '',
-      inventoryNotes: map['inventoryNotes']?.toString() ?? '',
-      productId: map['productId']?.toString() ?? '',
-      stoneUsed: parseStoneUsed(map['stoneUsed']),
+      inventoryProductId: map['inventoryProductId']?.toString() ?? '',
+      inventoryJewelryType: map['inventoryJewelryType']?.toString() ?? '',
+      inventoryGoldColor: map['inventoryGoldColor']?.toString() ?? '',
+      inventoryGoldType: map['inventoryGoldType']?.toString() ?? '',
+      inventoryStoneUsed: map['inventoryStoneUsed'] != null
+          ? List<Map<String, dynamic>>.from(map['inventoryStoneUsed'].map((e) => Map<String, dynamic>.from(e)))
+          : null,
+      inventoryImagePaths: parseImagePaths(map['inventoryImagePaths']),
+      inventoryItemsPrice: map['inventoryItemsPrice'] != null
+          ? double.tryParse(map['inventoryItemsPrice'].toString()) ?? 0
+          : null,
+      inventoryRingSize: map['inventoryRingSize']?.toString(),
     );
   }
 
@@ -317,12 +308,14 @@ class Order {
     List<String>? diamondSettingWorkChecklist,
     List<String>? finishingWorkChecklist,
     List<String>? inventoryWorkChecklist,
-    String? inventoryProductCode,
-    String? inventoryProductName,
-    String? inventoryShelfLocation,
-    String? inventoryNotes,
-    String? productId,
-    List<Map<String, String>>? stoneUsed,
+    String? inventoryProductId,
+    String? inventoryJewelryType,
+    String? inventoryGoldColor,
+    String? inventoryGoldType,
+    List<Map<String, dynamic>>? inventoryStoneUsed,
+    List<String>? inventoryImagePaths,
+    double? inventoryItemsPrice,
+    String? inventoryRingSize,
   }) {
     return Order(
       id: id ?? this.id,
@@ -352,12 +345,14 @@ class Order {
       diamondSettingWorkChecklist: diamondSettingWorkChecklist ?? this.diamondSettingWorkChecklist,
       finishingWorkChecklist: finishingWorkChecklist ?? this.finishingWorkChecklist,
       inventoryWorkChecklist: inventoryWorkChecklist ?? this.inventoryWorkChecklist,
-      inventoryProductCode: inventoryProductCode ?? this.inventoryProductCode,
-      inventoryProductName: inventoryProductName ?? this.inventoryProductName,
-      inventoryShelfLocation: inventoryShelfLocation ?? this.inventoryShelfLocation,
-      inventoryNotes: inventoryNotes ?? this.inventoryNotes,
-      productId: productId ?? this.productId,
-      stoneUsed: stoneUsed ?? this.stoneUsed,
+      inventoryProductId: inventoryProductId ?? this.inventoryProductId,
+      inventoryJewelryType: inventoryJewelryType ?? this.inventoryJewelryType,
+      inventoryGoldColor: inventoryGoldColor ?? this.inventoryGoldColor,
+      inventoryGoldType: inventoryGoldType ?? this.inventoryGoldType,
+      inventoryStoneUsed: inventoryStoneUsed ?? this.inventoryStoneUsed,
+      inventoryImagePaths: inventoryImagePaths ?? this.inventoryImagePaths,
+      inventoryItemsPrice: inventoryItemsPrice ?? this.inventoryItemsPrice,
+      inventoryRingSize: inventoryRingSize ?? this.inventoryRingSize,
     );
   }
 
@@ -381,22 +376,6 @@ class Order {
         try {
           final decoded = jsonDecode(val);
           if (decoded is List) return List<String>.from(decoded.map((e) => e.toString()));
-        } catch (_) {}
-      }
-      return [];
-    }
-
-    List<Map<String, String>> parseStoneUsed(dynamic val) {
-      if (val == null) return [];
-      if (val is List) {
-        return val.map<Map<String, String>>((e) => Map<String, String>.from(e as Map)).toList();
-      }
-      if (val is String && val.isNotEmpty) {
-        try {
-          final decoded = jsonDecode(val);
-          if (decoded is List) {
-            return decoded.map<Map<String, String>>((e) => Map<String, String>.from(e as Map)).toList();
-          }
         } catch (_) {}
       }
       return [];
@@ -446,12 +425,18 @@ class Order {
       diamondSettingWorkChecklist: parseChecklist(json['diamondSettingWorkChecklist']),
       finishingWorkChecklist: parseChecklist(json['finishingWorkChecklist']),
       inventoryWorkChecklist: parseChecklist(json['inventoryWorkChecklist']),
-      inventoryProductCode: json['inventoryProductCode']?.toString() ?? '',
-      inventoryProductName: json['inventoryProductName']?.toString() ?? '',
-      inventoryShelfLocation: json['inventoryShelfLocation']?.toString() ?? '',
-      inventoryNotes: json['inventoryNotes']?.toString() ?? '',
-      productId: json['productId']?.toString() ?? '',
-      stoneUsed: parseStoneUsed(json['stoneUsed']),
+      inventoryProductId: json['inventoryProductId']?.toString() ?? '',
+      inventoryJewelryType: json['inventoryJewelryType']?.toString() ?? '',
+      inventoryGoldColor: json['inventoryGoldColor']?.toString() ?? '',
+      inventoryGoldType: json['inventoryGoldType']?.toString() ?? '',
+      inventoryStoneUsed: json['inventoryStoneUsed'] != null
+          ? List<Map<String, dynamic>>.from(json['inventoryStoneUsed'].map((e) => Map<String, dynamic>.from(e)))
+          : null,
+      inventoryImagePaths: parseImagePaths(json['inventoryImagePaths']),
+      inventoryItemsPrice: json['inventoryItemsPrice'] != null
+          ? double.tryParse(json['inventoryItemsPrice'].toString()) ?? 0
+          : null,
+      inventoryRingSize: json['inventoryRingSize']?.toString(),
     );
   }
 
@@ -484,12 +469,14 @@ class Order {
       'diamondSettingWorkChecklist': diamondSettingWorkChecklist,
       'finishingWorkChecklist': finishingWorkChecklist,
       'inventoryWorkChecklist': inventoryWorkChecklist,
-      'inventoryProductCode': inventoryProductCode,
-      'inventoryProductName': inventoryProductName,
-      'inventoryShelfLocation': inventoryShelfLocation,
-      'inventoryNotes': inventoryNotes,
-      'productId': productId,
-      'stoneUsed': stoneUsed,
+      'inventoryProductId': inventoryProductId,
+      'inventoryJewelryType': inventoryJewelryType,
+      'inventoryGoldColor': inventoryGoldColor,
+      'inventoryGoldType': inventoryGoldType,
+      'inventoryStoneUsed': inventoryStoneUsed,
+      'inventoryImagePaths': inventoryImagePaths,
+      'inventoryItemsPrice': inventoryItemsPrice,
+      'inventoryRingSize': inventoryRingSize,
     };
   }
 }

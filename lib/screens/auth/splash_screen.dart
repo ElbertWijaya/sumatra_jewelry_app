@@ -23,6 +23,8 @@ class _SplashScreenState extends State<SplashScreen> {
     // Delay sejenak biar effect splash kelihatan
     await Future.delayed(const Duration(milliseconds: 800));
 
+    if (!mounted) return;
+
     if (isLoggedIn) {
       switch (role) {
         case 'sales':

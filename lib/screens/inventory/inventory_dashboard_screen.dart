@@ -19,7 +19,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   String _searchQuery = '';
-  String _selectedTab = 'waiting'; // default tab designer
+  String _selectedTab = 'waiting'; // default tab inventory
 
   // Filter state
   List<String> selectedJewelryTypes = [];
@@ -44,7 +44,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   ];
 
   final List<OrderWorkflowStatus> onProgressStatuses = [
-    // Inventory biasanya terminal, bisa kosong atau tambahkan status lain jika ada
+    OrderWorkflowStatus.waitingFinishing,
+    OrderWorkflowStatus.finishing,
   ];
 
   // Daftar pilihan filter
@@ -53,7 +54,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     "men ring", "women ring", "engagement ring", "custom",
   ];
   final List<String> goldColors = ["White Gold", "Rose Gold", "Yellow Gold"];
-  final List<String> goldTypes = ["24K", "22K", "18K", "14K", "10K", "9K"];
+  final List<String> goldTypes = ["19K", "18K", "14K", "9K"];
   final List<String> stoneTypes = [
     "Opal", "Sapphire", "Jade", "Emerald", "Ruby", "Amethyst", "Diamond",
   ];
@@ -140,7 +141,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
       order.workflowStatus != OrderWorkflowStatus.cancelled
     ).toList();
 
-    // Tab logic khusus designer
+    // Tab logic khusus inventory
     if (_selectedTab == 'waiting') {
       filtered = filtered.where((order) =>
         waitingStatuses.contains(order.workflowStatus)
@@ -389,7 +390,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                     ),
                   ],
                 ),
-              ),
+              )
               );
             },
         );
@@ -526,7 +527,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
           }
         },
         backgroundColor: Colors.amber[700],
-        tooltip: 'Tambah Barang Inventory',
+        tooltip: 'Buat Pesanan Baru',
         child: const Icon(Icons.add, color: Colors.black),
       ),
       body: Stack(
@@ -682,7 +683,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildTabButton('Waiting', 'waiting', Colors.orange),
-                      _buildTabButton('Inventory', 'working', Colors.blue),
+                      _buildTabButton('Working', 'working', Colors.blue),
+                      _buildTabButton('On Progress', 'onprogress', Colors.green),
                     ],
                   ),
                 ),
@@ -706,8 +708,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                 ? Center(
                                     child: Text(
                                       _searchQuery.isNotEmpty
-                                          ? 'Tidak ada barang inventory cocok dengan pencarian Anda.'
-                                          : 'Tidak ada barang inventory.',
+                                          ? 'Tidak ada pesanan cocok dengan pencarian Anda.'
+                                          : 'Tidak ada pesanan aktif.',
                                       style: const TextStyle(color: Colors.white70),
                                     ),
                                   )
