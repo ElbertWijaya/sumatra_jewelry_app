@@ -751,21 +751,26 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                                   // Gambar 1:1
                                                   ClipRRect(
                                                     borderRadius: BorderRadius.circular(12),
-                                                    child: order.imagePaths.isNotEmpty &&
-                                                            order.imagePaths.first.isNotEmpty &&
-                                                            File(order.imagePaths.first).existsSync()
-                                                        ? Image.file(
-                                                            File(order.imagePaths.first),
-                                                            width: 90,
-                                                            height: 90,
-                                                            fit: BoxFit.cover,
-                                                          )
-                                                        : Container(
+                                                  child: order.imagePaths.isNotEmpty &&
+                                                          order.imagePaths.first.isNotEmpty
+                                                      ? Image.network(
+                                                          order.imagePaths.first,
+                                                          width: 90,
+                                                          height: 90,
+                                                          fit: BoxFit.cover,
+                                                          errorBuilder: (context, error, stackTrace) => Container(
                                                             width: 90,
                                                             height: 90,
                                                             color: Colors.brown[100],
                                                             child: const Icon(Icons.image, size: 40, color: Colors.brown),
                                                           ),
+                                                        )
+                                                      : Container(
+                                                          width: 90,
+                                                          height: 90,
+                                                          color: Colors.brown[100],
+                                                          child: const Icon(Icons.image, size: 40, color: Colors.brown),
+                                                        ),
                                                   ),
                                                   const SizedBox(width: 18),
                                                   // Nama & jenis perhiasan
