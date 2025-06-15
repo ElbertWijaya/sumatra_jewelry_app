@@ -727,6 +727,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                     itemBuilder: (context, index) {
                                       final order = _filteredOrders[index];
 
+                                      print('DEBUG: order.imagePaths: ${order.imagePaths}');
                                       return Card(
                                         margin: const EdgeInsets.symmetric(vertical: 12.0),
                                         elevation: 5,
