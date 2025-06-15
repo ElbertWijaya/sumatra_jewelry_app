@@ -142,7 +142,7 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
       await OrderService().updateOrder(updatedOrder);
       await _fetchOrderDetail();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Order berhasil disubmit ke Finishing')),
+        const SnackBar(content: Text('Order berhasil disubmit ke Sales')),
       );
       Navigator.of(context).pop(true);
     } finally {
@@ -186,9 +186,13 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
       );
       final result = jsonDecode(response.body);
       if (result['success'] == true) {
+        setState(() {
+          _inventorySaved = true;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Data inventory berhasil diperbarui')),
         );
+        await _fetchOrderDetail(); // <-- Tambahkan baris ini agar data ter-refresh otomatis
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Gagal update inventory: ${result['error']}')),
@@ -506,15 +510,23 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
                               ),
                             ],
                           ),
-                          if (inventoryImageFiles.isNotEmpty)
+                          if ((_order.inventoryImagePaths ?? []).isNotEmpty)
                             SizedBox(
                               height: 80,
                               child: ListView(
                                 scrollDirection: Axis.horizontal,
-                                children: inventoryImageFiles
-                                    .map((f) => Padding(
+                                children: (_order.inventoryImagePaths ?? [])
+                                    .map((img) => Padding(
                                           padding: const EdgeInsets.all(4),
-                                          child: Image.file(f, width: 70, height: 70, fit: BoxFit.cover),
+                                          child: Image.network(
+                                            'http://localhost/sumatra_api/uploads/uploads/$img',
+                                            width: 70,
+                                            height: 70,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Image.asset('assets/images/no_image.png', width: 70, height: 70, fit: BoxFit.cover);
+                                            },
+                                          ),
                                         ))
                                     .toList(),
                               ),
@@ -567,7 +579,7 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
                             ),
                             child: _isProcessing
                                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Text('Submit ke Finishing'),
+                                : const Text('Submit ke Sales'),
                           ),
                           const SizedBox(height: 8),
 
