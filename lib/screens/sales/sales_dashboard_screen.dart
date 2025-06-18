@@ -129,14 +129,14 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       order.customerContact,
       order.address,
       order.jewelryType,
-      order.stoneType ?? '',
-      order.stoneSize ?? '',
-      order.ringSize ?? '',
+      order.stoneType,
+      order.stoneSize,
+      order.ringSize,
       order.readyDate?.toIso8601String() ?? '',
       order.pickupDate?.toIso8601String() ?? '',
-      order.goldPricePerGram.toString() ?? '',
-      order.finalPrice.toString() ?? '',
-      order.notes ?? '',
+      order.goldPricePerGram.toString(),
+      order.finalPrice.toString(),
+      order.notes,
       order.workflowStatus.label,
     ].join(' ').toLowerCase();
   }
@@ -177,18 +177,16 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       ).toList();
     }
     if (selectedStoneTypes.isNotEmpty) {
-      filtered = filtered.where((order) =>
-        selectedStoneTypes.any((stone) => (order.stoneType ?? '').toLowerCase().contains(stone.toLowerCase()))
-      ).toList();
+      filtered = filtered.where((order) => selectedStoneTypes.any((stone) => order.stoneType.toLowerCase().contains(stone.toLowerCase()))).toList();
     }
     if (priceMin != null) {
-      filtered = filtered.where((order) => (order.finalPrice ?? 0) >= priceMin!).toList();
+      filtered = filtered.where((order) => order.finalPrice >= priceMin!).toList();
     }
     if (priceMax != null) {
-      filtered = filtered.where((order) => (order.finalPrice ?? 0) <= priceMax!).toList();
+      filtered = filtered.where((order) => order.finalPrice <= priceMax!).toList();
     }
     if (ringSize != null && ringSize!.isNotEmpty) {
-      filtered = filtered.where((order) => (order.ringSize ?? '').toLowerCase().contains(ringSize!.toLowerCase())).toList();
+      filtered = filtered.where((order) => order.ringSize.toLowerCase().contains(ringSize!.toLowerCase())).toList();
     }
 
     if (_searchQuery.isNotEmpty) {
@@ -392,11 +390,11 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                     ),
                   ],
                 ),
-              ),
-            );
-          },
-        );
-      },
+              )
+              );
+            },
+          );
+        },
     );
   }
 
@@ -727,7 +725,14 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                     itemBuilder: (context, index) {
                                       final order = _filteredOrders[index];
 
-                                      print('DEBUG: order.imagePaths: ${order.imagePaths}');
+                                      // PATCH: Ganti logic gambar utama menjadi selalu URL
+                                      String? imageUrl;
+                                      if (order.imagePaths.isNotEmpty && order.imagePaths.first.isNotEmpty && order.imagePaths.first.startsWith('http')) {
+                                        imageUrl = order.imagePaths.first;
+                                      } else {
+                                        imageUrl = null;
+                                      }
+
                                       return Card(
                                         margin: const EdgeInsets.symmetric(vertical: 12.0),
                                         elevation: 5,
@@ -744,10 +749,9 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                                   // Gambar 1:1
                                                   ClipRRect(
                                                     borderRadius: BorderRadius.circular(12),
-                                                    child: order.imagePaths.isNotEmpty &&
-                                                            order.imagePaths.first.isNotEmpty
+                                                    child: imageUrl != null
                                                         ? Image.network(
-                                                            order.imagePaths.first,
+                                                            imageUrl,
                                                             width: 90,
                                                             height: 90,
                                                             fit: BoxFit.cover,
@@ -772,7 +776,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                                       crossAxisAlignment: CrossAxisAlignment.start,
                                                       children: [
                                                         Text(
-                                                          order.customerName ?? '-',
+                                                          order.customerName,
                                                           style: const TextStyle(
                                                             fontWeight: FontWeight.bold,
                                                             fontSize: 18,

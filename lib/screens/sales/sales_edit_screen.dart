@@ -164,7 +164,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
       // Upload to server
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.187.174/sumatra_api/uploads/upload_image.php'),
+        Uri.parse('http://192.168.187.174/orders_photo/upload_image.php'),
       );
       request.files.add(await http.MultipartFile.fromPath('image', picked.path));
       var response = await request.send();
@@ -173,7 +173,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
         var jsonResp = json.decode(respStr);
         if (jsonResp['success']) {
           setState(() {
-            _uploadedImageUrls.add(jsonResp['url']);
+            _uploadedImageUrls.add(jsonResp['url']); // URL penuh
             _pickedImages.add(File(picked.path));
           });
         }
@@ -209,7 +209,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
       sisaLunas: 
         (double.tryParse(_finalPriceController.text.replaceAll('.', '')) ?? 0) -
         (double.tryParse(_dpController.text.replaceAll('.', '')) ?? 0),
-      imagePaths: [..._uploadedImageUrls],
+      imagePaths: List<String>.from(_uploadedImageUrls), // <-- PASTIKAN URL
     );
 
     try {
@@ -494,6 +494,25 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
                         ),
                       ),
                     )),
+                    // PATCH: preview gambar yang sudah (lama) dari server
+                    ..._uploadedImageUrls.where((url) => url.isNotEmpty && !_pickedImages.any((file) => file.path == url)).map((img) {
+                      final String imageUrl = img.startsWith('http')
+                          ? img
+                          : 'http://192.168.187.174/sumatra_api/$img';
+                      return Container(
+                        margin: const EdgeInsets.only(right: 10),
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.amber),
+                          image: DecorationImage(
+                            image: NetworkImage(imageUrl),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      );
+                    }),
                     GestureDetector(
                       onTap: _pickImage,
                       child: Container(

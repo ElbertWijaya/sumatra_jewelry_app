@@ -47,6 +47,38 @@ class _SalesTaskScreenState extends State<SalesTaskScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // PATCH: Tampilkan gambar referensi order (jika ada)
+          if (_order.imagePaths.isNotEmpty) ...[
+            const Text('Referensi Gambar', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 90,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  ..._order.imagePaths.map((img) {
+                    final String imageUrl = img.startsWith('http')
+                        ? img
+                        : 'http://192.168.187.174/sumatra_api/$img';
+                    return Container(
+                      margin: const EdgeInsets.only(right: 10),
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.amber),
+                        image: DecorationImage(
+                          image: NetworkImage(imageUrl),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           CheckboxListTile(
             value: _designerChecklist.contains('Designing'),
             title: const Text('Designing'),

@@ -130,7 +130,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
       // Upload ke server
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.187.174/sumatra_api/uploads/upload_image.php'), // Ganti dengan URL server kamu
+        Uri.parse('http://192.168.187.174/sumatra_api/upload_image.php') // Ganti dengan URL server kamu
       );
       request.files.add(await http.MultipartFile.fromPath('image', picked.path));
       var response = await request.send();
@@ -140,7 +140,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
         var jsonResp = json.decode(respStr);
         if (jsonResp['success']) {
           setState(() {
-            _uploadedImageUrls.add(jsonResp['url']);
+            _uploadedImageUrls.add(jsonResp['url']); // <-- PASTIKAN SELALU URL PENUH!
             _pickedImages.add(File(picked.path));
           });
         }
@@ -176,9 +176,8 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
           ? double.tryParse(_dpController.text.replaceAll('.', '')) ?? 0
           : 0,
       sisaLunas: _sisaLunas,
-      imagePaths: _uploadedImageUrls,
+      imagePaths: List<String>.from(_uploadedImageUrls), // <-- PASTIKAN INI URL SEMUA!
       workflowStatus: OrderWorkflowStatus.waitingSalesCheck,
-
     );
 
     try {
@@ -194,18 +193,18 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
           'jewelry_type': order.jewelryType,
           'gold_type': order.goldType,
           'gold_color': order.goldColor,
-          'final_price': order.finalPrice.toString() ?? '',
+          'final_price': order.finalPrice.toString(),
           'notes': order.notes,
           'pickup_date': order.pickupDate != null ? DateFormat('yyyy-MM-dd').format(order.pickupDate!) : '',
           'created_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(order.createdAt),
-          'gold_price_per_gram': order.goldPricePerGram.toString() ?? '',
-          'stone_type': order.stoneType ?? '',
-          'stone_size': order.stoneSize ?? '',
-          'ring_size': order.ringSize ?? '',
+          'gold_price_per_gram': order.goldPricePerGram.toString(),
+          'stone_type': order.stoneType,
+          'stone_size': order.stoneSize,
+          'ring_size': order.ringSize,
           'ready_date': order.readyDate != null ? DateFormat('yyyy-MM-dd').format(order.readyDate!) : '',
-          'dp': order.dp.toString() ?? '',
-          'sisa_lunas': order.sisaLunas.toString() ?? '',
-          'imagePaths': jsonEncode(_uploadedImageUrls),
+          'dp': order.dp.toString(),
+          'sisa_lunas': order.sisaLunas.toString(),
+          'imagePaths': jsonEncode(order.imagePaths), // <-- URL semua!
         },
       );
       print('Response: ${response.body}');

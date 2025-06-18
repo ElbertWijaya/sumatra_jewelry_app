@@ -28,8 +28,6 @@ class SalesDetailScreen extends StatelessWidget {
     );
   }
 
-
-
   Widget _buildFullChecklist(String title, List<String> allTasks, List<String>? checkedTasks) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,19 +108,24 @@ class SalesDetailScreen extends StatelessWidget {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  ...order.imagePaths.map((img) => Container(
-                    margin: const EdgeInsets.only(right: 10),
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.amber),
-                      image: DecorationImage(
-                        image: img.startsWith('http') ? NetworkImage(img) : AssetImage('assets/images/no_image.png') as ImageProvider,
-                        fit: BoxFit.cover,
+                  ...order.imagePaths.map((img) {
+                    final String imageUrl = img.startsWith('http')
+                        ? img
+                        : 'http://192.168.187.174/sumatra_api/orders_photo/$img';
+                    return Container(
+                      margin: const EdgeInsets.only(right: 10),
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.amber),
+                        image: DecorationImage(
+                          image: NetworkImage(imageUrl),
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                    ),
-                  )),
+                    );
+                  }),
                 ],
               ),
             ),

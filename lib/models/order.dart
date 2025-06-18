@@ -265,18 +265,22 @@ class Order {
       diamondSettingWorkChecklist: parseChecklist(map['diamondSettingWorkChecklist']),
       finishingWorkChecklist: parseChecklist(map['finishingWorkChecklist']),
       inventoryWorkChecklist: parseChecklist(map['inventoryWorkChecklist']),
-      inventoryProductId: map['inventoryProductId']?.toString() ?? '',
-      inventoryJewelryType: map['inventoryJewelryType']?.toString() ?? '',
-      inventoryGoldColor: map['inventoryGoldColor']?.toString() ?? '',
-      inventoryGoldType: map['inventoryGoldType']?.toString() ?? '',
+      inventoryProductId: map['inventoryProductId']?.toString() ?? map['inventory_product_id']?.toString() ?? '',
+      inventoryJewelryType: map['inventoryJewelryType']?.toString() ?? map['inventory_jewelry_type']?.toString() ?? '',
+      inventoryGoldColor: map['inventoryGoldColor']?.toString() ?? map['inventory_gold_color']?.toString() ?? '',
+      inventoryGoldType: map['inventoryGoldType']?.toString() ?? map['inventory_gold_type']?.toString() ?? '',
       inventoryStoneUsed: map['inventoryStoneUsed'] != null
           ? List<Map<String, dynamic>>.from(map['inventoryStoneUsed'].map((e) => Map<String, dynamic>.from(e)))
-          : null,
-      inventoryImagePaths: parseImagePaths(map['inventoryImagePaths']),
+          : (map['inventory_stone_used'] != null
+              ? List<Map<String, dynamic>>.from(map['inventory_stone_used'].map((e) => Map<String, dynamic>.from(e)))
+              : null),
+      inventoryImagePaths: map['inventoryImagePaths'] != null
+          ? parseImagePaths(map['inventoryImagePaths'])
+          : (map['inventory_image_paths'] != null ? parseImagePaths(map['inventory_image_paths']) : []),
       inventoryItemsPrice: map['inventoryItemsPrice'] != null
           ? double.tryParse(map['inventoryItemsPrice'].toString()) ?? 0
-          : null,
-      inventoryRingSize: map['inventoryRingSize']?.toString(),
+          : (map['inventory_items_price'] != null ? double.tryParse(map['inventory_items_price'].toString()) ?? 0 : null),
+      inventoryRingSize: map['inventoryRingSize']?.toString() ?? map['inventory_ring_size']?.toString(),
     );
   }
 
