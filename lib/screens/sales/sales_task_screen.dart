@@ -49,7 +49,10 @@ class _SalesTaskScreenState extends State<SalesTaskScreen> {
         children: [
           // PATCH: Tampilkan gambar referensi order (jika ada)
           if (_order.imagePaths.isNotEmpty) ...[
-            const Text('Referensi Gambar', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Referensi Gambar',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             SizedBox(
               height: 90,
@@ -57,9 +60,10 @@ class _SalesTaskScreenState extends State<SalesTaskScreen> {
                 scrollDirection: Axis.horizontal,
                 children: [
                   ..._order.imagePaths.map((img) {
-                    final String imageUrl = img.startsWith('http')
-                        ? img
-                        : 'http://192.168.187.174/sumatra_api/$img';
+                    final String imageUrl =
+                        img.startsWith('http')
+                            ? img
+                            : 'http://192.168.83.117/sumatra_api/$img';
                     return Container(
                       margin: const EdgeInsets.only(right: 10),
                       width: 80,
@@ -96,9 +100,10 @@ class _SalesTaskScreenState extends State<SalesTaskScreen> {
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _isProcessing ? null : _updateChecklist,
-            child: _isProcessing
-                ? const CircularProgressIndicator()
-                : const Text('Update Checklist'),
+            child:
+                _isProcessing
+                    ? const CircularProgressIndicator()
+                    : const Text('Update Checklist'),
           ),
         ],
       ),

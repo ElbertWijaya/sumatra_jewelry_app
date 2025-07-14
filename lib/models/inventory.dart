@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 class InventoryItem {
+  final int? inventoryId; // <--- Tambahan
   final String id;
   final String jewelryType;
   final String goldColor;
@@ -11,8 +12,10 @@ class InventoryItem {
   final List<Map<String, dynamic>>? stoneUsed;
   final String? notes;
   final String? createdAt;
+  final String? updatedAt;
 
   InventoryItem({
+    this.inventoryId, // <--- Tambahan
     required this.id,
     required this.jewelryType,
     required this.goldColor,
@@ -23,6 +26,7 @@ class InventoryItem {
     this.stoneUsed,
     this.notes,
     this.createdAt,
+    this.updatedAt,
   });
 
   factory InventoryItem.fromMap(Map<String, dynamic> map) {
@@ -49,6 +53,7 @@ class InventoryItem {
       return [];
     }
     return InventoryItem(
+      inventoryId: map['inventory_id'] != null ? int.tryParse(map['inventory_id'].toString()) : null, // <--- Tambahan
       id: map['inventory_product_id']?.toString() ?? '',
       jewelryType: map['inventory_jewelry_type']?.toString() ?? '',
       goldColor: map['inventory_gold_color']?.toString() ?? '',
@@ -59,6 +64,7 @@ class InventoryItem {
       stoneUsed: parseStoneUsed(map['inventory_stone_used']),
       notes: null,
       createdAt: map['inventory_created_at']?.toString(),
+      updatedAt: map['inventory_updated_at']?.toString(),
     );
   }
 }

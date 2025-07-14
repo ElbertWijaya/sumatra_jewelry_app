@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,10 +9,12 @@ class DiamondSetterDashboardScreen extends StatefulWidget {
   const DiamondSetterDashboardScreen({super.key});
 
   @override
-  State<DiamondSetterDashboardScreen> createState() => _DiamondSetterDashboardScreenState();
+  State<DiamondSetterDashboardScreen> createState() =>
+      _DiamondSetterDashboardScreenState();
 }
 
-class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScreen> {
+class _DiamondSetterDashboardScreenState
+    extends State<DiamondSetterDashboardScreen> {
   final OrderService _orderService = OrderService();
   List<Order> _orders = [];
   bool _isLoading = true;
@@ -52,13 +53,27 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
 
   // Daftar pilihan filter
   final List<String> jewelryTypes = [
-    "ring", "bangle", "earring", "pendant", "hairpin", "pin",
-    "men ring", "women ring", "engagement ring", "custom",
+    "ring",
+    "bangle",
+    "earring",
+    "pendant",
+    "hairpin",
+    "pin",
+    "men ring",
+    "women ring",
+    "engagement ring",
+    "custom",
   ];
   final List<String> goldColors = ["White Gold", "Rose Gold", "Yellow Gold"];
   final List<String> goldTypes = ["19K", "18K", "14K", "9K"];
   final List<String> stoneTypes = [
-    "Opal", "Sapphire", "Jade", "Emerald", "Ruby", "Amethyst", "Diamond",
+    "Opal",
+    "Sapphire",
+    "Jade",
+    "Emerald",
+    "Ruby",
+    "Amethyst",
+    "Diamond",
   ];
 
   static const Color categoryActiveBgColor = Color(0xFFEAE38C);
@@ -110,7 +125,8 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
       _generateRandomCategoryFilters();
     } catch (e) {
       setState(() {
-        _errorMessage = 'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
+        _errorMessage =
+            'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
       });
     } finally {
       setState(() {
@@ -138,63 +154,112 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
   }
 
   List<Order> get _filteredOrders {
-    List<Order> filtered = _orders.where((order) =>
-      order.workflowStatus != OrderWorkflowStatus.done &&
-      order.workflowStatus != OrderWorkflowStatus.cancelled
-    ).toList();
+    List<Order> filtered =
+        _orders
+            .where(
+              (order) =>
+                  order.workflowStatus != OrderWorkflowStatus.done &&
+                  order.workflowStatus != OrderWorkflowStatus.cancelled,
+            )
+            .toList();
 
     // Tab logic khusus designer
     if (_selectedTab == 'waiting') {
-      filtered = filtered.where((order) =>
-        waitingStatuses.contains(order.workflowStatus)
-      ).toList();
+      filtered =
+          filtered
+              .where((order) => waitingStatuses.contains(order.workflowStatus))
+              .toList();
     } else if (_selectedTab == 'working') {
-      filtered = filtered.where((order) =>
-        workingStatuses.contains(order.workflowStatus)
-      ).toList();
+      filtered =
+          filtered
+              .where((order) => workingStatuses.contains(order.workflowStatus))
+              .toList();
     } else if (_selectedTab == 'onprogress') {
-      filtered = filtered.where((order) =>
-        onProgressStatuses.contains(order.workflowStatus)
-      ).toList();
+      filtered =
+          filtered
+              .where(
+                (order) => onProgressStatuses.contains(order.workflowStatus),
+              )
+              .toList();
     } else if (_selectedTab == 'all') {
       // tampilkan semua yang bukan done/cancelled (sudah di atas)
     }
 
     // Filter kategori dari filter bar/sheet
     if (selectedJewelryTypes.isNotEmpty) {
-      filtered = filtered.where((order) =>
-        selectedJewelryTypes.any((t) => order.jewelryType.toLowerCase().contains(t.toLowerCase()))
-      ).toList();
+      filtered =
+          filtered
+              .where(
+                (order) => selectedJewelryTypes.any(
+                  (t) =>
+                      order.jewelryType.toLowerCase().contains(t.toLowerCase()),
+                ),
+              )
+              .toList();
     }
     if (selectedGoldColors.isNotEmpty) {
-      filtered = filtered.where((order) =>
-        selectedGoldColors.any((gold) => orderFullText(order).contains(gold.toLowerCase()))
-      ).toList();
+      filtered =
+          filtered
+              .where(
+                (order) => selectedGoldColors.any(
+                  (gold) => orderFullText(order).contains(gold.toLowerCase()),
+                ),
+              )
+              .toList();
     }
     if (selectedGoldTypes.isNotEmpty) {
-      filtered = filtered.where((order) =>
-        selectedGoldTypes.any((t) => orderFullText(order).contains(t.toLowerCase()))
-      ).toList();
+      filtered =
+          filtered
+              .where(
+                (order) => selectedGoldTypes.any(
+                  (t) => orderFullText(order).contains(t.toLowerCase()),
+                ),
+              )
+              .toList();
     }
     if (selectedStoneTypes.isNotEmpty) {
-      filtered = filtered.where((order) =>
-        selectedStoneTypes.any((stone) => (order.stoneType ?? '').toLowerCase().contains(stone.toLowerCase()))
-      ).toList();
+      filtered =
+          filtered
+              .where(
+                (order) => selectedStoneTypes.any(
+                  (stone) => (order.stoneType ?? '').toLowerCase().contains(
+                    stone.toLowerCase(),
+                  ),
+                ),
+              )
+              .toList();
     }
     if (priceMin != null) {
-      filtered = filtered.where((order) => (order.finalPrice ?? 0) >= priceMin!).toList();
+      filtered =
+          filtered
+              .where((order) => (order.finalPrice ?? 0) >= priceMin!)
+              .toList();
     }
     if (priceMax != null) {
-      filtered = filtered.where((order) => (order.finalPrice ?? 0) <= priceMax!).toList();
+      filtered =
+          filtered
+              .where((order) => (order.finalPrice ?? 0) <= priceMax!)
+              .toList();
     }
     if (ringSize != null && ringSize!.isNotEmpty) {
-      filtered = filtered.where((order) => (order.ringSize ?? '').toLowerCase().contains(ringSize!.toLowerCase())).toList();
+      filtered =
+          filtered
+              .where(
+                (order) => (order.ringSize ?? '').toLowerCase().contains(
+                  ringSize!.toLowerCase(),
+                ),
+              )
+              .toList();
     }
 
     if (_searchQuery.isNotEmpty) {
-      filtered = filtered.where((order) =>
-        orderFullText(order).contains(_searchQuery.toLowerCase())
-      ).toList();
+      filtered =
+          filtered
+              .where(
+                (order) =>
+                    orderFullText(order).contains(_searchQuery.toLowerCase()),
+              )
+              .toList();
     }
 
     return filtered;
@@ -223,57 +288,88 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Jenis Perhiasan
-                    Text("Jenis Perhiasan", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      "Jenis Perhiasan",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     Wrap(
                       spacing: 8,
-                      children: jewelryTypes.map((type) => FilterChip(
-                        label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
-                        selected: selectedJewelryTypes.contains(type),
-                        showCheckmark: false,
-                        backgroundColor: categoryInactiveBgColor,
-                        selectedColor: categoryActiveBgColor,
-                        side: BorderSide(
-                          color: selectedJewelryTypes.contains(type)
-                              ? categoryActiveBgColor
-                              : categoryInactiveBgColor,
-                        ),
-                        onSelected: (selected) {
-                          setModalState(() {
-                            selected
-                                ? selectedJewelryTypes.add(type)
-                                : selectedJewelryTypes.remove(type);
-                          });
-                        },
-                      )).toList(),
+                      children:
+                          jewelryTypes
+                              .map(
+                                (type) => FilterChip(
+                                  label: Text(
+                                    type,
+                                    style: const TextStyle(
+                                      color: categoryInactiveTextColor,
+                                    ),
+                                  ),
+                                  selected: selectedJewelryTypes.contains(type),
+                                  showCheckmark: false,
+                                  backgroundColor: categoryInactiveBgColor,
+                                  selectedColor: categoryActiveBgColor,
+                                  side: BorderSide(
+                                    color:
+                                        selectedJewelryTypes.contains(type)
+                                            ? categoryActiveBgColor
+                                            : categoryInactiveBgColor,
+                                  ),
+                                  onSelected: (selected) {
+                                    setModalState(() {
+                                      selected
+                                          ? selectedJewelryTypes.add(type)
+                                          : selectedJewelryTypes.remove(type);
+                                    });
+                                  },
+                                ),
+                              )
+                              .toList(),
                     ),
                     const SizedBox(height: 16),
                     // Warna Emas
-                    Text("Warna Emas", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      "Warna Emas",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     Wrap(
                       spacing: 8,
-                      children: goldColors.map((color) => FilterChip(
-                        label: Text(color, style: const TextStyle(color: categoryInactiveTextColor)),
-                        selected: selectedGoldColors.contains(color),
-                        showCheckmark: false,
-                        backgroundColor: categoryInactiveBgColor,
-                        selectedColor: categoryActiveBgColor,
-                        side: BorderSide(
-                          color: selectedGoldColors.contains(color)
-                              ? categoryActiveBgColor
-                              : categoryInactiveBgColor,
-                        ),
-                        onSelected: (selected) {
-                          setModalState(() {
-                            selected
-                                ? selectedGoldColors.add(color)
-                                : selectedGoldColors.remove(color);
-                          });
-                        },
-                      )).toList(),
+                      children:
+                          goldColors
+                              .map(
+                                (color) => FilterChip(
+                                  label: Text(
+                                    color,
+                                    style: const TextStyle(
+                                      color: categoryInactiveTextColor,
+                                    ),
+                                  ),
+                                  selected: selectedGoldColors.contains(color),
+                                  showCheckmark: false,
+                                  backgroundColor: categoryInactiveBgColor,
+                                  selectedColor: categoryActiveBgColor,
+                                  side: BorderSide(
+                                    color:
+                                        selectedGoldColors.contains(color)
+                                            ? categoryActiveBgColor
+                                            : categoryInactiveBgColor,
+                                  ),
+                                  onSelected: (selected) {
+                                    setModalState(() {
+                                      selected
+                                          ? selectedGoldColors.add(color)
+                                          : selectedGoldColors.remove(color);
+                                    });
+                                  },
+                                ),
+                              )
+                              .toList(),
                     ),
                     const SizedBox(height: 16),
                     // Harga Min - Max
-                    Text("Harga Min - Max", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      "Harga Min - Max",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     Row(
                       children: [
                         Flexible(
@@ -303,57 +399,88 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
                     ),
                     const SizedBox(height: 16),
                     // Jenis Emas
-                    Text("Jenis Emas", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      "Jenis Emas",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     Wrap(
                       spacing: 8,
-                      children: goldTypes.map((type) => FilterChip(
-                        label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
-                        selected: selectedGoldTypes.contains(type),
-                        showCheckmark: false,
-                        backgroundColor: categoryInactiveBgColor,
-                        selectedColor: categoryActiveBgColor,
-                        side: BorderSide(
-                          color: selectedGoldTypes.contains(type)
-                              ? categoryActiveBgColor
-                              : categoryInactiveBgColor,
-                        ),
-                        onSelected: (selected) {
-                          setModalState(() {
-                            selected
-                                ? selectedGoldTypes.add(type)
-                                : selectedGoldTypes.remove(type);
-                          });
-                        },
-                      )).toList(),
+                      children:
+                          goldTypes
+                              .map(
+                                (type) => FilterChip(
+                                  label: Text(
+                                    type,
+                                    style: const TextStyle(
+                                      color: categoryInactiveTextColor,
+                                    ),
+                                  ),
+                                  selected: selectedGoldTypes.contains(type),
+                                  showCheckmark: false,
+                                  backgroundColor: categoryInactiveBgColor,
+                                  selectedColor: categoryActiveBgColor,
+                                  side: BorderSide(
+                                    color:
+                                        selectedGoldTypes.contains(type)
+                                            ? categoryActiveBgColor
+                                            : categoryInactiveBgColor,
+                                  ),
+                                  onSelected: (selected) {
+                                    setModalState(() {
+                                      selected
+                                          ? selectedGoldTypes.add(type)
+                                          : selectedGoldTypes.remove(type);
+                                    });
+                                  },
+                                ),
+                              )
+                              .toList(),
                     ),
                     const SizedBox(height: 16),
                     // Jenis Batu
-                    Text("Jenis Batu", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      "Jenis Batu",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     Wrap(
                       spacing: 8,
-                      children: stoneTypes.map((type) => FilterChip(
-                        label: Text(type, style: const TextStyle(color: categoryInactiveTextColor)),
-                        selected: selectedStoneTypes.contains(type),
-                        showCheckmark: false,
-                        backgroundColor: categoryInactiveBgColor,
-                        selectedColor: categoryActiveBgColor,
-                        side: BorderSide(
-                          color: selectedStoneTypes.contains(type)
-                              ? categoryActiveBgColor
-                              : categoryInactiveBgColor,
-                        ),
-                        onSelected: (selected) {
-                          setModalState(() {
-                            selected
-                                ? selectedStoneTypes.add(type)
-                                : selectedStoneTypes.remove(type);
-                          });
-                        },
-                      )).toList(),
+                      children:
+                          stoneTypes
+                              .map(
+                                (type) => FilterChip(
+                                  label: Text(
+                                    type,
+                                    style: const TextStyle(
+                                      color: categoryInactiveTextColor,
+                                    ),
+                                  ),
+                                  selected: selectedStoneTypes.contains(type),
+                                  showCheckmark: false,
+                                  backgroundColor: categoryInactiveBgColor,
+                                  selectedColor: categoryActiveBgColor,
+                                  side: BorderSide(
+                                    color:
+                                        selectedStoneTypes.contains(type)
+                                            ? categoryActiveBgColor
+                                            : categoryInactiveBgColor,
+                                  ),
+                                  onSelected: (selected) {
+                                    setModalState(() {
+                                      selected
+                                          ? selectedStoneTypes.add(type)
+                                          : selectedStoneTypes.remove(type);
+                                    });
+                                  },
+                                ),
+                              )
+                              .toList(),
                     ),
                     const SizedBox(height: 16),
                     // Ring Size
-                    Text("Ring Size", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      "Ring Size",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     TextField(
                       keyboardType: TextInputType.text,
                       decoration: const InputDecoration(hintText: "Ring Size"),
@@ -379,7 +506,10 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
                         ),
                         const SizedBox(width: 8),
                         IconButton(
-                          icon: const Icon(Icons.refresh, color: Colors.redAccent),
+                          icon: const Icon(
+                            Icons.refresh,
+                            color: Colors.redAccent,
+                          ),
                           tooltip: "Reset Filter",
                           onPressed: () {
                             Navigator.pop(context);
@@ -393,8 +523,8 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
                   ],
                 ),
               ),
-              );
-            },
+            );
+          },
         );
       },
     );
@@ -413,16 +543,31 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
     final bool selected = _selectedTab == value;
     int count = 0;
     if (value == 'waiting') {
-      count = _orders.where((order) => waitingStatuses.contains(order.workflowStatus)).length;
+      count =
+          _orders
+              .where((order) => waitingStatuses.contains(order.workflowStatus))
+              .length;
     } else if (value == 'working') {
-      count = _orders.where((order) => workingStatuses.contains(order.workflowStatus)).length;
+      count =
+          _orders
+              .where((order) => workingStatuses.contains(order.workflowStatus))
+              .length;
     } else if (value == 'onprogress') {
-      count = _orders.where((order) => onProgressStatuses.contains(order.workflowStatus)).length;
+      count =
+          _orders
+              .where(
+                (order) => onProgressStatuses.contains(order.workflowStatus),
+              )
+              .length;
     } else if (value == 'all') {
-      count = _orders.where((order) =>
-        order.workflowStatus != OrderWorkflowStatus.done &&
-        order.workflowStatus != OrderWorkflowStatus.cancelled
-      ).length;
+      count =
+          _orders
+              .where(
+                (order) =>
+                    order.workflowStatus != OrderWorkflowStatus.done &&
+                    order.workflowStatus != OrderWorkflowStatus.cancelled,
+              )
+              .length;
     }
     return Expanded(
       child: Padding(
@@ -497,13 +642,14 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
     }
 
     final allFilters = _randomCategoryFilters;
-    final selectedFilters = [
-      ...selectedJewelryTypes,
-      ...selectedGoldColors,
-      ...selectedGoldTypes,
-      ...selectedStoneTypes,
-      if (ringSize != null && ringSize!.isNotEmpty) 'Ring Size: $ringSize',
-    ].where((e) => e.isNotEmpty).toList();
+    final selectedFilters =
+        [
+          ...selectedJewelryTypes,
+          ...selectedGoldColors,
+          ...selectedGoldTypes,
+          ...selectedStoneTypes,
+          if (ringSize != null && ringSize!.isNotEmpty) 'Ring Size: $ringSize',
+        ].where((e) => e.isNotEmpty).toList();
     final unselectedFilters =
         allFilters.where((f) => !selectedFilters.contains(f)).toList();
     final filterBarList = [...selectedFilters, ...unselectedFilters];
@@ -523,7 +669,10 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
       resizeToAvoidBottomInset: false,
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final result = await Navigator.pushNamed(context, '/diamondsetter/create');
+          final result = await Navigator.pushNamed(
+            context,
+            '/diamondsetter/create',
+          );
           if (result == true) {
             await _fetchOrders();
           }
@@ -591,7 +740,9 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
-                            children: List.generate(filterBarList.length, (index) {
+                            children: List.generate(filterBarList.length, (
+                              index,
+                            ) {
                               final cat = filterBarList[index];
                               final isSelected = selectedFilters.contains(cat);
                               return Padding(
@@ -600,9 +751,10 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
                                   label: Text(
                                     cat,
                                     style: TextStyle(
-                                      color: isSelected
-                                          ? Colors.black
-                                          : categoryInactiveTextColor,
+                                      color:
+                                          isSelected
+                                              ? Colors.black
+                                              : categoryInactiveTextColor,
                                     ),
                                   ),
                                   selected: isSelected,
@@ -611,58 +763,76 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
                                       if (selected) {
                                         _isRandomCategoryActive = false;
                                         if (jewelryTypes.contains(cat)) {
-                                          if (!selectedJewelryTypes.contains(cat)) {
+                                          if (!selectedJewelryTypes.contains(
+                                            cat,
+                                          )) {
                                             selectedJewelryTypes.add(cat);
                                           }
                                         } else if (goldColors.contains(cat)) {
-                                          if (!selectedGoldColors.contains(cat)) {
+                                          if (!selectedGoldColors.contains(
+                                            cat,
+                                          )) {
                                             selectedGoldColors.add(cat);
                                           }
                                         } else if (goldTypes.contains(cat)) {
-                                          if (!selectedGoldTypes.contains(cat)) {
+                                          if (!selectedGoldTypes.contains(
+                                            cat,
+                                          )) {
                                             selectedGoldTypes.add(cat);
                                           }
                                         } else if (stoneTypes.contains(cat)) {
-                                          if (!selectedStoneTypes.contains(cat)) {
+                                          if (!selectedStoneTypes.contains(
+                                            cat,
+                                          )) {
                                             selectedStoneTypes.add(cat);
                                           }
-                                        } else if (cat.startsWith('Ring Size:')) {
-                                          ringSize = cat.replaceFirst('Ring Size: ', '');
+                                        } else if (cat.startsWith(
+                                          'Ring Size:',
+                                        )) {
+                                          ringSize = cat.replaceFirst(
+                                            'Ring Size: ',
+                                            '',
+                                          );
                                         }
                                       } else {
                                         selectedJewelryTypes.remove(cat);
                                         selectedGoldColors.remove(cat);
                                         selectedGoldTypes.remove(cat);
                                         selectedStoneTypes.remove(cat);
-                                        if (ringSize != null && 'Ring Size: $ringSize' == cat) {
+                                        if (ringSize != null &&
+                                            'Ring Size: $ringSize' == cat) {
                                           ringSize = null;
                                         }
                                         if (selectedJewelryTypes.isEmpty &&
                                             selectedGoldColors.isEmpty &&
                                             selectedGoldTypes.isEmpty &&
                                             selectedStoneTypes.isEmpty &&
-                                            (ringSize == null || ringSize!.isEmpty)) {
+                                            (ringSize == null ||
+                                                ringSize!.isEmpty)) {
                                           _isRandomCategoryActive = true;
                                         }
                                       }
                                     });
                                   },
-                                  backgroundColor: isSelected
-                                      ? const Color(0xFFEAE38C)
-                                      : categoryInactiveBgColor,
+                                  backgroundColor:
+                                      isSelected
+                                          ? const Color(0xFFEAE38C)
+                                          : categoryInactiveBgColor,
                                   selectedColor: const Color(0xFFEAE38C),
                                   labelStyle: TextStyle(
-                                    color: isSelected
-                                        ? Colors.black
-                                        : categoryInactiveTextColor,
+                                    color:
+                                        isSelected
+                                            ? Colors.black
+                                            : categoryInactiveTextColor,
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   side: BorderSide(
-                                    color: isSelected
-                                        ? const Color(0xFFEAE38C)
-                                        : categoryInactiveBgColor,
+                                    color:
+                                        isSelected
+                                            ? const Color(0xFFEAE38C)
+                                            : categoryInactiveBgColor,
                                   ),
                                 ),
                               );
@@ -671,7 +841,10 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.filter_list, color: Color(0xFF656359)),
+                        icon: const Icon(
+                          Icons.filter_list,
+                          color: Color(0xFF656359),
+                        ),
                         tooltip: "Filter",
                         onPressed: _openFilterSheet,
                       ),
@@ -686,8 +859,11 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
                     children: [
                       _buildTabButton('Waiting', 'waiting', Colors.orange),
                       _buildTabButton('Working', 'working', Colors.blue),
-                      _buildTabButton('On Progress', 'onprogress', Colors.green),
-                      
+                      _buildTabButton(
+                        'On Progress',
+                        'onprogress',
+                        Colors.green,
+                      ),
                     ],
                   ),
                 ),
@@ -695,177 +871,269 @@ class _DiamondSetterDashboardScreenState extends State<DiamondSetterDashboardScr
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _fetchOrders,
-                    child: _isLoading
-                        ? const Center(
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                            ),
-                          )
-                        : _errorMessage.isNotEmpty
+                    child:
+                        _isLoading
+                            ? const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                              ),
+                            )
+                            : _errorMessage.isNotEmpty
                             ? Center(
-                                child: Text(
-                                  _errorMessage,
-                                  style: const TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 16,
-                                  ),
+                              child: Text(
+                                _errorMessage,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 16,
                                 ),
-                              )
+                              ),
+                            )
                             : _filteredOrders.isEmpty
-                                ? Center(
-                                    child: Text(
-                                      _searchQuery.isNotEmpty
-                                          ? 'Tidak ada pesanan cocok dengan pencarian Anda.'
-                                          : 'Tidak ada pesanan aktif.',
-                                      style: const TextStyle(color: Colors.white70),
-                                    ),
-                                  )
-                                : ListView.builder(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16.0,
-                                      vertical: 8.0,
-                                    ),
-                                    itemCount: _filteredOrders.length,
-                                    itemBuilder: (context, index) {
-                                      final order = _filteredOrders[index];
+                            ? Center(
+                              child: Text(
+                                _searchQuery.isNotEmpty
+                                    ? 'Tidak ada pesanan cocok dengan pencarian Anda.'
+                                    : 'Tidak ada pesanan aktif.',
+                                style: const TextStyle(color: Colors.white70),
+                              ),
+                            )
+                            : ListView.builder(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                                vertical: 8.0,
+                              ),
+                              itemCount: _filteredOrders.length,
+                              itemBuilder: (context, index) {
+                                final order = _filteredOrders[index];
 
-                                      return Card(
-                                        margin: const EdgeInsets.symmetric(vertical: 12.0),
-                                        elevation: 5,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                                        color: const Color(0xFFFDF6E3), // luxurious light gold background
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Column(
-                                            children: [
-                                              // Row pertama: gambar dan info utama
-                                              Row(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  // Gambar 1:1
-                                                  ClipRRect(
-                                                    borderRadius: BorderRadius.circular(12),
-                                                    child: order.imagePaths.isNotEmpty &&
-                                                            order.imagePaths.first.isNotEmpty
-                                                        ? Image.network(
-                                                            order.imagePaths.first,
-                                                            width: 90,
-                                                            height: 90,
-                                                            fit: BoxFit.cover,
-                                                            errorBuilder: (context, error, stackTrace) => Container(
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(
+                                    vertical: 12.0,
+                                  ),
+                                  elevation: 5,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                  color: const Color(
+                                    0xFFFDF6E3,
+                                  ), // luxurious light gold background
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      children: [
+                                        // Row pertama: gambar dan info utama
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            // Gambar 1:1
+                                            ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              child:
+                                                  order.imagePaths.isNotEmpty &&
+                                                          order
+                                                              .imagePaths
+                                                              .first
+                                                              .isNotEmpty
+                                                      ? Image.network(
+                                                        order.imagePaths.first,
+                                                        width: 90,
+                                                        height: 90,
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder:
+                                                            (
+                                                              context,
+                                                              error,
+                                                              stackTrace,
+                                                            ) => Container(
                                                               width: 90,
                                                               height: 90,
-                                                              color: Colors.brown[100],
-                                                              child: const Icon(Icons.image, size: 40, color: Colors.brown),
-                                                            ),
-                                                          )
-                                                        : Container(
-                                                            width: 90,
-                                                            height: 90,
-                                                            color: Colors.brown[100],
-                                                            child: const Icon(Icons.image, size: 40, color: Colors.brown),
-                                                          ),
-                                                  ),
-                                                  const SizedBox(width: 18),
-                                                  // Nama & jenis perhiasan
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Text(
-                                                          order.customerName ?? '-',
-                                                          style: const TextStyle(
-                                                            fontWeight: FontWeight.bold,
-                                                            fontSize: 18,
-                                                            color: Color(0xFF7C5E2C), // deep gold
-                                                            letterSpacing: 0.5,
-                                                          ),
-                                                          overflow: TextOverflow.ellipsis,
-                                                        ),
-                                                        const SizedBox(height: 8),
-                                                        Row(
-                                                          children: [
-                                                            const Icon(Icons.category, color: Color(0xFFD4AF37), size: 18),
-                                                            const SizedBox(width: 6),
-                                                            Text(
-                                                              order.jewelryType.isNotEmpty == true ? order.jewelryType : "-",
-                                                              style: const TextStyle(
-                                                                fontSize: 15,
-                                                                color: Color(0xFF7C5E2C),
+                                                              color:
+                                                                  Colors
+                                                                      .brown[100],
+                                                              child: const Icon(
+                                                                Icons.image,
+                                                                size: 40,
+                                                                color:
+                                                                    Colors
+                                                                        .brown,
                                                               ),
                                                             ),
-                                                          ],
+                                                      )
+                                                      : Container(
+                                                        width: 90,
+                                                        height: 90,
+                                                        color:
+                                                            Colors.brown[100],
+                                                        child: const Icon(
+                                                          Icons.image,
+                                                          size: 40,
+                                                          color: Colors.brown,
                                                         ),
-                                                      ],
+                                                      ),
+                                            ),
+                                            const SizedBox(width: 18),
+                                            // Nama & jenis perhiasan
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    order.customerName ?? '-',
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 18,
+                                                      color: Color(
+                                                        0xFF7C5E2C,
+                                                      ), // deep gold
+                                                      letterSpacing: 0.5,
                                                     ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Row(
+                                                    children: [
+                                                      const Icon(
+                                                        Icons.category,
+                                                        color: Color(
+                                                          0xFFD4AF37,
+                                                        ),
+                                                        size: 18,
+                                                      ),
+                                                      const SizedBox(width: 6),
+                                                      Text(
+                                                        order
+                                                                    .jewelryType
+                                                                    .isNotEmpty ==
+                                                                true
+                                                            ? order.jewelryType
+                                                            : "-",
+                                                        style: const TextStyle(
+                                                          fontSize: 15,
+                                                          color: Color(
+                                                            0xFF7C5E2C,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ],
                                               ),
-                                              const SizedBox(height: 18),
-                                              // Row kedua: info tanggal, status, tombol
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 18),
+                                        // Row kedua: info tanggal, status, tombol
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.calendar_today,
+                                              color: Color(0xFFBFA14A),
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              'Order: ${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                color: Color(0xFF7C5E2C),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 18),
+                                            if (order.pickupDate != null)
                                               Row(
                                                 children: [
-                                                  const Icon(Icons.calendar_today, color: Color(0xFFBFA14A), size: 18),
+                                                  const Icon(
+                                                    Icons.assignment_turned_in,
+                                                    color: Color(0xFFBFA14A),
+                                                    size: 18,
+                                                  ),
                                                   const SizedBox(width: 6),
                                                   Text(
-                                                    'Order: ${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
-                                                    style: const TextStyle(fontSize: 13, color: Color(0xFF7C5E2C)),
-                                                  ),
-                                                  const SizedBox(width: 18),
-                                                  if (order.pickupDate != null)
-                                                    Row(
-                                                      children: [
-                                                        const Icon(Icons.assignment_turned_in, color: Color(0xFFBFA14A), size: 18),
-                                                        const SizedBox(width: 6),
-                                                        Text(
-                                                          'Ambil: ${order.pickupDate!.day}/${order.pickupDate!.month}/${order.pickupDate!.year}',
-                                                          style: const TextStyle(fontSize: 13, color: Color(0xFF7C5E2C)),
-                                                        ),
-                                                      ],
+                                                    'Ambil: ${order.pickupDate!.day}/${order.pickupDate!.month}/${order.pickupDate!.year}',
+                                                    style: const TextStyle(
+                                                      fontSize: 13,
+                                                      color: Color(0xFF7C5E2C),
                                                     ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 12),
-                                              Row(
-                                                children: [
-                                                  Chip(
-                                                    label: Text(
-                                                      order.workflowStatus.label,
-                                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                                    ),
-                                                    backgroundColor: const Color(0xFFD4AF37), // gold
-                                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                                                  ),
-                                                  const Spacer(),
-                                                  ElevatedButton.icon(
-                                                    style: ElevatedButton.styleFrom(
-                                                      backgroundColor: const Color(0xFFD4AF37), // gold
-                                                      foregroundColor: Colors.white,
-                                                      shape: RoundedRectangleBorder(
-                                                        borderRadius: BorderRadius.circular(12),
-                                                      ),
-                                                      elevation: 0,
-                                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                                    ),
-                                                    icon: const Icon(Icons.arrow_forward_ios, size: 16),
-                                                    label: const Text('Detail', style: TextStyle(fontSize: 13)),
-                                                    onPressed: () async {
-                                                      final result = await Navigator.of(context).push(
-                                                        MaterialPageRoute(
-                                                          builder: (context) => DiamondSetterDetailScreen(order: order),
-                                                        ),
-                                                      );
-                                                      if (result == true) _fetchOrders();
-                                                    },
                                                   ),
                                                 ],
                                               ),
-                                            ],
-                                          ),
+                                          ],
                                         ),
-                                      );
-                                    },
+                                        const SizedBox(height: 12),
+                                        Row(
+                                          children: [
+                                            Chip(
+                                              label: Text(
+                                                order.workflowStatus.label,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              backgroundColor: const Color(
+                                                0xFFD4AF37,
+                                              ), // gold
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 2,
+                                                  ),
+                                            ),
+                                            const Spacer(),
+                                            ElevatedButton.icon(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: const Color(
+                                                  0xFFD4AF37,
+                                                ), // gold
+                                                foregroundColor: Colors.white,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                elevation: 0,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 16,
+                                                      vertical: 8,
+                                                    ),
+                                              ),
+                                              icon: const Icon(
+                                                Icons.arrow_forward_ios,
+                                                size: 16,
+                                              ),
+                                              label: const Text(
+                                                'Detail',
+                                                style: TextStyle(fontSize: 13),
+                                              ),
+                                              onPressed: () async {
+                                                final result = await Navigator.of(
+                                                  context,
+                                                ).push(
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (context) =>
+                                                            DiamondSetterDetailScreen(
+                                                              order: order,
+                                                            ),
+                                                  ),
+                                                );
+                                                if (result == true)
+                                                  _fetchOrders();
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
+                                );
+                              },
+                            ),
                   ),
                 ),
               ],
