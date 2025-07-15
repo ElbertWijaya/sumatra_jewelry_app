@@ -1,7 +1,9 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
-/// Dummy AuthService for demonstration and future backend integration.
-/// In production, replace all dummy logic with real authentication APIs.
+/// AuthService for handling authentication with the backend.
+/// Integrates with the backend API for login and account management.
 class AuthService {
   static final AuthService _instance = AuthService._internal();
 
@@ -9,19 +11,27 @@ class AuthService {
 
   AuthService._internal();
 
-  String? _currentUserId;
+  Map<String, dynamic>? _currentAccount;
 
-  /// Simulates user login. Replace with real authentication logic.
+  /// Login ke backend, return true jika sukses dan simpan akun.
   Future<bool> login({
     required String username,
     required String password,
   }) async {
     try {
-      // TODO: Integrate with real authentication backend.
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (username.isNotEmpty && password.isNotEmpty) {
-        _currentUserId = username;
-        return true;
+      final response = await http.post(
+        Uri.parse('http://192.168.83.117/sumatra_api/login.php'),
+        body: {
+          'username': username,
+          'password': password, // Kirim plain, hash di backend
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          _currentAccount = data['account'];
+          return true;
+        }
       }
       return false;
     } catch (e, stack) {
@@ -32,13 +42,25 @@ class AuthService {
 
   /// Simulates user logout.
   Future<void> logout() async {
-    _currentUserId = null;
+    _currentAccount = null;
     // TODO: Add backend logic if needed.
   }
 
   /// Returns true if a user is currently logged in.
-  bool get isLoggedIn => _currentUserId != null;
+  bool get isLoggedIn => _currentAccount != null;
 
   /// Returns the current user ID, if logged in.
-  String? get currentUserId => _currentUserId;
+  String? get currentUserId => _currentAccount?['accounts_id']?.toString();
+
+  /// Returns the current user role, if logged in.
+  String? get currentRole => _currentAccount?['accounts_role'];
+
+  /// Returns the current username, if logged in.
+  String? get currentUsername => _currentAccount?['accounts_username'];
+
+  /// Returns the current user name, if logged in.
+  String? get currentName => _currentAccount?['accounts_name'];
+
+  /// Returns the current account data, if logged in.
+  Map<String, dynamic>? get currentAccount => _currentAccount;
 }

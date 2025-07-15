@@ -7,7 +7,8 @@ class DiamondSetterTaskScreen extends StatefulWidget {
   const DiamondSetterTaskScreen({super.key, required this.order});
 
   @override
-  State<DiamondSetterTaskScreen> createState() => _DiamondSetterTaskScreenState();
+  State<DiamondSetterTaskScreen> createState() =>
+      _DiamondSetterTaskScreenState();
 }
 
 class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
@@ -16,14 +17,18 @@ class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
   List<String> _diamondSetterChecklist = [];
 
   final List<String> _diamondSetterTasks = [
-    'Milih Berlian', 'Pasang Berlian', 'Kasih ke Olivia',
+    'Milih Berlian',
+    'Pasang Berlian',
+    'Kasih ke Admin',
   ];
 
   @override
   void initState() {
     super.initState();
     _order = widget.order;
-    _diamondSetterChecklist = List<String>.from(_order.diamondSettingWorkChecklist ?? []);
+    _diamondSetterChecklist = List<String>.from(
+      _order.diamondSettingWorkChecklist ?? [],
+    );
   }
 
   Future<void> _updateChecklist() async {
@@ -69,9 +74,10 @@ class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _isProcessing ? null : _updateChecklist,
-            child: _isProcessing
-                ? const CircularProgressIndicator()
-                : const Text('Update Checklist'),
+            child:
+                _isProcessing
+                    ? const CircularProgressIndicator()
+                    : const Text('Update Checklist'),
           ),
         ],
       ),

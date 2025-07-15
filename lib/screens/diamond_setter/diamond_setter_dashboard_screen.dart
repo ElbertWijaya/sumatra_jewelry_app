@@ -1122,8 +1122,9 @@ class _DiamondSetterDashboardScreenState
                                                             ),
                                                   ),
                                                 );
-                                                if (result == true)
+                                                if (result == true) {
                                                   _fetchOrders();
+                                                }
                                               },
                                             ),
                                           ],

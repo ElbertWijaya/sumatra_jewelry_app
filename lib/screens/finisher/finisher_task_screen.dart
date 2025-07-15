@@ -15,9 +15,7 @@ class _FinisherTaskScreenState extends State<FinisherTaskScreen> {
   bool _isProcessing = false;
   List<String> _finisherChecklist = [];
 
-  final List<String> _finisherTasks = [
-    'Finishing', 'Kasih ke Olivia',
-  ];
+  final List<String> _finisherTasks = ['Finishing', 'Kasih ke Admin'];
 
   @override
   void initState() {
@@ -69,9 +67,10 @@ class _FinisherTaskScreenState extends State<FinisherTaskScreen> {
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _isProcessing ? null : _updateChecklist,
-            child: _isProcessing
-                ? const CircularProgressIndicator()
-                : const Text('Update Checklist'),
+            child:
+                _isProcessing
+                    ? const CircularProgressIndicator()
+                    : const Text('Update Checklist'),
           ),
         ],
       ),

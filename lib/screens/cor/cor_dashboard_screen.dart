@@ -1121,8 +1121,9 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
                                                                 ),
                                                       ),
                                                     );
-                                                if (result == true)
+                                                if (result == true) {
                                                   _fetchOrders();
+                                                }
                                               },
                                             ),
                                           ],

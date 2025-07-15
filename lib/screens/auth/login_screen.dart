@@ -8,6 +8,7 @@ import 'package:sumatra_jewelry_app/screens/cor/cor_dashboard_screen.dart';
 import 'package:sumatra_jewelry_app/screens/carver/carver_dashboard_screen.dart';
 import 'package:sumatra_jewelry_app/screens/diamond_setter/diamond_setter_dashboard_screen.dart';
 import 'package:sumatra_jewelry_app/screens/inventory/inventory_dashboard_screen.dart';
+import 'package:sumatra_jewelry_app/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -44,58 +45,60 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     final username = _usernameController.text.trim();
-    // final password = _passwordController.text.trim(); // Hapus jika tidak digunakan
+    final password = _passwordController.text.trim();
 
-    await Future.delayed(const Duration(seconds: 1));
+    final success = await AuthService().login(
+      username: username,
+      password: password,
+    );
+    if (!success) {
+      setState(() {
+        _errorMessage = 'Username atau password salah.';
+        _isLoading = false;
+      });
+      return;
+    }
 
+    // Ambil role dari AuthService
+    final role = AuthService().currentRole;
     Widget? nextScreen;
-    String? role;
-
-    switch (username.toLowerCase()) {
+    switch (role) {
       case 'boss':
         nextScreen = const BossDashboardScreen();
-        role = 'boss';
         break;
       case 'sales':
         nextScreen = const SalesDashboardScreen();
-        role = 'sales';
         break;
       case 'finisher':
         nextScreen = const FinisherDashboardScreen();
-        role = 'finisher';
         break;
       case 'designer':
         nextScreen = const DesignerDashboardScreen();
-        role = 'designer';
         break;
-      case 'caster':
+      case 'cor':
         nextScreen = const CorDashboardScreen();
-        role = 'cor';
         break;
       case 'carver':
         nextScreen = const CarverDashboardScreen();
-        role = 'carver';
         break;
-      case 'diamond setter':
+      case 'diamond_setter':
         nextScreen = const DiamondSetterDashboardScreen();
-        role = 'diamond_setter';
         break;
       case 'inventory':
         nextScreen = const InventoryDashboardScreen();
-        role = 'inventory';
         break;
       default:
         setState(() {
-          _errorMessage = 'Username atau password salah.';
+          _errorMessage = 'Akun tidak memiliki role yang valid.';
           _isLoading = false;
         });
         return;
     }
 
-    await _setLoginStatus(true, role: role);
+    // Simpan status login jika ingin pakai SharedPreferences (opsional)
+    // await _setLoginStatus(true, role: role);
 
-    if (!mounted) return; // Perbaikan use_build_context_synchronously
-
+    if (!mounted) return;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => nextScreen!),

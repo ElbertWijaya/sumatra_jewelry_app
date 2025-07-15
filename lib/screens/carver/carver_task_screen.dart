@@ -16,7 +16,10 @@ class _CarverTaskScreenState extends State<CarverTaskScreen> {
   List<String> _carverChecklist = [];
 
   final List<String> _carverTasks = [
-    'Bom', 'Polish', 'Pengecekan', 'Kasih ke Olivia',
+    'Bom',
+    'Polish',
+    'Pengecekan',
+    'Kasih ke Admin',
   ];
 
   @override
@@ -51,25 +54,28 @@ class _CarverTaskScreenState extends State<CarverTaskScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          ..._carverTasks.map((task) => CheckboxListTile(
-                value: _carverChecklist.contains(task),
-                title: Text(task),
-                onChanged: (val) {
-                  setState(() {
-                    if (val == true) {
-                      _carverChecklist.add(task);
-                    } else {
-                      _carverChecklist.remove(task);
-                    }
-                  });
-                },
-              )),
+          ..._carverTasks.map(
+            (task) => CheckboxListTile(
+              value: _carverChecklist.contains(task),
+              title: Text(task),
+              onChanged: (val) {
+                setState(() {
+                  if (val == true) {
+                    _carverChecklist.add(task);
+                  } else {
+                    _carverChecklist.remove(task);
+                  }
+                });
+              },
+            ),
+          ),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _isProcessing ? null : _updateChecklist,
-            child: _isProcessing
-                ? const CircularProgressIndicator()
-                : const Text('Update Checklist'),
+            child:
+                _isProcessing
+                    ? const CircularProgressIndicator()
+                    : const Text('Update Checklist'),
           ),
         ],
       ),

@@ -63,7 +63,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     "pin",
     "men ring",
     "women ring",
-    "engagement ring",
+    "Wedding ring",
     "custom",
   ];
   final List<String> goldColors = ["White Gold", "Rose Gold", "Yellow Gold"];
@@ -943,7 +943,7 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                                           stackTrace,
                                                         ) {
                                                           print(
-                                                            'Image.network error for order.id: \\${order.id} url: \\${imageUrl} error: \\${error}',
+                                                            'Image.network error for order.id: \\${order.id} url: \\$imageUrl error: \\$error',
                                                           );
                                                           return Container(
                                                             width: 90,
@@ -1121,8 +1121,9 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                                             ),
                                                   ),
                                                 );
-                                                if (result == true)
+                                                if (result == true) {
                                                   _fetchOrders();
+                                                }
                                               },
                                             ),
                                           ],

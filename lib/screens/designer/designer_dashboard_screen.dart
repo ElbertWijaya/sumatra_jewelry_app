@@ -1124,8 +1124,9 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                                             ),
                                                   ),
                                                 );
-                                                if (result == true)
+                                                if (result == true) {
                                                   _fetchOrders(); // Refresh jika ada perubahan
+                                                }
                                               },
                                             ),
                                           ],

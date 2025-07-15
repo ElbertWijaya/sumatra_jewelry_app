@@ -1120,8 +1120,9 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
                                                         ), // Ganti ke CarverDetailScreen
                                                   ),
                                                 );
-                                                if (result == true)
+                                                if (result == true) {
                                                   _fetchOrders();
+                                                }
                                               },
                                             ),
                                           ],
