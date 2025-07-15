@@ -20,7 +20,7 @@ class AuthService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.83.117/sumatra_api/login.php'),
+        Uri.parse('http://192.168.83.54/sumatra_api/login.php'),
         body: {
           'username': username,
           'password': password, // Kirim plain, hash di backend

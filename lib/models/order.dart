@@ -188,13 +188,13 @@ class Order {
     this.inventoryImagePaths,
     this.inventoryItemsPrice,
     this.inventoryRingSize,
-  })  : imagePaths = imagePaths ?? const [],
-        designerWorkChecklist = designerWorkChecklist ?? const [],
-        castingWorkChecklist = castingWorkChecklist ?? const [],
-        carvingWorkChecklist = carvingWorkChecklist ?? const [],
-        diamondSettingWorkChecklist = diamondSettingWorkChecklist ?? const [],
-        finishingWorkChecklist = finishingWorkChecklist ?? const [],
-        inventoryWorkChecklist = inventoryWorkChecklist ?? const [];
+  }) : imagePaths = imagePaths ?? const [],
+       designerWorkChecklist = designerWorkChecklist ?? const [],
+       castingWorkChecklist = castingWorkChecklist ?? const [],
+       carvingWorkChecklist = carvingWorkChecklist ?? const [],
+       diamondSettingWorkChecklist = diamondSettingWorkChecklist ?? const [],
+       finishingWorkChecklist = finishingWorkChecklist ?? const [],
+       inventoryWorkChecklist = inventoryWorkChecklist ?? const [];
 
   factory Order.fromMap(Map<String, dynamic> map) {
     List<String> parseChecklist(dynamic val) {
@@ -203,7 +203,8 @@ class Order {
       if (val is String && val.isNotEmpty) {
         try {
           final decoded = jsonDecode(val);
-          if (decoded is List) return List<String>.from(decoded.map((e) => e.toString()));
+          if (decoded is List)
+            return List<String>.from(decoded.map((e) => e.toString()));
         } catch (_) {}
       }
       return [];
@@ -215,7 +216,8 @@ class Order {
       if (val is String && val.isNotEmpty) {
         try {
           final decoded = jsonDecode(val);
-          if (decoded is List) return List<String>.from(decoded.map((e) => e.toString()));
+          if (decoded is List)
+            return List<String>.from(decoded.map((e) => e.toString()));
         } catch (_) {}
       }
       return [];
@@ -227,60 +229,97 @@ class Order {
       customerContact: map['customer_contact']?.toString() ?? '',
       address: map['address']?.toString() ?? '',
       jewelryType: map['jewelry_type']?.toString() ?? '',
-      createdAt: map['created_at'] != null && map['created_at'] != ''
-          ? DateTime.parse(map['created_at'])
-          : DateTime.now(),
+      createdAt:
+          map['created_at'] != null && map['created_at'] != ''
+              ? DateTime.parse(map['created_at'])
+              : DateTime.now(),
       goldColor: map['gold_color']?.toString() ?? '',
       goldType: map['gold_type']?.toString() ?? '',
       stoneType: map['stone_type']?.toString() ?? '',
       stoneSize: map['stone_size']?.toString() ?? '',
       ringSize: map['ring_size']?.toString() ?? '',
-      readyDate: map['ready_date'] != null && map['ready_date'] != ''
-          ? DateTime.tryParse(map['ready_date'])
-          : null,
-      pickupDate: map['pickup_date'] != null && map['pickup_date'] != ''
-          ? DateTime.tryParse(map['pickup_date'])
-          : null,
-      goldPricePerGram: map['gold_price_per_gram'] != null
-          ? double.tryParse(map['gold_price_per_gram'].toString()) ?? 0
-          : 0,
-      finalPrice: map['final_price'] != null
-          ? double.tryParse(map['final_price'].toString()) ?? 0
-          : 0,
-      dp: map['dp'] != null
-          ? double.tryParse(map['dp'].toString()) ?? 0
-          : 0,
-      sisaLunas: map['sisa_lunas'] != null
-          ? double.tryParse(map['sisa_lunas'].toString()) ?? 0
-          : 0,
+      readyDate:
+          map['ready_date'] != null && map['ready_date'] != ''
+              ? DateTime.tryParse(map['ready_date'])
+              : null,
+      pickupDate:
+          map['pickup_date'] != null && map['pickup_date'] != ''
+              ? DateTime.tryParse(map['pickup_date'])
+              : null,
+      goldPricePerGram:
+          map['gold_price_per_gram'] != null
+              ? double.tryParse(map['gold_price_per_gram'].toString()) ?? 0
+              : 0,
+      finalPrice:
+          map['final_price'] != null
+              ? double.tryParse(map['final_price'].toString()) ?? 0
+              : 0,
+      dp: map['dp'] != null ? double.tryParse(map['dp'].toString()) ?? 0 : 0,
+      sisaLunas:
+          map['sisa_lunas'] != null
+              ? double.tryParse(map['sisa_lunas'].toString()) ?? 0
+              : 0,
       notes: map['notes']?.toString() ?? '',
-      updatedAt: map['updated_at'] != null && map['updated_at'] != ''
-          ? DateTime.tryParse(map['updated_at'])
-          : null,
+      updatedAt:
+          map['updated_at'] != null && map['updated_at'] != ''
+              ? DateTime.tryParse(map['updated_at'])
+              : null,
       imagePaths: parseImagePaths(map['imagePaths']),
       workflowStatus: OrderWorkflowStatusX.fromString(map['workflow_status']),
       designerWorkChecklist: parseChecklist(map['designerWorkChecklist']),
       castingWorkChecklist: parseChecklist(map['castingWorkChecklist']),
       carvingWorkChecklist: parseChecklist(map['carvingWorkChecklist']),
-      diamondSettingWorkChecklist: parseChecklist(map['diamondSettingWorkChecklist']),
+      diamondSettingWorkChecklist: parseChecklist(
+        map['diamondSettingWorkChecklist'],
+      ),
       finishingWorkChecklist: parseChecklist(map['finishingWorkChecklist']),
       inventoryWorkChecklist: parseChecklist(map['inventoryWorkChecklist']),
-      inventoryProductId: map['inventoryProductId']?.toString() ?? map['inventory_product_id']?.toString() ?? '',
-      inventoryJewelryType: map['inventoryJewelryType']?.toString() ?? map['inventory_jewelry_type']?.toString() ?? '',
-      inventoryGoldColor: map['inventoryGoldColor']?.toString() ?? map['inventory_gold_color']?.toString() ?? '',
-      inventoryGoldType: map['inventoryGoldType']?.toString() ?? map['inventory_gold_type']?.toString() ?? '',
-      inventoryStoneUsed: map['inventoryStoneUsed'] != null
-          ? List<Map<String, dynamic>>.from(map['inventoryStoneUsed'].map((e) => Map<String, dynamic>.from(e)))
-          : (map['inventory_stone_used'] != null
-              ? List<Map<String, dynamic>>.from(map['inventory_stone_used'].map((e) => Map<String, dynamic>.from(e)))
-              : null),
-      inventoryImagePaths: map['inventoryImagePaths'] != null
-          ? parseImagePaths(map['inventoryImagePaths'])
-          : (map['inventory_image_paths'] != null ? parseImagePaths(map['inventory_image_paths']) : []),
-      inventoryItemsPrice: map['inventoryItemsPrice'] != null
-          ? double.tryParse(map['inventoryItemsPrice'].toString()) ?? 0
-          : (map['inventory_items_price'] != null ? double.tryParse(map['inventory_items_price'].toString()) ?? 0 : null),
-      inventoryRingSize: map['inventoryRingSize']?.toString() ?? map['inventory_ring_size']?.toString(),
+      inventoryProductId:
+          map['inventoryProductId']?.toString() ??
+          map['inventory_product_id']?.toString() ??
+          '',
+      inventoryJewelryType:
+          map['inventoryJewelryType']?.toString() ??
+          map['inventory_jewelry_type']?.toString() ??
+          '',
+      inventoryGoldColor:
+          map['inventoryGoldColor']?.toString() ??
+          map['inventory_gold_color']?.toString() ??
+          '',
+      inventoryGoldType:
+          map['inventoryGoldType']?.toString() ??
+          map['inventory_gold_type']?.toString() ??
+          '',
+      inventoryStoneUsed:
+          map['inventoryStoneUsed'] != null
+              ? List<Map<String, dynamic>>.from(
+                map['inventoryStoneUsed'].map(
+                  (e) => Map<String, dynamic>.from(e),
+                ),
+              )
+              : (map['inventory_stone_used'] != null
+                  ? List<Map<String, dynamic>>.from(
+                    map['inventory_stone_used'].map(
+                      (e) => Map<String, dynamic>.from(e),
+                    ),
+                  )
+                  : null),
+      inventoryImagePaths:
+          map['inventoryImagePaths'] != null
+              ? parseImagePaths(map['inventoryImagePaths'])
+              : (map['inventory_image_paths'] != null
+                  ? parseImagePaths(map['inventory_image_paths'])
+                  : []),
+      inventoryItemsPrice:
+          map['inventoryItemsPrice'] != null
+              ? double.tryParse(map['inventoryItemsPrice'].toString()) ?? 0
+              : (map['inventory_items_price'] != null
+                  ? double.tryParse(map['inventory_items_price'].toString()) ??
+                      0
+                  : null),
+      inventoryRingSize:
+          map['inventoryRingSize']?.toString() ??
+          map['inventory_ring_size']?.toString(),
     );
   }
 
@@ -343,12 +382,16 @@ class Order {
       updatedAt: updatedAt ?? this.updatedAt,
       imagePaths: imagePaths ?? this.imagePaths,
       workflowStatus: workflowStatus ?? this.workflowStatus,
-      designerWorkChecklist: designerWorkChecklist ?? this.designerWorkChecklist,
+      designerWorkChecklist:
+          designerWorkChecklist ?? this.designerWorkChecklist,
       castingWorkChecklist: castingWorkChecklist ?? this.castingWorkChecklist,
       carvingWorkChecklist: carvingWorkChecklist ?? this.carvingWorkChecklist,
-      diamondSettingWorkChecklist: diamondSettingWorkChecklist ?? this.diamondSettingWorkChecklist,
-      finishingWorkChecklist: finishingWorkChecklist ?? this.finishingWorkChecklist,
-      inventoryWorkChecklist: inventoryWorkChecklist ?? this.inventoryWorkChecklist,
+      diamondSettingWorkChecklist:
+          diamondSettingWorkChecklist ?? this.diamondSettingWorkChecklist,
+      finishingWorkChecklist:
+          finishingWorkChecklist ?? this.finishingWorkChecklist,
+      inventoryWorkChecklist:
+          inventoryWorkChecklist ?? this.inventoryWorkChecklist,
       inventoryProductId: inventoryProductId ?? this.inventoryProductId,
       inventoryJewelryType: inventoryJewelryType ?? this.inventoryJewelryType,
       inventoryGoldColor: inventoryGoldColor ?? this.inventoryGoldColor,
@@ -367,7 +410,8 @@ class Order {
       if (val is String && val.isNotEmpty) {
         try {
           final decoded = jsonDecode(val);
-          if (decoded is List) return List<String>.from(decoded.map((e) => e.toString()));
+          if (decoded is List)
+            return List<String>.from(decoded.map((e) => e.toString()));
         } catch (_) {}
       }
       return [];
@@ -379,7 +423,8 @@ class Order {
       if (val is String && val.isNotEmpty) {
         try {
           final decoded = jsonDecode(val);
-          if (decoded is List) return List<String>.from(decoded.map((e) => e.toString()));
+          if (decoded is List)
+            return List<String>.from(decoded.map((e) => e.toString()));
         } catch (_) {}
       }
       return [];
@@ -391,55 +436,68 @@ class Order {
       customerContact: json['customer_contact']?.toString() ?? '',
       address: json['address']?.toString() ?? '',
       jewelryType: json['jewelry_type']?.toString() ?? '',
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'].toString())
-          : DateTime.now(),
+      createdAt:
+          json['created_at'] != null
+              ? DateTime.parse(json['created_at'].toString())
+              : DateTime.now(),
       goldColor: json['gold_color']?.toString() ?? '',
       goldType: json['gold_type']?.toString() ?? '',
       stoneType: json['stone_type']?.toString() ?? '',
       stoneSize: json['stone_size']?.toString() ?? '',
       ringSize: json['ring_size']?.toString() ?? '',
-      readyDate: json['ready_date'] != null && json['ready_date'] != ''
-          ? DateTime.tryParse(json['ready_date'].toString())
-          : null,
-      pickupDate: json['pickup_date'] != null && json['pickup_date'] != ''
-          ? DateTime.tryParse(json['pickup_date'].toString())
-          : null,
-      goldPricePerGram: json['gold_price_per_gram'] != null
-          ? double.tryParse(json['gold_price_per_gram'].toString()) ?? 0
-          : 0,
-      finalPrice: json['final_price'] != null
-          ? double.tryParse(json['final_price'].toString()) ?? 0
-          : 0,
-      dp: json['dp'] != null
-          ? double.tryParse(json['dp'].toString()) ?? 0
-          : 0,
-      sisaLunas: json['sisa_lunas'] != null
-          ? double.tryParse(json['sisa_lunas'].toString()) ?? 0
-          : 0,
+      readyDate:
+          json['ready_date'] != null && json['ready_date'] != ''
+              ? DateTime.tryParse(json['ready_date'].toString())
+              : null,
+      pickupDate:
+          json['pickup_date'] != null && json['pickup_date'] != ''
+              ? DateTime.tryParse(json['pickup_date'].toString())
+              : null,
+      goldPricePerGram:
+          json['gold_price_per_gram'] != null
+              ? double.tryParse(json['gold_price_per_gram'].toString()) ?? 0
+              : 0,
+      finalPrice:
+          json['final_price'] != null
+              ? double.tryParse(json['final_price'].toString()) ?? 0
+              : 0,
+      dp: json['dp'] != null ? double.tryParse(json['dp'].toString()) ?? 0 : 0,
+      sisaLunas:
+          json['sisa_lunas'] != null
+              ? double.tryParse(json['sisa_lunas'].toString()) ?? 0
+              : 0,
       notes: json['notes']?.toString() ?? '',
-      updatedAt: json['updated_at'] != null && json['updated_at'] != ''
-          ? DateTime.tryParse(json['updated_at'].toString())
-          : null,
+      updatedAt:
+          json['updated_at'] != null && json['updated_at'] != ''
+              ? DateTime.tryParse(json['updated_at'].toString())
+              : null,
       imagePaths: parseImagePaths(json['imagePaths']),
       workflowStatus: OrderWorkflowStatusX.fromString(json['workflow_status']),
       designerWorkChecklist: parseChecklist(json['designerWorkChecklist']),
       castingWorkChecklist: parseChecklist(json['castingWorkChecklist']),
       carvingWorkChecklist: parseChecklist(json['carvingWorkChecklist']),
-      diamondSettingWorkChecklist: parseChecklist(json['diamondSettingWorkChecklist']),
+      diamondSettingWorkChecklist: parseChecklist(
+        json['diamondSettingWorkChecklist'],
+      ),
       finishingWorkChecklist: parseChecklist(json['finishingWorkChecklist']),
       inventoryWorkChecklist: parseChecklist(json['inventoryWorkChecklist']),
       inventoryProductId: json['inventoryProductId']?.toString() ?? '',
       inventoryJewelryType: json['inventoryJewelryType']?.toString() ?? '',
       inventoryGoldColor: json['inventoryGoldColor']?.toString() ?? '',
       inventoryGoldType: json['inventoryGoldType']?.toString() ?? '',
-      inventoryStoneUsed: json['inventoryStoneUsed'] != null
-          ? List<Map<String, dynamic>>.from(json['inventoryStoneUsed'].map((e) => Map<String, dynamic>.from(e)))
-          : null,
+      inventoryStoneUsed:
+          json['inventoryStoneUsed'] != null
+              ? List<Map<String, dynamic>>.from(
+                json['inventoryStoneUsed'].map(
+                  (e) => Map<String, dynamic>.from(e),
+                ),
+              )
+              : null,
       inventoryImagePaths: parseImagePaths(json['inventoryImagePaths']),
-      inventoryItemsPrice: json['inventoryItemsPrice'] != null
-          ? double.tryParse(json['inventoryItemsPrice'].toString()) ?? 0
-          : null,
+      inventoryItemsPrice:
+          json['inventoryItemsPrice'] != null
+              ? double.tryParse(json['inventoryItemsPrice'].toString()) ?? 0
+              : null,
       inventoryRingSize: json['inventoryRingSize']?.toString(),
     );
   }

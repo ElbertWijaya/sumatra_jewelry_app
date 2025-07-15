@@ -141,7 +141,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
       var request = http.MultipartRequest(
         'POST',
         Uri.parse(
-          'http://192.168.83.117/sumatra_api/upload_image.php',
+          'http://192.168.83.54/sumatra_api/upload_image.php',
         ), // Ganti dengan URL server kamu
       );
       request.files.add(
@@ -211,7 +211,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
       print('Menjalankan _submit...');
       print('ImagePaths yang dikirim: ${jsonEncode(_uploadedImageUrls)}');
       final response = await http.post(
-        Uri.parse('http://192.168.83.117/sumatra_api/add_orders.php'),
+        Uri.parse('http://192.168.83.54/sumatra_api/add_orders.php'),
         body: {
           'id': order.id.toString(),
           'customer_name': order.customerName,

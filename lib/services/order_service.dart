@@ -5,7 +5,7 @@ import '../models/order.dart';
 
 class OrderService {
   static const String baseUrl =
-      'http://192.168.83.117/sumatra_api/get_orders.php';
+      'http://192.168.83.54/sumatra_api/get_orders.php';
 
   Future<List<Order>> getOrders() async {
     final response = await http.get(Uri.parse(baseUrl));
@@ -22,7 +22,7 @@ class OrderService {
     print('ImagePaths yang dikirim: ${jsonEncode(order.imagePaths)}');
 
     final response = await http.post(
-      Uri.parse('http://192.168.83.117/sumatra_api/add_orders.php'),
+      Uri.parse('http://192.168.83.54/sumatra_api/add_orders.php'),
       body: {
         'id': order.id.toString(),
         'customer_name': order.customerName,
@@ -64,7 +64,7 @@ class OrderService {
 
   Future<bool> updateOrder(Order order) async {
     final response = await http.post(
-      Uri.parse('http://192.168.83.117/sumatra_api/update_order.php'),
+      Uri.parse('http://192.168.83.54/sumatra_api/update_order.php'),
       body: {
         'id': order.id,
         'customer_name': order.customerName,
@@ -123,7 +123,7 @@ class OrderService {
 
   Future<Order> getOrderById(String id) async {
     final response = await http.get(
-      Uri.parse('http://192.168.83.117/sumatra_api/get_order_by_id.php?id=$id'),
+      Uri.parse('http://192.168.83.54/sumatra_api/get_order_by_id.php?id=$id'),
     );
     final data = jsonDecode(response.body);
     return Order.fromJson(data);
