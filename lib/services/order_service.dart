@@ -18,39 +18,51 @@ class OrderService {
   }
 
   Future<void> addOrders(Order order) async {
-    // Print isi imagePaths sebelum request
-    print('ImagePaths yang dikirim: ${jsonEncode(order.imagePaths)}');
-
+    print('ImagePaths yang dikirim: ${jsonEncode(order.ordersImagePaths)}');
     final response = await http.post(
       Uri.parse('http://192.168.83.54/sumatra_api/add_orders.php'),
       body: {
-        'id': order.id.toString(),
-        'customer_name': order.customerName,
-        'customer_contact': order.customerContact,
-        'address': order.address,
-        'jewelry_type': order.jewelryType,
-        'gold_type': order.goldType,
-        'gold_color': order.goldColor,
-        'final_price': order.finalPrice.toString(),
-        'notes': order.notes,
-        'pickup_date':
-            order.pickupDate != null
-                ? DateFormat('yyyy-MM-dd').format(order.pickupDate!)
+        'orders_id': order.ordersId,
+        'orders_customer_name': order.ordersCustomerName,
+        'orders_customer_contact': order.ordersCustomerContact,
+        'orders_address': order.ordersAddress,
+        'orders_jewelry_type': order.ordersJewelryType,
+        'orders_gold_type': order.ordersGoldType,
+        'orders_gold_color': order.ordersGoldColor,
+        'orders_final_price': order.ordersFinalPrice.toString(),
+        'orders_note': order.ordersNote,
+        'orders_pickup_date':
+            order.ordersPickupDate != null
+                ? DateFormat('yyyy-MM-dd').format(order.ordersPickupDate!)
                 : '',
-        'created_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(order.createdAt),
-        'gold_price_per_gram': order.goldPricePerGram.toString(),
-        'stone_type': order.stoneType,
-        'stone_size': order.stoneSize,
-        'ring_size': order.ringSize,
-        'ready_date':
-            order.readyDate != null
-                ? DateFormat('yyyy-MM-dd').format(order.readyDate!)
+        'orders_created_at': DateFormat(
+          'yyyy-MM-dd HH:mm:ss',
+        ).format(order.ordersCreatedAt),
+        'orders_gold_price_per_gram': order.ordersGoldPricePerGram.toString(),
+        'orders_ring_size': order.ordersRingSize,
+        'orders_ready_date':
+            order.ordersReadyDate != null
+                ? DateFormat('yyyy-MM-dd').format(order.ordersReadyDate!)
                 : '',
-        'dp': order.dp.toString(),
-        'sisa_lunas': order.sisaLunas.toString(),
-        'imagePaths': jsonEncode(order.imagePaths),
-        'workflow_status':
-            order.workflowStatus.name, // <-- Tambahkan baris ini!
+        'orders_dp': order.ordersDp.toString(),
+        'orders_sisa_lunas': order.ordersSisaLunas.toString(),
+        'orders_imagePaths': jsonEncode(order.ordersImagePaths),
+        'orders_workflowStatus': order.ordersWorkflowStatus.name,
+        'orders_designerWorkChecklist': jsonEncode(
+          order.ordersDesignerWorkChecklist,
+        ),
+        'orders_castingWorkChecklist': jsonEncode(
+          order.ordersCastingWorkChecklist,
+        ),
+        'orders_carvingWorkChecklist': jsonEncode(
+          order.ordersCarvingWorkChecklist,
+        ),
+        'orders_diamondSettingWorkChecklist': jsonEncode(
+          order.ordersDiamondSettingWorkChecklist,
+        ),
+        'orders_finishingWorkChecklist': jsonEncode(
+          order.ordersFinishingWorkChecklist,
+        ),
       },
     );
     if (response.statusCode != 200) {
@@ -66,43 +78,44 @@ class OrderService {
     final response = await http.post(
       Uri.parse('http://192.168.83.54/sumatra_api/update_order.php'),
       body: {
-        'id': order.id,
-        'customer_name': order.customerName,
-        'customer_contact': order.customerContact,
-        'address': order.address,
-        'jewelry_type': order.jewelryType,
-        'gold_type': order.goldType,
-        'gold_color': order.goldColor,
-        'final_price': order.finalPrice.toString(),
-        'notes': order.notes,
-        'pickup_date':
-            order.pickupDate != null
-                ? "${order.pickupDate!.year.toString().padLeft(4, '0')}-${order.pickupDate!.month.toString().padLeft(2, '0')}-${order.pickupDate!.day.toString().padLeft(2, '0')}"
+        'orders_id': order.ordersId,
+        'orders_customer_name': order.ordersCustomerName,
+        'orders_customer_contact': order.ordersCustomerContact,
+        'orders_address': order.ordersAddress,
+        'orders_jewelry_type': order.ordersJewelryType,
+        'orders_gold_type': order.ordersGoldType,
+        'orders_gold_color': order.ordersGoldColor,
+        'orders_final_price': order.ordersFinalPrice.toString(),
+        'orders_note': order.ordersNote,
+        'orders_pickup_date':
+            order.ordersPickupDate != null
+                ? "${order.ordersPickupDate!.year.toString().padLeft(4, '0')}-${order.ordersPickupDate!.month.toString().padLeft(2, '0')}-${order.ordersPickupDate!.day.toString().padLeft(2, '0')}"
                 : '',
-        'gold_price_per_gram': order.goldPricePerGram.toString(),
-        'stone_type': order.stoneType,
-        'stone_size': order.stoneSize,
-        'ring_size': order.ringSize,
-        'ready_date':
-            order.readyDate != null
-                ? "${order.readyDate!.year.toString().padLeft(4, '0')}-${order.readyDate!.month.toString().padLeft(2, '0')}-${order.readyDate!.day.toString().padLeft(2, '0')}"
+        'orders_gold_price_per_gram': order.ordersGoldPricePerGram.toString(),
+        'orders_ring_size': order.ordersRingSize,
+        'orders_ready_date':
+            order.ordersReadyDate != null
+                ? "${order.ordersReadyDate!.year.toString().padLeft(4, '0')}-${order.ordersReadyDate!.month.toString().padLeft(2, '0')}-${order.ordersReadyDate!.day.toString().padLeft(2, '0')}"
                 : '',
-        'dp': order.dp.toString(),
-        'sisa_lunas': order.sisaLunas.toString(),
-        'imagePaths': jsonEncode(order.imagePaths),
-        'workflow_status': order.workflowStatus.name,
-        'designerWorkChecklist': jsonEncode(order.designerWorkChecklist ?? []),
-        'castingWorkChecklist': jsonEncode(order.castingWorkChecklist ?? []),
-        'carvingWorkChecklist': jsonEncode(order.carvingWorkChecklist ?? []),
-        'diamondSettingWorkChecklist': jsonEncode(
-          order.diamondSettingWorkChecklist ?? [],
+        'orders_dp': order.ordersDp.toString(),
+        'orders_sisa_lunas': order.ordersSisaLunas.toString(),
+        'orders_imagePaths': jsonEncode(order.ordersImagePaths),
+        'orders_workflowStatus': order.ordersWorkflowStatus.name,
+        'orders_designerWorkChecklist': jsonEncode(
+          order.ordersDesignerWorkChecklist,
         ),
-        'finishingWorkChecklist': jsonEncode(
-          order.finishingWorkChecklist ?? [],
+        'orders_castingWorkChecklist': jsonEncode(
+          order.ordersCastingWorkChecklist,
         ),
-        'inventoryChecklist': jsonEncode(order.inventoryWorkChecklist ?? []),
-
-        // Tambahkan checklist lain jika perlu
+        'orders_carvingWorkChecklist': jsonEncode(
+          order.ordersCarvingWorkChecklist,
+        ),
+        'orders_diamondSettingWorkChecklist': jsonEncode(
+          order.ordersDiamondSettingWorkChecklist,
+        ),
+        'orders_finishingWorkChecklist': jsonEncode(
+          order.ordersFinishingWorkChecklist,
+        ),
       },
     );
     if (response.statusCode != 200) return false;
@@ -110,8 +123,12 @@ class OrderService {
     return result['success'] == true;
   }
 
-  Future<void> deleteOrders(String id) async {
-    final response = await http.delete(Uri.parse('$baseUrl?id=$id'));
+  Future<void> deleteOrders(String ordersId) async {
+    final response = await http.delete(
+      Uri.parse(
+        'http://192.168.83.54/sumatra_api/delete_orders.php?orders_id=$ordersId',
+      ),
+    );
     if (response.statusCode != 200) {
       throw Exception('Gagal menghapus pesanan: ${response.body}');
     }
@@ -121,10 +138,13 @@ class OrderService {
     }
   }
 
-  Future<Order> getOrderById(String id) async {
+  Future<Order> getOrderById(String ordersId) async {
     final response = await http.get(
-      Uri.parse('http://192.168.83.54/sumatra_api/get_order_by_id.php?id=$id'),
+      Uri.parse(
+        'http://192.168.83.54/sumatra_api/get_order_by_id.php?orders_id=$ordersId',
+      ),
     );
+    print('RESPONSE BODY: ${response.body}');
     final data = jsonDecode(response.body);
     return Order.fromJson(data);
   }

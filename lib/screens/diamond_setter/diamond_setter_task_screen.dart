@@ -27,7 +27,7 @@ class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
     super.initState();
     _order = widget.order;
     _diamondSetterChecklist = List<String>.from(
-      _order.diamondSettingWorkChecklist ?? [],
+      _order.ordersDiamondSettingWorkChecklist,
     );
   }
 
@@ -35,7 +35,7 @@ class _DiamondSetterTaskScreenState extends State<DiamondSetterTaskScreen> {
     setState(() => _isProcessing = true);
     try {
       final updatedOrder = _order.copyWith(
-        diamondSettingWorkChecklist: _diamondSetterChecklist,
+        ordersDiamondSettingWorkChecklist: _diamondSetterChecklist,
       );
       await OrderService().updateOrder(updatedOrder);
       setState(() {

@@ -14,12 +14,22 @@ class DiamondSetterDetailScreen extends StatefulWidget {
 class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
   // Inisialisasi dengan order kosong agar tidak LateInitializationError
   Order _order = Order(
-    id: '',
-    customerName: '',
-    customerContact: '',
-    address: '',
-    jewelryType: '',
-    createdAt: DateTime.now(),
+    ordersId: '',
+    ordersCustomerName: '',
+    ordersCustomerContact: '',
+    ordersAddress: '',
+    ordersJewelryType: '',
+    ordersCreatedAt: DateTime.now(),
+    ordersGoldType: '',
+    ordersGoldColor: '',
+    ordersRingSize: '',
+    ordersFinalPrice: 0,
+    ordersGoldPricePerGram: 0,
+    ordersDp: 0,
+    ordersImagePaths: const [],
+    ordersNote: '',
+    ordersWorkflowStatus: OrderWorkflowStatus.waitingDiamondSetting,
+    ordersDiamondSettingWorkChecklist: const [],
   );
   List<String> _diamondSetterChecklist = [];
   bool _isProcessing = false;
@@ -37,7 +47,7 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
     // _order langsung ambil dari widget.order sebagai default
     _order = widget.order;
     _diamondSetterChecklist = List<String>.from(
-      _order.diamondSettingWorkChecklist,
+      _order.ordersDiamondSettingWorkChecklist,
     );
     _fetchOrderDetail();
   }
@@ -48,11 +58,13 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
     });
     try {
       // Selalu fetch order terbaru dari backend (bukan dari dashboard)
-      final refreshedOrder = await OrderService().getOrderById(widget.order.id);
+      final refreshedOrder = await OrderService().getOrderById(
+        widget.order.ordersId,
+      );
       setState(() {
         _order = refreshedOrder;
         _diamondSetterChecklist = List<String>.from(
-          _order.diamondSettingWorkChecklist,
+          _order.ordersDiamondSettingWorkChecklist,
         );
       });
     } catch (e) {
@@ -60,7 +72,7 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
       setState(() {
         _order = widget.order;
         _diamondSetterChecklist = List<String>.from(
-          _order.diamondSettingWorkChecklist,
+          _order.ordersDiamondSettingWorkChecklist,
         );
       });
     } finally {
@@ -74,7 +86,7 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
     setState(() => _isProcessing = true);
     try {
       final updatedOrder = _order.copyWith(
-        diamondSettingWorkChecklist: _diamondSetterChecklist,
+        ordersDiamondSettingWorkChecklist: _diamondSetterChecklist,
       );
       await OrderService().updateOrder(updatedOrder);
 
@@ -94,7 +106,8 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isWorking = _order.workflowStatus == OrderWorkflowStatus.stoneSetting;
+    final isWorking =
+        _order.ordersWorkflowStatus == OrderWorkflowStatus.stoneSetting;
 
     return Scaffold(
       appBar: AppBar(
@@ -121,15 +134,15 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                     ),
                     const Divider(),
                     Text(
-                      'Nama: ${_order.customerName}',
+                      'Nama: ${_order.ordersCustomerName}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Kontak: ${_order.customerContact}',
+                      'Kontak: ${_order.ordersCustomerContact}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Alamat: ${_order.address}',
+                      'Alamat: ${_order.ordersAddress}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     const SizedBox(height: 12),
@@ -145,29 +158,42 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                     ),
                     const Divider(),
                     Text(
-                      'Jenis Perhiasan: ${_order.jewelryType}',
+                      'Jenis Perhiasan: ${_order.ordersJewelryType}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Jenis Emas: ${_order.goldType}',
+                      'Jenis Emas: ${_order.ordersGoldType}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Warna Emas: ${_order.goldColor}',
+                      'Warna Emas: ${_order.ordersGoldColor}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Ukuran Cincin: ${_order.ringSize}',
+                      'Ukuran Cincin: ${_order.ordersRingSize}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
-                    Text(
-                      'Tipe Batu: ${_order.stoneType}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
-                    Text(
-                      'Ukuran Batu: ${_order.stoneSize}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
+                    // Batu: gunakan inventoryStoneUsed jika ada
+                    if (_order.inventoryStoneUsed != null &&
+                        _order.inventoryStoneUsed!.isNotEmpty) ...[
+                      Text(
+                        'Tipe Batu: ${_order.inventoryStoneUsed![0]['type'] ?? '-'}',
+                        style: const TextStyle(color: Color(0xFF7C5E2C)),
+                      ),
+                      Text(
+                        'Ukuran Batu: ${_order.inventoryStoneUsed![0]['size'] ?? '-'}',
+                        style: const TextStyle(color: Color(0xFF7C5E2C)),
+                      ),
+                    ] else ...[
+                      Text(
+                        'Tipe Batu: -',
+                        style: const TextStyle(color: Color(0xFF7C5E2C)),
+                      ),
+                      Text(
+                        'Ukuran Batu: -',
+                        style: const TextStyle(color: Color(0xFF7C5E2C)),
+                      ),
+                    ],
                     const SizedBox(height: 12),
 
                     // Informasi Harga
@@ -181,19 +207,19 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                     ),
                     const Divider(),
                     Text(
-                      'Harga Perkiraan: Rp ${_order.finalPrice.toStringAsFixed(0)}',
+                      'Harga Perkiraan: Rp ${_order.ordersFinalPrice.toStringAsFixed(0)}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Harga Emas per Gram: Rp ${_order.goldPricePerGram.toStringAsFixed(0)}',
+                      'Harga Emas per Gram: Rp ${_order.ordersGoldPricePerGram.toStringAsFixed(0)}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'DP: Rp ${_order.dp.toStringAsFixed(0)}',
+                      'DP: Rp ${_order.ordersDp.toStringAsFixed(0)}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Sisa Lunas: Rp ${(_order.finalPrice - _order.dp).clamp(0, double.infinity).toStringAsFixed(0)}',
+                      'Sisa Lunas: Rp ${(_order.ordersFinalPrice - _order.ordersDp).clamp(0, double.infinity).toStringAsFixed(0)}',
                       style: const TextStyle(color: Colors.redAccent),
                     ),
                     const SizedBox(height: 12),
@@ -209,15 +235,15 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                     ),
                     const Divider(),
                     Text(
-                      'Tanggal Order: ${_order.createdAt.day}/${_order.createdAt.month}/${_order.createdAt.year}',
+                      'Tanggal Order: ${_order.ordersCreatedAt.day}/${_order.ordersCreatedAt.month}/${_order.ordersCreatedAt.year}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Tanggal Ambil: ${_order.pickupDate != null ? "${_order.pickupDate!.day}/${_order.pickupDate!.month}/${_order.pickupDate!.year}" : "-"}',
+                      'Tanggal Ambil: ${_order.ordersPickupDate != null ? "${_order.ordersPickupDate!.day}/${_order.ordersPickupDate!.month}/${_order.ordersPickupDate!.year}" : "-"}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Tanggal Jadi: ${_order.readyDate != null ? "${_order.readyDate!.day}/${_order.readyDate!.month}/${_order.readyDate!.year}" : "-"}',
+                      'Tanggal Jadi: ${_order.ordersReadyDate != null ? "${_order.ordersReadyDate!.day}/${_order.ordersReadyDate!.month}/${_order.ordersReadyDate!.year}" : "-"}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     const SizedBox(height: 12),
@@ -232,15 +258,15 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    if (_order.imagePaths.isNotEmpty)
+                    if (_order.ordersImagePaths.isNotEmpty)
                       SizedBox(
                         height: 100,
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
-                          itemCount: _order.imagePaths.length,
+                          itemCount: _order.ordersImagePaths.length,
                           separatorBuilder: (_, __) => const SizedBox(width: 8),
                           itemBuilder: (context, idx) {
-                            final url = _order.imagePaths[idx];
+                            final url = _order.ordersImagePaths[idx];
                             return GestureDetector(
                               onTap: () {
                                 showDialog(
@@ -295,7 +321,7 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                         border: Border.all(color: Colors.amber[200]!),
                       ),
                       child: Text(
-                        _order.notes,
+                        _order.ordersNote,
                         style: const TextStyle(
                           fontFamily: 'Courier',
                           fontSize: 14,
@@ -306,7 +332,7 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                     // Status
                     const SizedBox(height: 8),
                     Text(
-                      'Status: ${_order.workflowStatus.label}',
+                      'Status: ${_order.ordersWorkflowStatus.label}',
                       style: const TextStyle(
                         color: Color(0xFFD4AF37),
                         fontWeight: FontWeight.bold,
@@ -366,7 +392,7 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                             (_isProcessing ||
                                     !_diamondSetterTasks.every(
                                       (task) => _order
-                                          .diamondSettingWorkChecklist
+                                          .ordersDiamondSettingWorkChecklist
                                           .contains(task),
                                     ))
                                 ? null
@@ -374,7 +400,7 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                                   setState(() => _isProcessing = true);
                                   try {
                                     final updatedOrder = _order.copyWith(
-                                      workflowStatus:
+                                      ordersWorkflowStatus:
                                           OrderWorkflowStatus.waitingFinishing,
                                     );
                                     await OrderService().updateOrder(
@@ -403,7 +429,7 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                     ],
 
                     // Tombol Terima Pesanan
-                    if (_order.workflowStatus ==
+                    if (_order.ordersWorkflowStatus ==
                         OrderWorkflowStatus.waitingDiamondSetting) ...[
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
@@ -421,7 +447,7 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                                   setState(() => _isProcessing = true);
                                   try {
                                     final updatedOrder = _order.copyWith(
-                                      workflowStatus:
+                                      ordersWorkflowStatus:
                                           OrderWorkflowStatus.stoneSetting,
                                     );
                                     await OrderService().updateOrder(

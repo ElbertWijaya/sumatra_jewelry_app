@@ -26,14 +26,16 @@ class _CarverTaskScreenState extends State<CarverTaskScreen> {
   void initState() {
     super.initState();
     _order = widget.order;
-    _carverChecklist = List<String>.from(_order.carvingWorkChecklist ?? []);
+    _carverChecklist = List<String>.from(
+      _order.ordersCarvingWorkChecklist ?? [],
+    );
   }
 
   Future<void> _updateChecklist() async {
     setState(() => _isProcessing = true);
     try {
       final updatedOrder = _order.copyWith(
-        carvingWorkChecklist: _carverChecklist,
+        ordersCarvingWorkChecklist: _carverChecklist,
       );
       await OrderService().updateOrder(updatedOrder);
       setState(() {

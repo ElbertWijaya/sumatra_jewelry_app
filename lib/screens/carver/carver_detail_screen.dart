@@ -13,12 +13,22 @@ class CarverDetailScreen extends StatefulWidget {
 class _CarverDetailScreenState extends State<CarverDetailScreen> {
   // Inisialisasi dengan order kosong agar tidak LateInitializationError
   Order _order = Order(
-    id: '',
-    customerName: '',
-    customerContact: '',
-    address: '',
-    jewelryType: '',
-    createdAt: DateTime.now(),
+    ordersId: '',
+    ordersCustomerName: '',
+    ordersCustomerContact: '',
+    ordersAddress: '',
+    ordersJewelryType: '',
+    ordersCreatedAt: DateTime.now(),
+    ordersGoldType: '',
+    ordersGoldColor: '',
+    ordersRingSize: '',
+    ordersFinalPrice: 0,
+    ordersGoldPricePerGram: 0,
+    ordersDp: 0,
+    ordersImagePaths: const [],
+    ordersNote: '',
+    ordersWorkflowStatus: OrderWorkflowStatus.waitingCarving,
+    ordersCarvingWorkChecklist: const [],
   );
   List<String> _carverChecklist = [];
   bool _isProcessing = false;
@@ -35,7 +45,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
   void initState() {
     super.initState();
     _order = widget.order;
-    _carverChecklist = List<String>.from(_order.carvingWorkChecklist);
+    _carverChecklist = List<String>.from(_order.ordersCarvingWorkChecklist);
     _fetchOrderDetail();
   }
 
@@ -44,15 +54,17 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
       _isLoading = true;
     });
     try {
-      final refreshedOrder = await OrderService().getOrderById(widget.order.id);
+      final refreshedOrder = await OrderService().getOrderById(
+        widget.order.ordersId,
+      );
       setState(() {
         _order = refreshedOrder;
-        _carverChecklist = List<String>.from(_order.carvingWorkChecklist);
+        _carverChecklist = List<String>.from(_order.ordersCarvingWorkChecklist);
       });
     } catch (e) {
       setState(() {
         _order = widget.order;
-        _carverChecklist = List<String>.from(_order.carvingWorkChecklist);
+        _carverChecklist = List<String>.from(_order.ordersCarvingWorkChecklist);
       });
     } finally {
       setState(() {
@@ -65,7 +77,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
     setState(() => _isProcessing = true);
     try {
       final updatedOrder = _order.copyWith(
-        carvingWorkChecklist: _carverChecklist,
+        ordersCarvingWorkChecklist: _carverChecklist,
       );
       await OrderService().updateOrder(updatedOrder);
 
@@ -85,7 +97,8 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isWorking = _order.workflowStatus == OrderWorkflowStatus.carving;
+    final isWorking =
+        _order.ordersWorkflowStatus == OrderWorkflowStatus.carving;
 
     return Scaffold(
       appBar: AppBar(
@@ -112,15 +125,15 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                     ),
                     const Divider(),
                     Text(
-                      'Nama: ${_order.customerName}',
+                      'Nama: ${_order.ordersCustomerName}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Kontak: ${_order.customerContact}',
+                      'Kontak: ${_order.ordersCustomerContact}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Alamat: ${_order.address}',
+                      'Alamat: ${_order.ordersAddress}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     const SizedBox(height: 12),
@@ -136,29 +149,42 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                     ),
                     const Divider(),
                     Text(
-                      'Jenis Perhiasan: ${_order.jewelryType}',
+                      'Jenis Perhiasan: ${_order.ordersJewelryType}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Jenis Emas: ${_order.goldType}',
+                      'Jenis Emas: ${_order.ordersGoldType}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Warna Emas: ${_order.goldColor}',
+                      'Warna Emas: ${_order.ordersGoldColor}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Ukuran Cincin: ${_order.ringSize}',
+                      'Ukuran Cincin: ${_order.ordersRingSize}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
-                    Text(
-                      'Tipe Batu: ${_order.stoneType}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
-                    Text(
-                      'Ukuran Batu: ${_order.stoneSize}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
+                    // Batu: gunakan inventoryStoneUsed jika ada
+                    if (_order.inventoryStoneUsed != null &&
+                        _order.inventoryStoneUsed!.isNotEmpty) ...[
+                      Text(
+                        'Tipe Batu: ${_order.inventoryStoneUsed![0]['type'] ?? '-'}',
+                        style: const TextStyle(color: Color(0xFF7C5E2C)),
+                      ),
+                      Text(
+                        'Ukuran Batu: ${_order.inventoryStoneUsed![0]['size'] ?? '-'}',
+                        style: const TextStyle(color: Color(0xFF7C5E2C)),
+                      ),
+                    ] else ...[
+                      Text(
+                        'Tipe Batu: -',
+                        style: const TextStyle(color: Color(0xFF7C5E2C)),
+                      ),
+                      Text(
+                        'Ukuran Batu: -',
+                        style: const TextStyle(color: Color(0xFF7C5E2C)),
+                      ),
+                    ],
                     const SizedBox(height: 12),
 
                     // Informasi Harga
@@ -172,19 +198,19 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                     ),
                     const Divider(),
                     Text(
-                      'Harga Perkiraan: Rp ${_order.finalPrice.toStringAsFixed(0)}',
+                      'Harga Perkiraan: Rp ${_order.ordersFinalPrice.toStringAsFixed(0)}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Harga Emas per Gram: Rp ${_order.goldPricePerGram.toStringAsFixed(0)}',
+                      'Harga Emas per Gram: Rp ${_order.ordersGoldPricePerGram.toStringAsFixed(0)}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'DP: Rp ${_order.dp.toStringAsFixed(0)}',
+                      'DP: Rp ${_order.ordersDp.toStringAsFixed(0)}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Sisa Lunas: Rp ${(_order.finalPrice - _order.dp).clamp(0, double.infinity).toStringAsFixed(0)}',
+                      'Sisa Lunas: Rp ${(_order.ordersFinalPrice - _order.ordersDp).clamp(0, double.infinity).toStringAsFixed(0)}',
                       style: const TextStyle(color: Colors.redAccent),
                     ),
                     const SizedBox(height: 12),
@@ -200,15 +226,15 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                     ),
                     const Divider(),
                     Text(
-                      'Tanggal Order: ${_order.createdAt.day}/${_order.createdAt.month}/${_order.createdAt.year}',
+                      'Tanggal Order: ${_order.ordersCreatedAt.day}/${_order.ordersCreatedAt.month}/${_order.ordersCreatedAt.year}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Tanggal Ambil: ${_order.pickupDate != null ? "${_order.pickupDate!.day}/${_order.pickupDate!.month}/${_order.pickupDate!.year}" : "-"}',
+                      'Tanggal Ambil: ${_order.ordersPickupDate != null ? "${_order.ordersPickupDate!.day}/${_order.ordersPickupDate!.month}/${_order.ordersPickupDate!.year}" : "-"}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Tanggal Jadi: ${_order.readyDate != null ? "${_order.readyDate!.day}/${_order.readyDate!.month}/${_order.readyDate!.year}" : "-"}',
+                      'Tanggal Jadi: ${_order.ordersReadyDate != null ? "${_order.ordersReadyDate!.day}/${_order.ordersReadyDate!.month}/${_order.ordersReadyDate!.year}" : "-"}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     const SizedBox(height: 12),
@@ -222,16 +248,15 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                         color: Color(0xFF7C5E2C),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    if (_order.imagePaths.isNotEmpty)
+                    if (_order.ordersImagePaths.isNotEmpty)
                       SizedBox(
                         height: 100,
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
-                          itemCount: _order.imagePaths.length,
+                          itemCount: _order.ordersImagePaths.length,
                           separatorBuilder: (_, __) => const SizedBox(width: 8),
                           itemBuilder: (context, idx) {
-                            final url = _order.imagePaths[idx];
+                            final url = _order.ordersImagePaths[idx];
                             return GestureDetector(
                               onTap: () {
                                 showDialog(
@@ -286,7 +311,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                         border: Border.all(color: Colors.amber[200]!),
                       ),
                       child: Text(
-                        _order.notes,
+                        _order.ordersNote,
                         style: const TextStyle(
                           fontFamily: 'Courier',
                           fontSize: 14,
@@ -297,7 +322,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                     // Status
                     const SizedBox(height: 8),
                     Text(
-                      'Status: ${_order.workflowStatus.label}',
+                      'Status: ${_order.ordersWorkflowStatus.label}',
                       style: const TextStyle(
                         color: Color(0xFFD4AF37),
                         fontWeight: FontWeight.bold,
@@ -354,7 +379,8 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                         onPressed:
                             (_isProcessing ||
                                     !_carverTasks.every(
-                                      (task) => _order.carvingWorkChecklist
+                                      (task) => _order
+                                          .ordersCarvingWorkChecklist
                                           .contains(task),
                                     ))
                                 ? null
@@ -362,7 +388,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                                   setState(() => _isProcessing = true);
                                   try {
                                     final updatedOrder = _order.copyWith(
-                                      workflowStatus:
+                                      ordersWorkflowStatus:
                                           OrderWorkflowStatus
                                               .waitingDiamondSetting,
                                     );
@@ -392,7 +418,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                     ],
 
                     // Tombol Terima Pesanan
-                    if (_order.workflowStatus ==
+                    if (_order.ordersWorkflowStatus ==
                         OrderWorkflowStatus.waitingCarving) ...[
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
@@ -410,7 +436,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                                   setState(() => _isProcessing = true);
                                   try {
                                     final updatedOrder = _order.copyWith(
-                                      workflowStatus:
+                                      ordersWorkflowStatus:
                                           OrderWorkflowStatus.carving,
                                     );
                                     await OrderService().updateOrder(

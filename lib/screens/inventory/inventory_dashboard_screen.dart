@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,7 +20,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   String _searchQuery = '';
-  String _selectedTab = 'waiting'; // default tab sama seperti designer
+  String _selectedTab = 'waiting'; // default tab diamond setter
 
   // Filter state
   List<String> selectedJewelryTypes = [];
@@ -34,6 +35,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   List<String> _randomCategoryFilters = [];
   bool _isRandomCategoryActive = true;
 
+  // Status yang relevan untuk Inventory
   final List<OrderWorkflowStatus> waitingStatuses = [
     OrderWorkflowStatus.waitingInventory,
   ];
@@ -42,7 +44,10 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     OrderWorkflowStatus.inventory,
   ];
 
-  final List<OrderWorkflowStatus> onProgressStatuses = [];
+  final List<OrderWorkflowStatus> onProgressStatuses = [
+    OrderWorkflowStatus.waitingInventory,
+    OrderWorkflowStatus.inventory,
+  ];
 
   // Daftar pilihan filter
   final List<String> jewelryTypes = [
@@ -129,20 +134,32 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   }
 
   String orderFullText(Order order) {
+    // Use new orders_* and inventory* fields
+    final stoneType =
+        (order.inventoryStoneUsed != null &&
+                order.inventoryStoneUsed!.isNotEmpty)
+            ? (order.inventoryStoneUsed![0]['type']?.toString() ?? '')
+            : '';
+    final stoneSize =
+        (order.inventoryStoneUsed != null &&
+                order.inventoryStoneUsed!.isNotEmpty)
+            ? (order.inventoryStoneUsed![0]['size']?.toString() ?? '')
+            : '';
     return [
-      order.customerName,
-      order.customerContact,
-      order.address,
-      order.jewelryType,
-      order.stoneType,
-      order.stoneSize,
-      order.ringSize,
-      order.readyDate?.toIso8601String() ?? '',
-      order.pickupDate?.toIso8601String() ?? '',
-      order.goldPricePerGram.toString(),
-      order.finalPrice.toString(),
-      order.notes,
-      order.workflowStatus.label,
+      order.ordersCustomerName,
+      order.ordersCustomerContact,
+      order.ordersAddress,
+      order.inventoryJewelryType ?? '',
+      stoneType,
+      stoneSize,
+      order.inventoryRingSize ?? '',
+      order.ordersReadyDate?.toIso8601String() ?? '',
+      order.ordersPickupDate?.toIso8601String() ?? '',
+      order.ordersGoldPricePerGram.toString(),
+      order.ordersFinalPrice.toString(),
+      // notes field not available in new model, skip or use ''
+      '',
+      order.ordersWorkflowStatus.label,
     ].join(' ').toLowerCase();
   }
 
@@ -151,27 +168,32 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
         _orders
             .where(
               (order) =>
-                  order.workflowStatus != OrderWorkflowStatus.done &&
-                  order.workflowStatus != OrderWorkflowStatus.cancelled,
+                  order.ordersWorkflowStatus != OrderWorkflowStatus.done &&
+                  order.ordersWorkflowStatus != OrderWorkflowStatus.cancelled,
             )
             .toList();
 
-    // Tab logic mirip designer
+    // Tab logic khusus designer
     if (_selectedTab == 'waiting') {
       filtered =
           filtered
-              .where((order) => waitingStatuses.contains(order.workflowStatus))
+              .where(
+                (order) => waitingStatuses.contains(order.ordersWorkflowStatus),
+              )
               .toList();
     } else if (_selectedTab == 'working') {
       filtered =
           filtered
-              .where((order) => workingStatuses.contains(order.workflowStatus))
+              .where(
+                (order) => workingStatuses.contains(order.ordersWorkflowStatus),
+              )
               .toList();
     } else if (_selectedTab == 'onprogress') {
       filtered =
           filtered
               .where(
-                (order) => onProgressStatuses.contains(order.workflowStatus),
+                (order) =>
+                    onProgressStatuses.contains(order.ordersWorkflowStatus),
               )
               .toList();
     } else if (_selectedTab == 'all') {
@@ -184,8 +206,9 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
           filtered
               .where(
                 (order) => selectedJewelryTypes.any(
-                  (t) =>
-                      order.jewelryType.toLowerCase().contains(t.toLowerCase()),
+                  (t) => (order.inventoryJewelryType ?? '')
+                      .toLowerCase()
+                      .contains(t.toLowerCase()),
                 ),
               )
               .toList();
@@ -215,28 +238,37 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
           filtered
               .where(
                 (order) => selectedStoneTypes.any(
-                  (stone) => order.stoneType.toLowerCase().contains(
-                    stone.toLowerCase(),
-                  ),
+                  (stone) =>
+                      (order.inventoryStoneUsed != null &&
+                              order.inventoryStoneUsed!.isNotEmpty)
+                          ? (order.inventoryStoneUsed![0]['type']?.toString() ??
+                                  '')
+                              .toLowerCase()
+                              .contains(stone.toLowerCase())
+                          : false,
                 ),
               )
               .toList();
     }
     if (priceMin != null) {
       filtered =
-          filtered.where((order) => order.finalPrice >= priceMin!).toList();
+          filtered
+              .where((order) => (order.ordersFinalPrice) >= priceMin!)
+              .toList();
     }
     if (priceMax != null) {
       filtered =
-          filtered.where((order) => order.finalPrice <= priceMax!).toList();
+          filtered
+              .where((order) => (order.ordersFinalPrice) <= priceMax!)
+              .toList();
     }
     if (ringSize != null && ringSize!.isNotEmpty) {
       filtered =
           filtered
               .where(
-                (order) => order.ringSize.toLowerCase().contains(
-                  ringSize!.toLowerCase(),
-                ),
+                (order) => (order.inventoryRingSize ?? '')
+                    .toLowerCase()
+                    .contains(ringSize!.toLowerCase()),
               )
               .toList();
     }
@@ -534,18 +566,23 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     if (value == 'waiting') {
       count =
           _orders
-              .where((order) => waitingStatuses.contains(order.workflowStatus))
+              .where(
+                (order) => waitingStatuses.contains(order.ordersWorkflowStatus),
+              )
               .length;
     } else if (value == 'working') {
       count =
           _orders
-              .where((order) => workingStatuses.contains(order.workflowStatus))
+              .where(
+                (order) => workingStatuses.contains(order.ordersWorkflowStatus),
+              )
               .length;
     } else if (value == 'onprogress') {
       count =
           _orders
               .where(
-                (order) => onProgressStatuses.contains(order.workflowStatus),
+                (order) =>
+                    onProgressStatuses.contains(order.ordersWorkflowStatus),
               )
               .length;
     } else if (value == 'all') {
@@ -553,8 +590,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
           _orders
               .where(
                 (order) =>
-                    order.workflowStatus != OrderWorkflowStatus.done &&
-                    order.workflowStatus != OrderWorkflowStatus.cancelled,
+                    order.ordersWorkflowStatus != OrderWorkflowStatus.done &&
+                    order.ordersWorkflowStatus != OrderWorkflowStatus.cancelled,
               )
               .length;
     }
@@ -658,7 +695,10 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
       resizeToAvoidBottomInset: false,
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final result = await Navigator.pushNamed(context, '/sales/create');
+          final result = await Navigator.pushNamed(
+            context,
+            '/Inventory/create',
+          );
           if (result == true) {
             await _fetchOrders();
           }
@@ -843,8 +883,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildTabButton('Waiting', 'waiting', Colors.blueGrey),
-                      _buildTabButton('Working', 'working', Colors.orange),
+                      _buildTabButton('Waiting', 'waiting', Colors.orange),
+                      _buildTabButton('Working', 'working', Colors.blue),
                       _buildTabButton(
                         'On Progress',
                         'onprogress',
@@ -891,22 +931,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                               itemCount: _filteredOrders.length,
                               itemBuilder: (context, index) {
                                 final order = _filteredOrders[index];
-
-                                // DEBUG: Print imagePaths for troubleshooting
-                                print(
-                                  'order.id: \\${order.id} imagePaths: \\${order.imagePaths}',
-                                );
-
-                                // PATCH: Ganti logic gambar utama menjadi selalu URL
-                                String? imageUrl;
-                                if (order.imagePaths.isNotEmpty &&
-                                    order.imagePaths.first.isNotEmpty &&
-                                    order.imagePaths.first.startsWith('http')) {
-                                  imageUrl = order.imagePaths.first;
-                                } else {
-                                  imageUrl = null;
-                                }
-
+                                // Use new fields for display
+                                // stoneType variable removed (was unused)
                                 return Card(
                                   margin: const EdgeInsets.symmetric(
                                     vertical: 12.0,
@@ -915,51 +941,40 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(18),
                                   ),
-                                  color: const Color(
-                                    0xFFFDF6E3,
-                                  ), // luxurious light gold background
+                                  color: const Color(0xFFFDF6E3),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
                                     child: Column(
                                       children: [
-                                        // Row pertama: gambar dan info utama
                                         Row(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            // Gambar 1:1
                                             ClipRRect(
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                               child:
-                                                  imageUrl != null
-                                                      ? Image.network(
-                                                        imageUrl,
+                                                  order
+                                                              .ordersImagePaths
+                                                              .isNotEmpty &&
+                                                          order
+                                                              .ordersImagePaths
+                                                              .first
+                                                              .isNotEmpty &&
+                                                          File(
+                                                            order
+                                                                .ordersImagePaths
+                                                                .first,
+                                                          ).existsSync()
+                                                      ? Image.file(
+                                                        File(
+                                                          order
+                                                              .ordersImagePaths
+                                                              .first,
+                                                        ),
                                                         width: 90,
                                                         height: 90,
                                                         fit: BoxFit.cover,
-                                                        errorBuilder: (
-                                                          context,
-                                                          error,
-                                                          stackTrace,
-                                                        ) {
-                                                          print(
-                                                            'Image.network error for order.id: \\${order.id} url: \\$imageUrl error: \\$error',
-                                                          );
-                                                          return Container(
-                                                            width: 90,
-                                                            height: 90,
-                                                            color:
-                                                                Colors
-                                                                    .brown[100],
-                                                            child: const Icon(
-                                                              Icons.image,
-                                                              size: 40,
-                                                              color:
-                                                                  Colors.brown,
-                                                            ),
-                                                          );
-                                                        },
                                                       )
                                                       : Container(
                                                         width: 90,
@@ -974,21 +989,18 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                                       ),
                                             ),
                                             const SizedBox(width: 18),
-                                            // Nama & jenis perhiasan
                                             Expanded(
                                               child: Column(
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
-                                                    order.customerName,
+                                                    order.ordersCustomerName,
                                                     style: const TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold,
                                                       fontSize: 18,
-                                                      color: Color(
-                                                        0xFF7C5E2C,
-                                                      ), // deep gold
+                                                      color: Color(0xFF7C5E2C),
                                                       letterSpacing: 0.5,
                                                     ),
                                                     overflow:
@@ -1006,11 +1018,11 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                                       ),
                                                       const SizedBox(width: 6),
                                                       Text(
-                                                        order
-                                                                    .jewelryType
-                                                                    .isNotEmpty ==
-                                                                true
-                                                            ? order.jewelryType
+                                                        (order.inventoryJewelryType ??
+                                                                    '')
+                                                                .isNotEmpty
+                                                            ? order
+                                                                .inventoryJewelryType!
                                                             : "-",
                                                         style: const TextStyle(
                                                           fontSize: 15,
@@ -1027,7 +1039,6 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                           ],
                                         ),
                                         const SizedBox(height: 18),
-                                        // Row kedua: info tanggal, status, tombol
                                         Row(
                                           children: [
                                             const Icon(
@@ -1037,14 +1048,14 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                             ),
                                             const SizedBox(width: 6),
                                             Text(
-                                              'Order: ${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
+                                              'Order: ${order.ordersCreatedAt.day}/${order.ordersCreatedAt.month}/${order.ordersCreatedAt.year}',
                                               style: const TextStyle(
                                                 fontSize: 13,
                                                 color: Color(0xFF7C5E2C),
                                               ),
                                             ),
                                             const SizedBox(width: 18),
-                                            if (order.pickupDate != null)
+                                            if (order.ordersPickupDate != null)
                                               Row(
                                                 children: [
                                                   const Icon(
@@ -1054,7 +1065,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                                   ),
                                                   const SizedBox(width: 6),
                                                   Text(
-                                                    'Ambil: ${order.pickupDate!.day}/${order.pickupDate!.month}/${order.pickupDate!.year}',
+                                                    'Ambil: ${order.ordersPickupDate!.day}/${order.ordersPickupDate!.month}/${order.ordersPickupDate!.year}',
                                                     style: const TextStyle(
                                                       fontSize: 13,
                                                       color: Color(0xFF7C5E2C),
@@ -1069,7 +1080,9 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                           children: [
                                             Chip(
                                               label: Text(
-                                                order.workflowStatus.label,
+                                                order
+                                                    .ordersWorkflowStatus
+                                                    .label,
                                                 style: const TextStyle(
                                                   color: Colors.white,
                                                   fontWeight: FontWeight.bold,
@@ -1077,7 +1090,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                               ),
                                               backgroundColor: const Color(
                                                 0xFFD4AF37,
-                                              ), // gold
+                                              ),
                                               padding:
                                                   const EdgeInsets.symmetric(
                                                     horizontal: 10,
@@ -1089,7 +1102,7 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor: const Color(
                                                   0xFFD4AF37,
-                                                ), // gold
+                                                ),
                                                 foregroundColor: Colors.white,
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
@@ -1122,9 +1135,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                                             ),
                                                   ),
                                                 );
-                                                if (result == true) {
+                                                if (result == true)
                                                   _fetchOrders();
-                                                }
                                               },
                                             ),
                                           ],

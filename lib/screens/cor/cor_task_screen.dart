@@ -19,14 +19,16 @@ class _CasterTaskScreenState extends State<CasterTaskScreen> {
   void initState() {
     super.initState();
     _order = widget.order;
-    _casterChecklist = List<String>.from(_order.castingWorkChecklist ?? []);
+    _casterChecklist = List<String>.from(
+      _order.ordersCastingWorkChecklist ?? [],
+    );
   }
 
   Future<void> _updateChecklist() async {
     setState(() => _isProcessing = true);
     try {
       final updatedOrder = _order.copyWith(
-        castingWorkChecklist: _casterChecklist,
+        ordersCastingWorkChecklist: _casterChecklist,
       );
       await OrderService().updateOrder(updatedOrder);
       setState(() {
@@ -89,9 +91,10 @@ class _CasterTaskScreenState extends State<CasterTaskScreen> {
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _isProcessing ? null : _updateChecklist,
-            child: _isProcessing
-                ? const CircularProgressIndicator()
-                : const Text('Update Checklist'),
+            child:
+                _isProcessing
+                    ? const CircularProgressIndicator()
+                    : const Text('Update Checklist'),
           ),
         ],
       ),

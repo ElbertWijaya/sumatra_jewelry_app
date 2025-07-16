@@ -13,12 +13,22 @@ class CorDetailScreen extends StatefulWidget {
 class _CorDetailScreenState extends State<CorDetailScreen> {
   // Inisialisasi dengan order kosong agar tidak LateInitializationError
   Order _order = Order(
-    id: '',
-    customerName: '',
-    customerContact: '',
-    address: '',
-    jewelryType: '',
-    createdAt: DateTime.now(),
+    ordersId: '',
+    ordersCustomerName: '',
+    ordersCustomerContact: '',
+    ordersAddress: '',
+    ordersJewelryType: '',
+    ordersCreatedAt: DateTime.now(),
+    ordersGoldType: '',
+    ordersGoldColor: '',
+    ordersRingSize: '',
+    ordersFinalPrice: 0,
+    ordersGoldPricePerGram: 0,
+    ordersDp: 0,
+    ordersImagePaths: const [],
+    ordersNote: '',
+    ordersWorkflowStatus: OrderWorkflowStatus.waitingCasting,
+    ordersCastingWorkChecklist: const [],
   );
   List<String> _casterChecklist = [];
   bool _isProcessing = false;
@@ -30,7 +40,7 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
   void initState() {
     super.initState();
     _order = widget.order;
-    _casterChecklist = List<String>.from(_order.castingWorkChecklist);
+    _casterChecklist = List<String>.from(_order.ordersCastingWorkChecklist);
     _fetchOrderDetail();
   }
 
@@ -39,15 +49,17 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
       _isLoading = true;
     });
     try {
-      final refreshedOrder = await OrderService().getOrderById(widget.order.id);
+      final refreshedOrder = await OrderService().getOrderById(
+        widget.order.ordersId,
+      );
       setState(() {
         _order = refreshedOrder;
-        _casterChecklist = List<String>.from(_order.castingWorkChecklist);
+        _casterChecklist = List<String>.from(_order.ordersCastingWorkChecklist);
       });
     } catch (e) {
       setState(() {
         _order = widget.order;
-        _casterChecklist = List<String>.from(_order.castingWorkChecklist);
+        _casterChecklist = List<String>.from(_order.ordersCastingWorkChecklist);
       });
     } finally {
       setState(() {
@@ -60,7 +72,7 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
     setState(() => _isProcessing = true);
     try {
       final updatedOrder = _order.copyWith(
-        castingWorkChecklist: _casterChecklist,
+        ordersCastingWorkChecklist: _casterChecklist,
       );
       await OrderService().updateOrder(updatedOrder);
 
@@ -80,7 +92,8 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isWorking = _order.workflowStatus == OrderWorkflowStatus.casting;
+    final isWorking =
+        _order.ordersWorkflowStatus == OrderWorkflowStatus.casting;
 
     return Scaffold(
       appBar: AppBar(
@@ -107,15 +120,15 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
                     ),
                     const Divider(),
                     Text(
-                      'Nama: ${_order.customerName}',
+                      'Nama: ${_order.ordersCustomerName}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Kontak: ${_order.customerContact}',
+                      'Kontak: ${_order.ordersCustomerContact}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Alamat: ${_order.address}',
+                      'Alamat: ${_order.ordersAddress}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     const SizedBox(height: 12),
@@ -131,29 +144,42 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
                     ),
                     const Divider(),
                     Text(
-                      'Jenis Perhiasan: ${_order.jewelryType}',
+                      'Jenis Perhiasan: ${_order.ordersJewelryType}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Jenis Emas: ${_order.goldType}',
+                      'Jenis Emas: ${_order.ordersGoldType}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Warna Emas: ${_order.goldColor}',
+                      'Warna Emas: ${_order.ordersGoldColor}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Ukuran Cincin: ${_order.ringSize}',
+                      'Ukuran Cincin: ${_order.ordersRingSize}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
-                    Text(
-                      'Tipe Batu: ${_order.stoneType}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
-                    Text(
-                      'Ukuran Batu: ${_order.stoneSize}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
+                    // Batu: gunakan inventoryStoneUsed jika ada
+                    if (_order.inventoryStoneUsed != null &&
+                        _order.inventoryStoneUsed!.isNotEmpty) ...[
+                      Text(
+                        'Tipe Batu: ${_order.inventoryStoneUsed![0]['type'] ?? '-'}',
+                        style: const TextStyle(color: Color(0xFF7C5E2C)),
+                      ),
+                      Text(
+                        'Ukuran Batu: ${_order.inventoryStoneUsed![0]['size'] ?? '-'}',
+                        style: const TextStyle(color: Color(0xFF7C5E2C)),
+                      ),
+                    ] else ...[
+                      Text(
+                        'Tipe Batu: -',
+                        style: const TextStyle(color: Color(0xFF7C5E2C)),
+                      ),
+                      Text(
+                        'Ukuran Batu: -',
+                        style: const TextStyle(color: Color(0xFF7C5E2C)),
+                      ),
+                    ],
                     const SizedBox(height: 12),
 
                     // Informasi Harga
@@ -167,19 +193,19 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
                     ),
                     const Divider(),
                     Text(
-                      'Harga Perkiraan: Rp ${_order.finalPrice.toStringAsFixed(0)}',
+                      'Harga Perkiraan: Rp ${_order.ordersFinalPrice.toStringAsFixed(0)}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Harga Emas per Gram: Rp ${_order.goldPricePerGram.toStringAsFixed(0)}',
+                      'Harga Emas per Gram: Rp ${_order.ordersGoldPricePerGram.toStringAsFixed(0)}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'DP: Rp ${_order.dp.toStringAsFixed(0)}',
+                      'DP: Rp ${_order.ordersDp.toStringAsFixed(0)}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Sisa Lunas: Rp ${(_order.finalPrice - _order.dp).clamp(0, double.infinity).toStringAsFixed(0)}',
+                      'Sisa Lunas: Rp ${(_order.ordersFinalPrice - _order.ordersDp).clamp(0, double.infinity).toStringAsFixed(0)}',
                       style: const TextStyle(color: Colors.redAccent),
                     ),
                     const SizedBox(height: 12),
@@ -195,15 +221,15 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
                     ),
                     const Divider(),
                     Text(
-                      'Tanggal Order: ${_order.createdAt.day}/${_order.createdAt.month}/${_order.createdAt.year}',
+                      'Tanggal Order: ${_order.ordersCreatedAt.day}/${_order.ordersCreatedAt.month}/${_order.ordersCreatedAt.year}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Tanggal Ambil: ${_order.pickupDate != null ? "${_order.pickupDate!.day}/${_order.pickupDate!.month}/${_order.pickupDate!.year}" : "-"}',
+                      'Tanggal Ambil: ${_order.ordersPickupDate != null ? "${_order.ordersPickupDate!.day}/${_order.ordersPickupDate!.month}/${_order.ordersPickupDate!.year}" : "-"}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Tanggal Jadi: ${_order.readyDate != null ? "${_order.readyDate!.day}/${_order.readyDate!.month}/${_order.readyDate!.year}" : "-"}',
+                      'Tanggal Jadi: ${_order.ordersReadyDate != null ? "${_order.ordersReadyDate!.day}/${_order.ordersReadyDate!.month}/${_order.ordersReadyDate!.year}" : "-"}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     const SizedBox(height: 12),
@@ -218,15 +244,15 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    if (_order.imagePaths.isNotEmpty)
+                    if (_order.ordersImagePaths.isNotEmpty)
                       SizedBox(
                         height: 100,
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
-                          itemCount: _order.imagePaths.length,
+                          itemCount: _order.ordersImagePaths.length,
                           separatorBuilder: (_, __) => const SizedBox(width: 8),
                           itemBuilder: (context, idx) {
-                            final url = _order.imagePaths[idx];
+                            final url = _order.ordersImagePaths[idx];
                             return GestureDetector(
                               onTap: () {
                                 showDialog(
@@ -260,17 +286,6 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
                       )
                     else
                       const Text('Tidak ada gambar referensi.'),
-                    const SizedBox(height: 12),
-
-                    // Catatan
-                    const Text(
-                      'Catatan (Memo)',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Color(0xFF7C5E2C),
-                      ),
-                    ),
                     Container(
                       width: double.infinity,
                       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -281,7 +296,7 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
                         border: Border.all(color: Colors.amber[200]!),
                       ),
                       child: Text(
-                        _order.notes,
+                        _order.ordersNote,
                         style: const TextStyle(
                           fontFamily: 'Courier',
                           fontSize: 14,
@@ -292,7 +307,7 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
                     // Status
                     const SizedBox(height: 8),
                     Text(
-                      'Status: ${_order.workflowStatus.label}',
+                      'Status: ${_order.ordersWorkflowStatus.label}',
                       style: const TextStyle(
                         color: Color(0xFFD4AF37),
                         fontWeight: FontWeight.bold,
@@ -349,7 +364,8 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
                         onPressed:
                             (_isProcessing ||
                                     !_casterTasks.every(
-                                      (task) => _order.castingWorkChecklist
+                                      (task) => _order
+                                          .ordersCastingWorkChecklist
                                           .contains(task),
                                     ))
                                 ? null
@@ -357,7 +373,7 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
                                   setState(() => _isProcessing = true);
                                   try {
                                     final updatedOrder = _order.copyWith(
-                                      workflowStatus:
+                                      ordersWorkflowStatus:
                                           OrderWorkflowStatus.waitingCarving,
                                     );
                                     await OrderService().updateOrder(
@@ -386,7 +402,7 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
                     ],
 
                     // Tombol Terima Pesanan
-                    if (_order.workflowStatus ==
+                    if (_order.ordersWorkflowStatus ==
                         OrderWorkflowStatus.waitingCasting) ...[
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
@@ -404,7 +420,7 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
                                   setState(() => _isProcessing = true);
                                   try {
                                     final updatedOrder = _order.copyWith(
-                                      workflowStatus:
+                                      ordersWorkflowStatus:
                                           OrderWorkflowStatus.casting,
                                     );
                                     await OrderService().updateOrder(

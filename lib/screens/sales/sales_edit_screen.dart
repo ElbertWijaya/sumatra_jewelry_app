@@ -64,41 +64,56 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
   void initState() {
     super.initState();
     final o = widget.order;
-    _customerNameController = TextEditingController(text: o.customerName);
-    _customerContactController = TextEditingController(text: o.customerContact);
-    _addressController = TextEditingController(text: o.address);
-    _finalPriceController = TextEditingController(
-      text: o.finalPrice.toStringAsFixed(0),
+    _customerNameController = TextEditingController(text: o.ordersCustomerName);
+    _customerContactController = TextEditingController(
+      text: o.ordersCustomerContact,
     );
-    _notesController = TextEditingController(text: o.notes ?? '');
+    _addressController = TextEditingController(text: o.ordersAddress);
+    _finalPriceController = TextEditingController(
+      text: o.ordersFinalPrice.toStringAsFixed(0),
+    );
+    _notesController = TextEditingController(text: o.ordersNote);
     _pickupDateController = TextEditingController(
       text:
-          o.pickupDate != null
-              ? DateFormat('yyyy-MM-dd').format(o.pickupDate!)
+          o.ordersPickupDate != null
+              ? DateFormat('yyyy-MM-dd').format(o.ordersPickupDate!)
               : '',
     );
     _goldPricePerGramController = TextEditingController(
-      text: o.goldPricePerGram.toStringAsFixed(0),
+      text: o.ordersGoldPricePerGram.toStringAsFixed(0),
     );
-    _stoneTypeController = TextEditingController(text: o.stoneType ?? '');
-    _stoneSizeController = TextEditingController(text: o.stoneSize ?? '');
-    _ringSizeController = TextEditingController(text: o.ringSize ?? '');
-    _readyDateController = TextEditingController(
+    // Untuk batu, ambil dari inventoryStoneUsed jika ada
+    _stoneTypeController = TextEditingController(
       text:
-          o.readyDate != null
-              ? DateFormat('yyyy-MM-dd').format(o.readyDate!)
+          (o.inventoryStoneUsed != null && o.inventoryStoneUsed!.isNotEmpty)
+              ? (o.inventoryStoneUsed![0]['type'] ?? '')
               : '',
     );
-    _dpController = TextEditingController(text: o.dp.toStringAsFixed(0));
-    _sisaLunasController = TextEditingController(
-      text: (o.finalPrice - o.dp).clamp(0, double.infinity).toStringAsFixed(0),
+    _stoneSizeController = TextEditingController(
+      text:
+          (o.inventoryStoneUsed != null && o.inventoryStoneUsed!.isNotEmpty)
+              ? (o.inventoryStoneUsed![0]['size'] ?? '')
+              : '',
     );
-    _selectedJewelryType = o.jewelryType;
-    _selectedGoldType = o.goldType;
-    _selectedGoldColor = o.goldColor;
-    _selectedPickupDate = o.pickupDate;
-    _selectedReadyDate = o.readyDate;
-    _uploadedImageUrls = List<String>.from(o.imagePaths ?? []);
+    _ringSizeController = TextEditingController(text: o.ordersRingSize);
+    _readyDateController = TextEditingController(
+      text:
+          o.ordersReadyDate != null
+              ? DateFormat('yyyy-MM-dd').format(o.ordersReadyDate!)
+              : '',
+    );
+    _dpController = TextEditingController(text: o.ordersDp.toStringAsFixed(0));
+    _sisaLunasController = TextEditingController(
+      text: (o.ordersFinalPrice - o.ordersDp)
+          .clamp(0, double.infinity)
+          .toStringAsFixed(0),
+    );
+    _selectedJewelryType = o.ordersJewelryType;
+    _selectedGoldType = o.ordersGoldType;
+    _selectedGoldColor = o.ordersGoldColor;
+    _selectedPickupDate = o.ordersPickupDate;
+    _selectedReadyDate = o.ordersReadyDate;
+    _uploadedImageUrls = List<String>.from(o.ordersImagePaths);
   }
 
   @override
@@ -209,75 +224,81 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
     setState(() => _isLoading = true);
 
     final order = widget.order.copyWith(
-      customerName: _customerNameController.text,
-      customerContact: _customerContactController.text,
-      address: _addressController.text,
-      jewelryType: _selectedJewelryType ?? '',
-      goldType: _selectedGoldType ?? '',
-      goldColor: _selectedGoldColor ?? '',
-      finalPrice:
+      ordersCustomerName: _customerNameController.text,
+      ordersCustomerContact: _customerContactController.text,
+      ordersAddress: _addressController.text,
+      ordersJewelryType: _selectedJewelryType ?? '',
+      ordersGoldType: _selectedGoldType ?? '',
+      ordersGoldColor: _selectedGoldColor ?? '',
+      ordersFinalPrice:
           double.tryParse(_finalPriceController.text.replaceAll('.', '')) ?? 0,
-      notes: _notesController.text,
-      pickupDate: _selectedPickupDate,
-      goldPricePerGram:
+      ordersNote: _notesController.text,
+      ordersPickupDate: _selectedPickupDate,
+      ordersGoldPricePerGram:
           _goldPricePerGramController.text.isNotEmpty
               ? double.tryParse(
                     _goldPricePerGramController.text.replaceAll('.', ''),
                   ) ??
                   0
               : 0,
-      stoneType:
-          _stoneTypeController.text.isNotEmpty ? _stoneTypeController.text : '',
-      stoneSize:
-          _stoneSizeController.text.isNotEmpty ? _stoneSizeController.text : '',
-      ringSize:
+      ordersRingSize:
           _ringSizeController.text.isNotEmpty ? _ringSizeController.text : '',
-      readyDate: _selectedReadyDate,
-      dp:
+      ordersReadyDate: _selectedReadyDate,
+      ordersDp:
           _dpController.text.isNotEmpty
               ? double.tryParse(_dpController.text.replaceAll('.', '')) ?? 0
               : 0,
-      sisaLunas:
+      ordersSisaLunas:
           (double.tryParse(_finalPriceController.text.replaceAll('.', '')) ??
               0) -
           (double.tryParse(_dpController.text.replaceAll('.', '')) ?? 0),
-      imagePaths: List<String>.from(_uploadedImageUrls), // <-- PASTIKAN URL
+      ordersImagePaths: List<String>.from(_uploadedImageUrls),
+      inventoryStoneUsed:
+          (_stoneTypeController.text.isNotEmpty ||
+                  _stoneSizeController.text.isNotEmpty)
+              ? [
+                {
+                  'type': _stoneTypeController.text,
+                  'size': _stoneSizeController.text,
+                },
+              ]
+              : null,
     );
 
     try {
       // DEBUG: print data yang akan dikirim ke backend
-      print('DEBUG order.id: ${order.id}');
+      print('DEBUG order.ordersId: ${order.ordersId}');
       print(
-        'DEBUG body: ${{'id': order.id, 'customer_name': order.customerName, 'customer_contact': order.customerContact, 'address': order.address, 'jewelry_type': order.jewelryType, 'gold_type': order.goldType, 'gold_color': order.goldColor, 'final_price': order.finalPrice.toString(), 'notes': order.notes, 'pickup_date': order.pickupDate != null ? DateFormat('yyyy-MM-dd').format(order.pickupDate!) : '', 'gold_price_per_gram': order.goldPricePerGram.toString(), 'stone_type': order.stoneType, 'stone_size': order.stoneSize, 'ring_size': order.ringSize, 'ready_date': order.readyDate != null ? DateFormat('yyyy-MM-dd').format(order.readyDate!) : '', 'dp': order.dp.toString(), 'sisa_lunas': order.sisaLunas.toString(), 'imagePaths': jsonEncode(order.imagePaths)}}',
+        'DEBUG body: ${{'orders_id': order.ordersId, 'orders_customer_name': order.ordersCustomerName, 'orders_customer_contact': order.ordersCustomerContact, 'orders_address': order.ordersAddress, 'orders_jewelry_type': order.ordersJewelryType, 'orders_gold_type': order.ordersGoldType, 'orders_gold_color': order.ordersGoldColor, 'orders_final_price': order.ordersFinalPrice.toString(), 'orders_note': order.ordersNote, 'orders_pickup_date': order.ordersPickupDate != null ? DateFormat('yyyy-MM-dd').format(order.ordersPickupDate!) : '', 'orders_gold_price_per_gram': order.ordersGoldPricePerGram.toString(), 'orders_ring_size': order.ordersRingSize, 'orders_ready_date': order.ordersReadyDate != null ? DateFormat('yyyy-MM-dd').format(order.ordersReadyDate!) : '', 'orders_dp': order.ordersDp.toString(), 'orders_sisa_lunas': order.ordersSisaLunas.toString(), 'orders_imagePaths': jsonEncode(order.ordersImagePaths)}}',
       );
 
       final response = await http.post(
         Uri.parse('http://192.168.83.54/sumatra_api/update_order.php'),
         body: {
-          'id': order.id,
-          'customer_name': order.customerName ?? '',
-          'customer_contact': order.customerContact ?? '',
-          'address': order.address ?? '',
-          'jewelry_type': order.jewelryType ?? '',
-          'gold_type': order.goldType ?? '',
-          'gold_color': order.goldColor ?? '',
-          'final_price': order.finalPrice.toString() ?? '0',
-          'notes': order.notes ?? '',
-          'pickup_date':
-              order.pickupDate != null
-                  ? DateFormat('yyyy-MM-dd').format(order.pickupDate!)
+          'orders_id': order.ordersId,
+          'orders_customer_name': order.ordersCustomerName,
+          'orders_customer_contact': order.ordersCustomerContact,
+          'orders_address': order.ordersAddress,
+          'orders_jewelry_type': order.ordersJewelryType,
+          'orders_gold_type': order.ordersGoldType,
+          'orders_gold_color': order.ordersGoldColor,
+          'orders_final_price': order.ordersFinalPrice.toString(),
+          'orders_note': order.ordersNote,
+          'orders_pickup_date':
+              order.ordersPickupDate != null
+                  ? DateFormat('yyyy-MM-dd').format(order.ordersPickupDate!)
                   : '',
-          'gold_price_per_gram': order.goldPricePerGram.toString() ?? '0',
-          'stone_type': order.stoneType ?? '',
-          'stone_size': order.stoneSize ?? '',
-          'ring_size': order.ringSize ?? '',
-          'ready_date':
-              order.readyDate != null
-                  ? DateFormat('yyyy-MM-dd').format(order.readyDate!)
+          'orders_gold_price_per_gram': order.ordersGoldPricePerGram.toString(),
+          'orders_ring_size': order.ordersRingSize,
+          'orders_ready_date':
+              order.ordersReadyDate != null
+                  ? DateFormat('yyyy-MM-dd').format(order.ordersReadyDate!)
                   : '',
-          'dp': order.dp.toString() ?? '0',
-          'sisa_lunas': order.sisaLunas.toString() ?? '0',
-          'imagePaths': jsonEncode(order.imagePaths),
+          'orders_dp': order.ordersDp.toString(),
+          'orders_sisa_lunas': order.ordersSisaLunas.toString(),
+          'orders_imagePaths': jsonEncode(order.ordersImagePaths),
+          if (order.inventoryStoneUsed != null)
+            'inventory_stone_used': jsonEncode(order.inventoryStoneUsed),
         },
       );
       print('Response: ${response.body}');

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../models/order.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/order_service.dart';
+import '../../services/inventory_service.dart';
+import '../../models/order.dart';
+import '../../models/inventory.dart';
 
 class BossDashboardScreen extends StatefulWidget {
   const BossDashboardScreen({super.key});
@@ -10,94 +13,136 @@ class BossDashboardScreen extends StatefulWidget {
 }
 
 class _BossDashboardScreenState extends State<BossDashboardScreen> {
-  final OrderService _orderService = OrderService();
-  bool _isLoading = false;
-  List<Order> _orders = [];
+  int _orderCount = 0;
+  int _inventoryCount = 0;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchOrders();
+    _fetchData();
   }
 
-  Future<void> _fetchOrders() async {
-    setState(() => _isLoading = true);
+  Future<void> _fetchData() async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
-      final orders = await _orderService.getOrders();
+      final orders = await OrderService().getOrders();
+      final inventory = await InventoryService().getInventoryList();
       setState(() {
-        _orders = orders;
+        _orderCount = orders.length;
+        _inventoryCount = inventory.length;
       });
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Gagal memuat pesanan: $e')));
+      // handle error
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
-    setState(() => _isLoading = false);
   }
 
-  int countStatus(OrderWorkflowStatus status) =>
-      _orders.where((o) => o.workflowStatus == status).length;
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false);
+    await prefs.remove('userRole');
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/login');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard Boss'),
+        title: const Text('Boss Dashboard'),
+        centerTitle: true,
+        backgroundColor: Colors.amber[700],
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
+          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
         ],
       ),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  Text(
-                    'Pesanan Selesai: ${countStatus(OrderWorkflowStatus.done)}',
-                  ),
-                  Text(
-                    'Pesanan Batal: ${countStatus(OrderWorkflowStatus.cancelled)}',
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Semua Pesanan:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  ..._orders
-                      .map(
-                        (order) => Card(
-                          child: ListTile(
-                            title: Text(order.customerName),
-                            subtitle: Text(
-                              '${order.jewelryType} • ${order.workflowStatus.label}',
-                            ),
-                            trailing: Text(
-                              order.createdAt
-                                  .toIso8601String()
-                                  .split('T')
-                                  .first,
-                            ),
-                            onTap:
-                                () => Navigator.of(
-                                  context,
-                                ).pushNamed('/order/detail', arguments: order),
+              : Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Selamat datang, Boss!',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: ListTile(
+                        leading: const Icon(
+                          Icons.shopping_bag,
+                          color: Colors.orange,
+                          size: 36,
+                        ),
+                        title: const Text('Total Order'),
+                        trailing: Text(
+                          '$_orderCount',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      )
-                      ,
-                  const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(
-                        context,
-                      ).pushNamed('/boss/employee-performance');
-                    },
-                    child: const Text('Lihat Performa Karyawan'),
-                  ),
-                ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: ListTile(
+                        leading: const Icon(
+                          Icons.inventory,
+                          color: Colors.green,
+                          size: 36,
+                        ),
+                        title: const Text('Total Inventory'),
+                        trailing: Text(
+                          '$_inventoryCount',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    ElevatedButton.icon(
+                      onPressed: _fetchData,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Refresh Data'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber[700],
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 24,
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
     );
   }

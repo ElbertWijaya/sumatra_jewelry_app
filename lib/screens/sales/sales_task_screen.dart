@@ -19,14 +19,14 @@ class _SalesTaskScreenState extends State<SalesTaskScreen> {
   void initState() {
     super.initState();
     _order = widget.order;
-    _designerChecklist = List<String>.from(_order.designerWorkChecklist ?? []);
+    _designerChecklist = List<String>.from(_order.ordersDesignerWorkChecklist);
   }
 
   Future<void> _updateChecklist() async {
     setState(() => _isProcessing = true);
     try {
       final updatedOrder = _order.copyWith(
-        designerWorkChecklist: _designerChecklist,
+        ordersDesignerWorkChecklist: _designerChecklist,
       );
       await OrderService().updateOrder(updatedOrder);
       setState(() {
@@ -48,7 +48,7 @@ class _SalesTaskScreenState extends State<SalesTaskScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           // PATCH: Tampilkan gambar referensi order (jika ada)
-          if (_order.imagePaths.isNotEmpty) ...[
+          if (_order.ordersImagePaths.isNotEmpty) ...[
             const Text(
               'Referensi Gambar',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -59,7 +59,7 @@ class _SalesTaskScreenState extends State<SalesTaskScreen> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  ..._order.imagePaths.map((img) {
+                  ..._order.ordersImagePaths.map((img) {
                     final String imageUrl =
                         img.startsWith('http')
                             ? img

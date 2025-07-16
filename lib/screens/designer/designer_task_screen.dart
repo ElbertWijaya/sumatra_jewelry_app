@@ -19,14 +19,14 @@ class _DesignerTaskScreenState extends State<DesignerTaskScreen> {
   void initState() {
     super.initState();
     _order = widget.order;
-    _designerChecklist = List<String>.from(_order.designerWorkChecklist ?? []);
+    _designerChecklist = List<String>.from(_order.ordersDesignerWorkChecklist);
   }
 
   Future<void> _updateChecklist() async {
     setState(() => _isProcessing = true);
     try {
       final updatedOrder = _order.copyWith(
-        designerWorkChecklist: _designerChecklist,
+        ordersDesignerWorkChecklist: _designerChecklist,
       );
       await OrderService().updateOrder(updatedOrder);
       setState(() {
@@ -64,9 +64,10 @@ class _DesignerTaskScreenState extends State<DesignerTaskScreen> {
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _isProcessing ? null : _updateChecklist,
-            child: _isProcessing
-                ? const CircularProgressIndicator()
-                : const Text('Update Checklist'),
+            child:
+                _isProcessing
+                    ? const CircularProgressIndicator()
+                    : const Text('Update Checklist'),
           ),
         ],
       ),

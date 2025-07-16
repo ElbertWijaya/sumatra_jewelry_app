@@ -20,7 +20,7 @@ final List<OrderWorkflowStatus> fullWorkflowStatuses = [
 ];
 
 double getOrderProgress(Order order) {
-  final idx = fullWorkflowStatuses.indexOf(order.workflowStatus);
+  final idx = fullWorkflowStatuses.indexOf(order.ordersWorkflowStatus);
   final maxIdx = fullWorkflowStatuses.indexOf(OrderWorkflowStatus.done);
   if (idx < 0) return 0.0;
   return idx / maxIdx;

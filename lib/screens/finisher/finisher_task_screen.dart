@@ -21,14 +21,14 @@ class _FinisherTaskScreenState extends State<FinisherTaskScreen> {
   void initState() {
     super.initState();
     _order = widget.order;
-    _finisherChecklist = List<String>.from(_order.finishingWorkChecklist ?? []);
+    _finisherChecklist = List<String>.from(_order.ordersFinishingWorkChecklist);
   }
 
   Future<void> _updateChecklist() async {
     setState(() => _isProcessing = true);
     try {
       final updatedOrder = _order.copyWith(
-        finishingWorkChecklist: _finisherChecklist,
+        ordersFinishingWorkChecklist: _finisherChecklist,
       );
       await OrderService().updateOrder(updatedOrder);
       setState(() {

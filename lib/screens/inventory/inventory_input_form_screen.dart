@@ -166,7 +166,7 @@ class _InventoryInputFormScreenState extends State<InventoryInputFormScreen> {
 
     // Kumpulkan data
     final Map<String, dynamic> inventoryData = {
-      'inventory_id': widget.order.id,
+      'inventory_id': widget.order.ordersId,
       'inventory_product_id': _productIdController.text,
       'inventory_jewelry_type': _selectedJewelryType,
       'inventory_gold_type': _selectedGoldType,
@@ -202,7 +202,7 @@ class _InventoryInputFormScreenState extends State<InventoryInputFormScreen> {
       if (result['success'] == true) {
         // Update workflow_status order ke waitingSalesCompletion
         final updatedOrder = widget.order.copyWith(
-          workflowStatus: OrderWorkflowStatus.waitingSalesCompletion,
+          ordersWorkflowStatus: OrderWorkflowStatus.waitingSalesCompletion,
         );
         await OrderService().updateOrder(updatedOrder);
         if (!mounted) return;

@@ -110,37 +110,31 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
 
 class Order {
   // Non-nullable (WAJIB)
-  final String id;
-  final String customerName;
-  final String customerContact;
-  final String address;
-  final String jewelryType;
-  final DateTime createdAt;
+  final String ordersId;
+  final String ordersCustomerName;
+  final String ordersCustomerContact;
+  final String ordersAddress;
+  final String ordersJewelryType;
+  final DateTime ordersCreatedAt;
 
-  // Non-nullable dengan default value
-  final String goldColor;
-  final String goldType;
-  final String stoneType;
-  final String stoneSize;
-  final String ringSize;
-  final DateTime? readyDate;
-  final DateTime? pickupDate;
-  final double goldPricePerGram;
-  final double finalPrice;
-  final double dp;
-  final double sisaLunas;
-  final String notes;
-  final DateTime? updatedAt;
-  final List<String> imagePaths;
-  final OrderWorkflowStatus workflowStatus;
-
-  // Checklist tiap pekerja (boleh kosong, tidak null)
-  final List<String> designerWorkChecklist;
-  final List<String> castingWorkChecklist;
-  final List<String> carvingWorkChecklist;
-  final List<String> diamondSettingWorkChecklist;
-  final List<String> finishingWorkChecklist;
-  final List<String> inventoryWorkChecklist;
+  final String ordersGoldColor;
+  final String ordersGoldType;
+  final String ordersRingSize;
+  final DateTime? ordersReadyDate;
+  final DateTime? ordersPickupDate;
+  final double ordersGoldPricePerGram;
+  final double ordersFinalPrice;
+  final double ordersDp;
+  final double ordersSisaLunas;
+  final String ordersNote;
+  final DateTime? ordersUpdatedAt;
+  final List<String> ordersImagePaths;
+  final OrderWorkflowStatus ordersWorkflowStatus;
+  final List<String> ordersDesignerWorkChecklist;
+  final List<String> ordersCastingWorkChecklist;
+  final List<String> ordersCarvingWorkChecklist;
+  final List<String> ordersDiamondSettingWorkChecklist;
+  final List<String> ordersFinishingWorkChecklist;
 
   // Data inventory (hanya yang perlu)
   final String? inventoryProductId;
@@ -153,33 +147,30 @@ class Order {
   final String? inventoryRingSize;
 
   Order({
-    required this.id,
-    required this.customerName,
-    required this.customerContact,
-    required this.address,
-    required this.jewelryType,
-    required this.createdAt,
-    this.goldColor = '',
-    this.goldType = '',
-    this.stoneType = '',
-    this.stoneSize = '',
-    this.ringSize = '',
-    this.readyDate,
-    this.pickupDate,
-    this.goldPricePerGram = 0,
-    this.finalPrice = 0,
-    this.dp = 0,
-    this.sisaLunas = 0,
-    this.notes = '',
-    this.updatedAt,
-    List<String>? imagePaths,
-    this.workflowStatus = OrderWorkflowStatus.waitingSalesCheck,
-    List<String>? designerWorkChecklist,
-    List<String>? castingWorkChecklist,
-    List<String>? carvingWorkChecklist,
-    List<String>? diamondSettingWorkChecklist,
-    List<String>? finishingWorkChecklist,
-    List<String>? inventoryWorkChecklist,
+    required this.ordersId,
+    required this.ordersCustomerName,
+    required this.ordersCustomerContact,
+    required this.ordersAddress,
+    required this.ordersJewelryType,
+    required this.ordersCreatedAt,
+    this.ordersGoldColor = '',
+    this.ordersGoldType = '',
+    this.ordersRingSize = '',
+    this.ordersReadyDate,
+    this.ordersPickupDate,
+    this.ordersGoldPricePerGram = 0,
+    this.ordersFinalPrice = 0,
+    this.ordersDp = 0,
+    this.ordersSisaLunas = 0,
+    this.ordersNote = '',
+    this.ordersUpdatedAt,
+    List<String>? ordersImagePaths,
+    this.ordersWorkflowStatus = OrderWorkflowStatus.waitingSalesCheck,
+    List<String>? ordersDesignerWorkChecklist,
+    List<String>? ordersCastingWorkChecklist,
+    List<String>? ordersCarvingWorkChecklist,
+    List<String>? ordersDiamondSettingWorkChecklist,
+    List<String>? ordersFinishingWorkChecklist,
     this.inventoryProductId,
     this.inventoryJewelryType,
     this.inventoryGoldColor,
@@ -188,13 +179,13 @@ class Order {
     this.inventoryImagePaths,
     this.inventoryItemsPrice,
     this.inventoryRingSize,
-  }) : imagePaths = imagePaths ?? const [],
-       designerWorkChecklist = designerWorkChecklist ?? const [],
-       castingWorkChecklist = castingWorkChecklist ?? const [],
-       carvingWorkChecklist = carvingWorkChecklist ?? const [],
-       diamondSettingWorkChecklist = diamondSettingWorkChecklist ?? const [],
-       finishingWorkChecklist = finishingWorkChecklist ?? const [],
-       inventoryWorkChecklist = inventoryWorkChecklist ?? const [];
+  }) : ordersImagePaths = ordersImagePaths ?? const [],
+       ordersDesignerWorkChecklist = ordersDesignerWorkChecklist ?? const [],
+       ordersCastingWorkChecklist = ordersCastingWorkChecklist ?? const [],
+       ordersCarvingWorkChecklist = ordersCarvingWorkChecklist ?? const [],
+       ordersDiamondSettingWorkChecklist =
+           ordersDiamondSettingWorkChecklist ?? const [],
+       ordersFinishingWorkChecklist = ordersFinishingWorkChecklist ?? const [];
 
   factory Order.fromMap(Map<String, dynamic> map) {
     List<String> parseChecklist(dynamic val) {
@@ -224,133 +215,116 @@ class Order {
     }
 
     return Order(
-      id: map['id']?.toString() ?? '',
-      customerName: map['customer_name']?.toString() ?? '',
-      customerContact: map['customer_contact']?.toString() ?? '',
-      address: map['address']?.toString() ?? '',
-      jewelryType: map['jewelry_type']?.toString() ?? '',
-      createdAt:
-          map['created_at'] != null && map['created_at'] != ''
-              ? DateTime.parse(map['created_at'])
+      ordersId: map['orders_id']?.toString() ?? '',
+      ordersCustomerName: map['orders_customer_name']?.toString() ?? '',
+      ordersCustomerContact: map['orders_customer_contact']?.toString() ?? '',
+      ordersAddress: map['orders_address']?.toString() ?? '',
+      ordersJewelryType: map['orders_jewelry_type']?.toString() ?? '',
+      ordersCreatedAt:
+          map['orders_created_at'] != null && map['orders_created_at'] != ''
+              ? DateTime.parse(map['orders_created_at'])
               : DateTime.now(),
-      goldColor: map['gold_color']?.toString() ?? '',
-      goldType: map['gold_type']?.toString() ?? '',
-      stoneType: map['stone_type']?.toString() ?? '',
-      stoneSize: map['stone_size']?.toString() ?? '',
-      ringSize: map['ring_size']?.toString() ?? '',
-      readyDate:
-          map['ready_date'] != null && map['ready_date'] != ''
-              ? DateTime.tryParse(map['ready_date'])
+      ordersGoldColor: map['orders_gold_color']?.toString() ?? '',
+      ordersGoldType: map['orders_gold_type']?.toString() ?? '',
+      ordersRingSize: map['orders_ring_size']?.toString() ?? '',
+      ordersReadyDate:
+          map['orders_ready_date'] != null && map['orders_ready_date'] != ''
+              ? DateTime.tryParse(map['orders_ready_date'])
               : null,
-      pickupDate:
-          map['pickup_date'] != null && map['pickup_date'] != ''
-              ? DateTime.tryParse(map['pickup_date'])
+      ordersPickupDate:
+          map['orders_pickup_date'] != null && map['orders_pickup_date'] != ''
+              ? DateTime.tryParse(map['orders_pickup_date'])
               : null,
-      goldPricePerGram:
-          map['gold_price_per_gram'] != null
-              ? double.tryParse(map['gold_price_per_gram'].toString()) ?? 0
+      ordersGoldPricePerGram:
+          map['orders_gold_price_per_gram'] != null
+              ? double.tryParse(map['orders_gold_price_per_gram'].toString()) ??
+                  0
               : 0,
-      finalPrice:
-          map['final_price'] != null
-              ? double.tryParse(map['final_price'].toString()) ?? 0
+      ordersFinalPrice:
+          map['orders_final_price'] != null
+              ? double.tryParse(map['orders_final_price'].toString()) ?? 0
               : 0,
-      dp: map['dp'] != null ? double.tryParse(map['dp'].toString()) ?? 0 : 0,
-      sisaLunas:
-          map['sisa_lunas'] != null
-              ? double.tryParse(map['sisa_lunas'].toString()) ?? 0
+      ordersDp:
+          map['orders_dp'] != null
+              ? double.tryParse(map['orders_dp'].toString()) ?? 0
               : 0,
-      notes: map['notes']?.toString() ?? '',
-      updatedAt:
-          map['updated_at'] != null && map['updated_at'] != ''
-              ? DateTime.tryParse(map['updated_at'])
+      ordersSisaLunas:
+          map['orders_sisa_lunas'] != null
+              ? double.tryParse(map['orders_sisa_lunas'].toString()) ?? 0
+              : 0,
+      ordersNote: map['orders_note']?.toString() ?? '',
+      ordersUpdatedAt:
+          map['orders_updated_at'] != null && map['orders_updated_at'] != ''
+              ? DateTime.tryParse(map['orders_updated_at'])
               : null,
-      imagePaths: parseImagePaths(map['imagePaths']),
-      workflowStatus: OrderWorkflowStatusX.fromString(map['workflow_status']),
-      designerWorkChecklist: parseChecklist(map['designerWorkChecklist']),
-      castingWorkChecklist: parseChecklist(map['castingWorkChecklist']),
-      carvingWorkChecklist: parseChecklist(map['carvingWorkChecklist']),
-      diamondSettingWorkChecklist: parseChecklist(
-        map['diamondSettingWorkChecklist'],
+      ordersImagePaths: parseImagePaths(map['orders_imagePaths']),
+      ordersWorkflowStatus: OrderWorkflowStatusX.fromString(
+        map['orders_workflowStatus'],
       ),
-      finishingWorkChecklist: parseChecklist(map['finishingWorkChecklist']),
-      inventoryWorkChecklist: parseChecklist(map['inventoryWorkChecklist']),
-      inventoryProductId:
-          map['inventoryProductId']?.toString() ??
-          map['inventory_product_id']?.toString() ??
-          '',
-      inventoryJewelryType:
-          map['inventoryJewelryType']?.toString() ??
-          map['inventory_jewelry_type']?.toString() ??
-          '',
-      inventoryGoldColor:
-          map['inventoryGoldColor']?.toString() ??
-          map['inventory_gold_color']?.toString() ??
-          '',
-      inventoryGoldType:
-          map['inventoryGoldType']?.toString() ??
-          map['inventory_gold_type']?.toString() ??
-          '',
+      ordersDesignerWorkChecklist: parseChecklist(
+        map['orders_designerWorkChecklist'],
+      ),
+      ordersCastingWorkChecklist: parseChecklist(
+        map['orders_castingWorkChecklist'],
+      ),
+      ordersCarvingWorkChecklist: parseChecklist(
+        map['orders_carvingWorkChecklist'],
+      ),
+      ordersDiamondSettingWorkChecklist: parseChecklist(
+        map['orders_diamondSettingWorkChecklist'],
+      ),
+      ordersFinishingWorkChecklist: parseChecklist(
+        map['orders_finishingWorkChecklist'],
+      ),
+      inventoryProductId: map['inventory_product_id']?.toString() ?? '',
+      inventoryJewelryType: map['inventory_jewelry_type']?.toString() ?? '',
+      inventoryGoldColor: map['inventory_gold_color']?.toString() ?? '',
+      inventoryGoldType: map['inventory_gold_type']?.toString() ?? '',
       inventoryStoneUsed:
-          map['inventoryStoneUsed'] != null
+          map['inventory_stone_used'] != null
               ? List<Map<String, dynamic>>.from(
-                map['inventoryStoneUsed'].map(
+                map['inventory_stone_used'].map(
                   (e) => Map<String, dynamic>.from(e),
                 ),
               )
-              : (map['inventory_stone_used'] != null
-                  ? List<Map<String, dynamic>>.from(
-                    map['inventory_stone_used'].map(
-                      (e) => Map<String, dynamic>.from(e),
-                    ),
-                  )
-                  : null),
+              : null,
       inventoryImagePaths:
-          map['inventoryImagePaths'] != null
-              ? parseImagePaths(map['inventoryImagePaths'])
-              : (map['inventory_image_paths'] != null
-                  ? parseImagePaths(map['inventory_image_paths'])
-                  : []),
+          map['inventory_imagePaths'] != null
+              ? parseImagePaths(map['inventory_imagePaths'])
+              : [],
       inventoryItemsPrice:
-          map['inventoryItemsPrice'] != null
-              ? double.tryParse(map['inventoryItemsPrice'].toString()) ?? 0
-              : (map['inventory_items_price'] != null
-                  ? double.tryParse(map['inventory_items_price'].toString()) ??
-                      0
-                  : null),
-      inventoryRingSize:
-          map['inventoryRingSize']?.toString() ??
-          map['inventory_ring_size']?.toString(),
+          map['inventory_items_price'] != null
+              ? double.tryParse(map['inventory_items_price'].toString()) ?? 0
+              : null,
+      inventoryRingSize: map['inventory_ring_size']?.toString(),
     );
   }
 
   Order copyWith({
-    String? id,
-    String? customerName,
-    String? customerContact,
-    String? address,
-    String? jewelryType,
-    DateTime? createdAt,
-    String? goldColor,
-    String? goldType,
-    String? stoneType,
-    String? stoneSize,
-    String? ringSize,
-    DateTime? readyDate,
-    DateTime? pickupDate,
-    double? goldPricePerGram,
-    double? finalPrice,
-    double? dp,
-    double? sisaLunas,
-    String? notes,
-    DateTime? updatedAt,
-    List<String>? imagePaths,
-    OrderWorkflowStatus? workflowStatus,
-    List<String>? designerWorkChecklist,
-    List<String>? castingWorkChecklist,
-    List<String>? carvingWorkChecklist,
-    List<String>? diamondSettingWorkChecklist,
-    List<String>? finishingWorkChecklist,
-    List<String>? inventoryWorkChecklist,
+    String? ordersId,
+    String? ordersCustomerName,
+    String? ordersCustomerContact,
+    String? ordersAddress,
+    String? ordersJewelryType,
+    DateTime? ordersCreatedAt,
+    String? ordersGoldColor,
+    String? ordersGoldType,
+    String? ordersRingSize,
+    DateTime? ordersReadyDate,
+    DateTime? ordersPickupDate,
+    double? ordersGoldPricePerGram,
+    double? ordersFinalPrice,
+    double? ordersDp,
+    double? ordersSisaLunas,
+    String? ordersNote,
+    DateTime? ordersUpdatedAt,
+    List<String>? ordersImagePaths,
+    OrderWorkflowStatus? ordersWorkflowStatus,
+    List<String>? ordersDesignerWorkChecklist,
+    List<String>? ordersCastingWorkChecklist,
+    List<String>? ordersCarvingWorkChecklist,
+    List<String>? ordersDiamondSettingWorkChecklist,
+    List<String>? ordersFinishingWorkChecklist,
     String? inventoryProductId,
     String? inventoryJewelryType,
     String? inventoryGoldColor,
@@ -361,37 +335,38 @@ class Order {
     String? inventoryRingSize,
   }) {
     return Order(
-      id: id ?? this.id,
-      customerName: customerName ?? this.customerName,
-      customerContact: customerContact ?? this.customerContact,
-      address: address ?? this.address,
-      jewelryType: jewelryType ?? this.jewelryType,
-      createdAt: createdAt ?? this.createdAt,
-      goldColor: goldColor ?? this.goldColor,
-      goldType: goldType ?? this.goldType,
-      stoneType: stoneType ?? this.stoneType,
-      stoneSize: stoneSize ?? this.stoneSize,
-      ringSize: ringSize ?? this.ringSize,
-      readyDate: readyDate ?? this.readyDate,
-      pickupDate: pickupDate ?? this.pickupDate,
-      goldPricePerGram: goldPricePerGram ?? this.goldPricePerGram,
-      finalPrice: finalPrice ?? this.finalPrice,
-      dp: dp ?? this.dp,
-      sisaLunas: sisaLunas ?? this.sisaLunas,
-      notes: notes ?? this.notes,
-      updatedAt: updatedAt ?? this.updatedAt,
-      imagePaths: imagePaths ?? this.imagePaths,
-      workflowStatus: workflowStatus ?? this.workflowStatus,
-      designerWorkChecklist:
-          designerWorkChecklist ?? this.designerWorkChecklist,
-      castingWorkChecklist: castingWorkChecklist ?? this.castingWorkChecklist,
-      carvingWorkChecklist: carvingWorkChecklist ?? this.carvingWorkChecklist,
-      diamondSettingWorkChecklist:
-          diamondSettingWorkChecklist ?? this.diamondSettingWorkChecklist,
-      finishingWorkChecklist:
-          finishingWorkChecklist ?? this.finishingWorkChecklist,
-      inventoryWorkChecklist:
-          inventoryWorkChecklist ?? this.inventoryWorkChecklist,
+      ordersId: ordersId ?? this.ordersId,
+      ordersCustomerName: ordersCustomerName ?? this.ordersCustomerName,
+      ordersCustomerContact:
+          ordersCustomerContact ?? this.ordersCustomerContact,
+      ordersAddress: ordersAddress ?? this.ordersAddress,
+      ordersJewelryType: ordersJewelryType ?? this.ordersJewelryType,
+      ordersCreatedAt: ordersCreatedAt ?? this.ordersCreatedAt,
+      ordersGoldColor: ordersGoldColor ?? this.ordersGoldColor,
+      ordersGoldType: ordersGoldType ?? this.ordersGoldType,
+      ordersRingSize: ordersRingSize ?? this.ordersRingSize,
+      ordersReadyDate: ordersReadyDate ?? this.ordersReadyDate,
+      ordersPickupDate: ordersPickupDate ?? this.ordersPickupDate,
+      ordersGoldPricePerGram:
+          ordersGoldPricePerGram ?? this.ordersGoldPricePerGram,
+      ordersFinalPrice: ordersFinalPrice ?? this.ordersFinalPrice,
+      ordersDp: ordersDp ?? this.ordersDp,
+      ordersSisaLunas: ordersSisaLunas ?? this.ordersSisaLunas,
+      ordersNote: ordersNote ?? this.ordersNote,
+      ordersUpdatedAt: ordersUpdatedAt ?? this.ordersUpdatedAt,
+      ordersImagePaths: ordersImagePaths ?? this.ordersImagePaths,
+      ordersWorkflowStatus: ordersWorkflowStatus ?? this.ordersWorkflowStatus,
+      ordersDesignerWorkChecklist:
+          ordersDesignerWorkChecklist ?? this.ordersDesignerWorkChecklist,
+      ordersCastingWorkChecklist:
+          ordersCastingWorkChecklist ?? this.ordersCastingWorkChecklist,
+      ordersCarvingWorkChecklist:
+          ordersCarvingWorkChecklist ?? this.ordersCarvingWorkChecklist,
+      ordersDiamondSettingWorkChecklist:
+          ordersDiamondSettingWorkChecklist ??
+          this.ordersDiamondSettingWorkChecklist,
+      ordersFinishingWorkChecklist:
+          ordersFinishingWorkChecklist ?? this.ordersFinishingWorkChecklist,
       inventoryProductId: inventoryProductId ?? this.inventoryProductId,
       inventoryJewelryType: inventoryJewelryType ?? this.inventoryJewelryType,
       inventoryGoldColor: inventoryGoldColor ?? this.inventoryGoldColor,
@@ -431,114 +406,127 @@ class Order {
     }
 
     return Order(
-      id: json['id']?.toString() ?? '',
-      customerName: json['customer_name']?.toString() ?? '',
-      customerContact: json['customer_contact']?.toString() ?? '',
-      address: json['address']?.toString() ?? '',
-      jewelryType: json['jewelry_type']?.toString() ?? '',
-      createdAt:
-          json['created_at'] != null
-              ? DateTime.parse(json['created_at'].toString())
+      ordersId: json['orders_id']?.toString() ?? '',
+      ordersCustomerName: json['orders_customer_name']?.toString() ?? '',
+      ordersCustomerContact: json['orders_customer_contact']?.toString() ?? '',
+      ordersAddress: json['orders_address']?.toString() ?? '',
+      ordersJewelryType: json['orders_jewelry_type']?.toString() ?? '',
+      ordersCreatedAt:
+          json['orders_created_at'] != null
+              ? DateTime.parse(json['orders_created_at'].toString())
               : DateTime.now(),
-      goldColor: json['gold_color']?.toString() ?? '',
-      goldType: json['gold_type']?.toString() ?? '',
-      stoneType: json['stone_type']?.toString() ?? '',
-      stoneSize: json['stone_size']?.toString() ?? '',
-      ringSize: json['ring_size']?.toString() ?? '',
-      readyDate:
-          json['ready_date'] != null && json['ready_date'] != ''
-              ? DateTime.tryParse(json['ready_date'].toString())
+      ordersGoldColor: json['orders_gold_color']?.toString() ?? '',
+      ordersGoldType: json['orders_gold_type']?.toString() ?? '',
+      ordersRingSize: json['orders_ring_size']?.toString() ?? '',
+      ordersReadyDate:
+          json['orders_ready_date'] != null && json['orders_ready_date'] != ''
+              ? DateTime.tryParse(json['orders_ready_date'].toString())
               : null,
-      pickupDate:
-          json['pickup_date'] != null && json['pickup_date'] != ''
-              ? DateTime.tryParse(json['pickup_date'].toString())
+      ordersPickupDate:
+          json['orders_pickup_date'] != null && json['orders_pickup_date'] != ''
+              ? DateTime.tryParse(json['orders_pickup_date'].toString())
               : null,
-      goldPricePerGram:
-          json['gold_price_per_gram'] != null
-              ? double.tryParse(json['gold_price_per_gram'].toString()) ?? 0
+      ordersGoldPricePerGram:
+          json['orders_gold_price_per_gram'] != null
+              ? double.tryParse(
+                    json['orders_gold_price_per_gram'].toString(),
+                  ) ??
+                  0
               : 0,
-      finalPrice:
-          json['final_price'] != null
-              ? double.tryParse(json['final_price'].toString()) ?? 0
+      ordersFinalPrice:
+          json['orders_final_price'] != null
+              ? double.tryParse(json['orders_final_price'].toString()) ?? 0
               : 0,
-      dp: json['dp'] != null ? double.tryParse(json['dp'].toString()) ?? 0 : 0,
-      sisaLunas:
-          json['sisa_lunas'] != null
-              ? double.tryParse(json['sisa_lunas'].toString()) ?? 0
+      ordersDp:
+          json['orders_dp'] != null
+              ? double.tryParse(json['orders_dp'].toString()) ?? 0
               : 0,
-      notes: json['notes']?.toString() ?? '',
-      updatedAt:
-          json['updated_at'] != null && json['updated_at'] != ''
-              ? DateTime.tryParse(json['updated_at'].toString())
+      ordersSisaLunas:
+          json['orders_sisa_lunas'] != null
+              ? double.tryParse(json['orders_sisa_lunas'].toString()) ?? 0
+              : 0,
+      ordersNote: json['orders_note']?.toString() ?? '',
+      ordersUpdatedAt:
+          json['orders_updated_at'] != null && json['orders_updated_at'] != ''
+              ? DateTime.tryParse(json['orders_updated_at'].toString())
               : null,
-      imagePaths: parseImagePaths(json['imagePaths']),
-      workflowStatus: OrderWorkflowStatusX.fromString(json['workflow_status']),
-      designerWorkChecklist: parseChecklist(json['designerWorkChecklist']),
-      castingWorkChecklist: parseChecklist(json['castingWorkChecklist']),
-      carvingWorkChecklist: parseChecklist(json['carvingWorkChecklist']),
-      diamondSettingWorkChecklist: parseChecklist(
-        json['diamondSettingWorkChecklist'],
+      ordersImagePaths: parseImagePaths(json['orders_imagePaths']),
+      ordersWorkflowStatus: OrderWorkflowStatusX.fromString(
+        json['orders_workflowStatus'],
       ),
-      finishingWorkChecklist: parseChecklist(json['finishingWorkChecklist']),
-      inventoryWorkChecklist: parseChecklist(json['inventoryWorkChecklist']),
-      inventoryProductId: json['inventoryProductId']?.toString() ?? '',
-      inventoryJewelryType: json['inventoryJewelryType']?.toString() ?? '',
-      inventoryGoldColor: json['inventoryGoldColor']?.toString() ?? '',
-      inventoryGoldType: json['inventoryGoldType']?.toString() ?? '',
+      ordersDesignerWorkChecklist: parseChecklist(
+        json['orders_designerWorkChecklist'],
+      ),
+      ordersCastingWorkChecklist: parseChecklist(
+        json['orders_castingWorkChecklist'],
+      ),
+      ordersCarvingWorkChecklist: parseChecklist(
+        json['orders_carvingWorkChecklist'],
+      ),
+      ordersDiamondSettingWorkChecklist: parseChecklist(
+        json['orders_diamondSettingWorkChecklist'],
+      ),
+      ordersFinishingWorkChecklist: parseChecklist(
+        json['orders_finishingWorkChecklist'],
+      ),
+      inventoryProductId: json['inventory_product_id']?.toString() ?? '',
+      inventoryJewelryType: json['inventory_jewelry_type']?.toString() ?? '',
+      inventoryGoldColor: json['inventory_gold_color']?.toString() ?? '',
+      inventoryGoldType: json['inventory_gold_type']?.toString() ?? '',
       inventoryStoneUsed:
-          json['inventoryStoneUsed'] != null
+          json['inventory_stone_used'] != null
               ? List<Map<String, dynamic>>.from(
-                json['inventoryStoneUsed'].map(
+                json['inventory_stone_used'].map(
                   (e) => Map<String, dynamic>.from(e),
                 ),
               )
               : null,
-      inventoryImagePaths: parseImagePaths(json['inventoryImagePaths']),
+      inventoryImagePaths:
+          json['inventory_imagePaths'] != null
+              ? parseImagePaths(json['inventory_imagePaths'])
+              : [],
       inventoryItemsPrice:
-          json['inventoryItemsPrice'] != null
-              ? double.tryParse(json['inventoryItemsPrice'].toString()) ?? 0
+          json['inventory_items_price'] != null
+              ? double.tryParse(json['inventory_items_price'].toString()) ?? 0
               : null,
-      inventoryRingSize: json['inventoryRingSize']?.toString(),
+      inventoryRingSize: json['inventory_ring_size']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'customer_name': customerName,
-      'customer_contact': customerContact,
-      'address': address,
-      'jewelry_type': jewelryType,
-      'created_at': createdAt.toIso8601String(),
-      'gold_color': goldColor,
-      'gold_type': goldType,
-      'stone_type': stoneType,
-      'stone_size': stoneSize,
-      'ring_size': ringSize,
-      'ready_date': readyDate?.toIso8601String(),
-      'pickup_date': pickupDate?.toIso8601String(),
-      'gold_price_per_gram': goldPricePerGram,
-      'final_price': finalPrice,
-      'dp': dp,
-      'sisa_lunas': sisaLunas,
-      'notes': notes,
-      'updated_at': updatedAt?.toIso8601String(),
-      'imagePaths': imagePaths,
-      'workflow_status': workflowStatus.name,
-      'designerWorkChecklist': designerWorkChecklist,
-      'castingWorkChecklist': castingWorkChecklist,
-      'carvingWorkChecklist': carvingWorkChecklist,
-      'diamondSettingWorkChecklist': diamondSettingWorkChecklist,
-      'finishingWorkChecklist': finishingWorkChecklist,
-      'inventoryWorkChecklist': inventoryWorkChecklist,
-      'inventoryProductId': inventoryProductId,
-      'inventoryJewelryType': inventoryJewelryType,
-      'inventoryGoldColor': inventoryGoldColor,
-      'inventoryGoldType': inventoryGoldType,
-      'inventoryStoneUsed': inventoryStoneUsed,
-      'inventoryImagePaths': inventoryImagePaths,
-      'inventoryItemsPrice': inventoryItemsPrice,
-      'inventoryRingSize': inventoryRingSize,
+      'orders_id': ordersId,
+      'orders_customer_name': ordersCustomerName,
+      'orders_customer_contact': ordersCustomerContact,
+      'orders_address': ordersAddress,
+      'orders_jewelry_type': ordersJewelryType,
+      'orders_created_at': ordersCreatedAt.toIso8601String(),
+      'orders_gold_color': ordersGoldColor,
+      'orders_gold_type': ordersGoldType,
+      'orders_ring_size': ordersRingSize,
+      'orders_ready_date': ordersReadyDate?.toIso8601String(),
+      'orders_pickup_date': ordersPickupDate?.toIso8601String(),
+      'orders_gold_price_per_gram': ordersGoldPricePerGram,
+      'orders_final_price': ordersFinalPrice,
+      'orders_dp': ordersDp,
+      'orders_sisa_lunas': ordersSisaLunas,
+      'orders_note': ordersNote,
+      'orders_updated_at': ordersUpdatedAt?.toIso8601String(),
+      'orders_imagePaths': ordersImagePaths,
+      'orders_workflowStatus': ordersWorkflowStatus.name,
+      'orders_designerWorkChecklist': ordersDesignerWorkChecklist,
+      'orders_castingWorkChecklist': ordersCastingWorkChecklist,
+      'orders_carvingWorkChecklist': ordersCarvingWorkChecklist,
+      'orders_diamondSettingWorkChecklist': ordersDiamondSettingWorkChecklist,
+      'orders_finishingWorkChecklist': ordersFinishingWorkChecklist,
+      'inventory_product_id': inventoryProductId,
+      'inventory_jewelry_type': inventoryJewelryType,
+      'inventory_gold_color': inventoryGoldColor,
+      'inventory_gold_type': inventoryGoldType,
+      'inventory_stone_used': inventoryStoneUsed,
+      'inventory_imagePaths': inventoryImagePaths,
+      'inventory_items_price': inventoryItemsPrice,
+      'inventory_ring_size': inventoryRingSize,
     };
   }
 }

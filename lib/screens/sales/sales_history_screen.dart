@@ -26,10 +26,14 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
     try {
       final orders = await _orderService.getOrders();
       setState(() {
-        _orders = orders.where((o) =>
-          o.workflowStatus == OrderWorkflowStatus.done ||
-          o.workflowStatus == OrderWorkflowStatus.cancelled
-        ).toList();
+        _orders =
+            orders
+                .where(
+                  (o) =>
+                      o.ordersWorkflowStatus == OrderWorkflowStatus.done ||
+                      o.ordersWorkflowStatus == OrderWorkflowStatus.cancelled,
+                )
+                .toList();
       });
     } finally {
       setState(() => _isLoading = false);
@@ -40,23 +44,27 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Riwayat Pesanan Sales')),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: _orders.length,
-              itemBuilder: (context, index) {
-                final order = _orders[index];
-                return ListTile(
-                  title: Text(order.customerName),
-                  subtitle: Text('Status: ${order.workflowStatus.label}'),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => SalesDetailScreen(order: order),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.builder(
+                itemCount: _orders.length,
+                itemBuilder: (context, index) {
+                  final order = _orders[index];
+                  return ListTile(
+                    title: Text(order.ordersCustomerName),
+                    subtitle: Text(
+                      'Status: ${order.ordersWorkflowStatus.label}',
                     ),
-                  ),
-                );
-              },
-            ),
+                    onTap:
+                        () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => SalesDetailScreen(order: order),
+                          ),
+                        ),
+                  );
+                },
+              ),
     );
   }
 }

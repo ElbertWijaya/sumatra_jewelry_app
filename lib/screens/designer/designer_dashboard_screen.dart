@@ -142,19 +142,25 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
 
   String orderFullText(Order order) {
     return [
-      order.customerName,
-      order.customerContact,
-      order.address,
-      order.jewelryType,
-      order.stoneType ?? '',
-      order.stoneSize ?? '',
-      order.ringSize ?? '',
-      order.readyDate?.toIso8601String() ?? '',
-      order.pickupDate?.toIso8601String() ?? '',
-      order.goldPricePerGram.toString(),
-      order.finalPrice.toString(),
-      order.notes,
-      order.workflowStatus.label,
+      order.ordersCustomerName,
+      order.ordersCustomerContact,
+      order.ordersAddress,
+      order.ordersJewelryType,
+      // Gunakan inventoryStoneUsed jika ada
+      (order.inventoryStoneUsed != null && order.inventoryStoneUsed!.isNotEmpty)
+          ? order.inventoryStoneUsed!.map((e) => e['type'] ?? '').join(', ')
+          : '',
+      order.ordersRingSize,
+      order.ordersReadyDate != null
+          ? order.ordersReadyDate!.toIso8601String()
+          : '',
+      order.ordersPickupDate != null
+          ? order.ordersPickupDate!.toIso8601String()
+          : '',
+      order.ordersGoldPricePerGram.toString(),
+      order.ordersFinalPrice.toString(),
+      order.ordersNote,
+      order.ordersWorkflowStatus.label,
     ].join(' ').toLowerCase();
   }
 
@@ -163,8 +169,8 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
         _orders
             .where(
               (order) =>
-                  order.workflowStatus != OrderWorkflowStatus.done &&
-                  order.workflowStatus != OrderWorkflowStatus.cancelled,
+                  order.ordersWorkflowStatus != OrderWorkflowStatus.done &&
+                  order.ordersWorkflowStatus != OrderWorkflowStatus.cancelled,
             )
             .toList();
 
@@ -172,18 +178,23 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
     if (_selectedTab == 'waiting') {
       filtered =
           filtered
-              .where((order) => waitingStatuses.contains(order.workflowStatus))
+              .where(
+                (order) => waitingStatuses.contains(order.ordersWorkflowStatus),
+              )
               .toList();
     } else if (_selectedTab == 'working') {
       filtered =
           filtered
-              .where((order) => workingStatuses.contains(order.workflowStatus))
+              .where(
+                (order) => workingStatuses.contains(order.ordersWorkflowStatus),
+              )
               .toList();
     } else if (_selectedTab == 'onprogress') {
       filtered =
           filtered
               .where(
-                (order) => onProgressStatuses.contains(order.workflowStatus),
+                (order) =>
+                    onProgressStatuses.contains(order.ordersWorkflowStatus),
               )
               .toList();
     } else if (_selectedTab == 'all') {
@@ -196,8 +207,9 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
           filtered
               .where(
                 (order) => selectedJewelryTypes.any(
-                  (t) =>
-                      order.jewelryType.toLowerCase().contains(t.toLowerCase()),
+                  (t) => order.ordersJewelryType.toLowerCase().contains(
+                    t.toLowerCase(),
+                  ),
                 ),
               )
               .toList();
@@ -226,31 +238,39 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
       filtered =
           filtered
               .where(
-                (order) => selectedStoneTypes.any(
-                  (stone) => (order.stoneType ?? '').toLowerCase().contains(
-                    stone.toLowerCase(),
-                  ),
-                ),
+                (order) => selectedStoneTypes.any((stone) {
+                  // Cek di inventoryStoneUsed jika ada
+                  if (order.inventoryStoneUsed != null &&
+                      order.inventoryStoneUsed!.isNotEmpty) {
+                    return order.inventoryStoneUsed!.any(
+                      (e) => (e['type'] ?? '')
+                          .toString()
+                          .toLowerCase()
+                          .contains(stone.toLowerCase()),
+                    );
+                  }
+                  return false;
+                }),
               )
               .toList();
     }
     if (priceMin != null) {
       filtered =
           filtered
-              .where((order) => (order.finalPrice ?? 0) >= priceMin!)
+              .where((order) => (order.ordersFinalPrice) >= priceMin!)
               .toList();
     }
     if (priceMax != null) {
       filtered =
           filtered
-              .where((order) => (order.finalPrice ?? 0) <= priceMax!)
+              .where((order) => (order.ordersFinalPrice) <= priceMax!)
               .toList();
     }
     if (ringSize != null && ringSize!.isNotEmpty) {
       filtered =
           filtered
               .where(
-                (order) => (order.ringSize ?? '').toLowerCase().contains(
+                (order) => (order.ordersRingSize).toLowerCase().contains(
                   ringSize!.toLowerCase(),
                 ),
               )
@@ -550,18 +570,23 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
     if (value == 'waiting') {
       count =
           _orders
-              .where((order) => waitingStatuses.contains(order.workflowStatus))
+              .where(
+                (order) => waitingStatuses.contains(order.ordersWorkflowStatus),
+              )
               .length;
     } else if (value == 'working') {
       count =
           _orders
-              .where((order) => workingStatuses.contains(order.workflowStatus))
+              .where(
+                (order) => workingStatuses.contains(order.ordersWorkflowStatus),
+              )
               .length;
     } else if (value == 'onprogress') {
       count =
           _orders
               .where(
-                (order) => onProgressStatuses.contains(order.workflowStatus),
+                (order) =>
+                    onProgressStatuses.contains(order.ordersWorkflowStatus),
               )
               .length;
     } else if (value == 'all') {
@@ -569,8 +594,8 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
           _orders
               .where(
                 (order) =>
-                    order.workflowStatus != OrderWorkflowStatus.done &&
-                    order.workflowStatus != OrderWorkflowStatus.cancelled,
+                    order.ordersWorkflowStatus != OrderWorkflowStatus.done &&
+                    order.ordersWorkflowStatus != OrderWorkflowStatus.cancelled,
               )
               .length;
     }
@@ -933,13 +958,17 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                               child:
-                                                  order.imagePaths.isNotEmpty &&
+                                                  order
+                                                              .ordersImagePaths
+                                                              .isNotEmpty &&
                                                           order
-                                                              .imagePaths
+                                                              .ordersImagePaths
                                                               .first
                                                               .isNotEmpty
                                                       ? Image.network(
-                                                        order.imagePaths.first,
+                                                        order
+                                                            .ordersImagePaths
+                                                            .first,
                                                         width: 90,
                                                         height: 90,
                                                         fit: BoxFit.cover,
@@ -983,7 +1012,7 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                                     CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
-                                                    order.customerName ?? '-',
+                                                    order.ordersCustomerName,
                                                     style: const TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold,
@@ -1009,10 +1038,11 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                                       const SizedBox(width: 6),
                                                       Text(
                                                         order
-                                                                    .jewelryType
+                                                                    .ordersJewelryType
                                                                     .isNotEmpty ==
                                                                 true
-                                                            ? order.jewelryType
+                                                            ? order
+                                                                .ordersJewelryType
                                                             : "-",
                                                         style: const TextStyle(
                                                           fontSize: 15,
@@ -1039,14 +1069,14 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                             ),
                                             const SizedBox(width: 6),
                                             Text(
-                                              'Order: ${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
+                                              'Order: ${order.ordersCreatedAt.day}/${order.ordersCreatedAt.month}/${order.ordersCreatedAt.year}',
                                               style: const TextStyle(
                                                 fontSize: 13,
                                                 color: Color(0xFF7C5E2C),
                                               ),
                                             ),
                                             const SizedBox(width: 18),
-                                            if (order.pickupDate != null)
+                                            if (order.ordersPickupDate != null)
                                               Row(
                                                 children: [
                                                   const Icon(
@@ -1056,7 +1086,7 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                                   ),
                                                   const SizedBox(width: 6),
                                                   Text(
-                                                    'Ambil: ${order.pickupDate!.day}/${order.pickupDate!.month}/${order.pickupDate!.year}',
+                                                    'Ambil: ${order.ordersPickupDate!.day}/${order.ordersPickupDate!.month}/${order.ordersPickupDate!.year}',
                                                     style: const TextStyle(
                                                       fontSize: 13,
                                                       color: Color(0xFF7C5E2C),
@@ -1071,7 +1101,9 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
                                           children: [
                                             Chip(
                                               label: Text(
-                                                order.workflowStatus.label,
+                                                order
+                                                    .ordersWorkflowStatus
+                                                    .label,
                                                 style: const TextStyle(
                                                   color: Colors.white,
                                                   fontWeight: FontWeight.bold,
