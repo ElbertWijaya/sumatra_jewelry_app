@@ -9,9 +9,17 @@ class OrderService {
 
   Future<List<Order>> getOrders() async {
     final response = await http.get(Uri.parse(baseUrl));
+    print('API Response: ${response.body}'); // DEBUG: print response API
     if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      return data.map((json) => Order.fromJson(json)).toList().cast<Order>();
+      final data = json.decode(response.body);
+      final orders =
+          data.map((json) => Order.fromJson(json)).toList().cast<Order>();
+      for (var order in orders) {
+        print(
+          'Order Object: ${order.toJson()}',
+        ); // DEBUG: print isi objek Order
+      }
+      return orders;
     } else {
       throw Exception('Gagal memuat pesanan: ${response.statusCode}');
     }
@@ -139,13 +147,13 @@ class OrderService {
   }
 
   Future<Order> getOrderById(String ordersId) async {
-    final response = await http.get(
-      Uri.parse(
-        'http://192.168.83.54/sumatra_api/get_order_by_id.php?orders_id=$ordersId',
-      ),
-    );
-    print('RESPONSE BODY: ${response.body}');
-    final data = jsonDecode(response.body);
-    return Order.fromJson(data);
+    final response = await http.get(Uri.parse('$baseUrl?orders_id=$ordersId'));
+    print('API Response: ${response.body}'); // DEBUG: print response API
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return Order.fromJson(data);
+    } else {
+      throw Exception('Gagal memuat pesanan: ${response.statusCode}');
+    }
   }
 }

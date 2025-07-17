@@ -64,7 +64,7 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
       case 'cancelled':
         return OrderWorkflowStatus.cancelled;
       default:
-        return OrderWorkflowStatus.waitingSalesCheck; // Default case
+        return OrderWorkflowStatus.waitingSalesCheck;
     }
   }
 
@@ -103,7 +103,7 @@ extension OrderWorkflowStatusX on OrderWorkflowStatus {
       case OrderWorkflowStatus.cancelled:
         return 'Dibatalkan';
       default:
-        return 'Waiting Sales Check'; // Default case
+        return 'Waiting Sales Check';
     }
   }
 }
@@ -146,6 +146,9 @@ class Order {
   final double? inventoryItemsPrice;
   final String? inventoryRingSize;
 
+  // Tambahan: data batu/berlian pesanan
+  final List<Map<String, dynamic>> ordersStoneUsed;
+
   Order({
     required this.ordersId,
     required this.ordersCustomerName,
@@ -179,13 +182,15 @@ class Order {
     this.inventoryImagePaths,
     this.inventoryItemsPrice,
     this.inventoryRingSize,
+    List<Map<String, dynamic>>? ordersStoneUsed,
   }) : ordersImagePaths = ordersImagePaths ?? const [],
        ordersDesignerWorkChecklist = ordersDesignerWorkChecklist ?? const [],
        ordersCastingWorkChecklist = ordersCastingWorkChecklist ?? const [],
        ordersCarvingWorkChecklist = ordersCarvingWorkChecklist ?? const [],
        ordersDiamondSettingWorkChecklist =
            ordersDiamondSettingWorkChecklist ?? const [],
-       ordersFinishingWorkChecklist = ordersFinishingWorkChecklist ?? const [];
+       ordersFinishingWorkChecklist = ordersFinishingWorkChecklist ?? const [],
+       ordersStoneUsed = ordersStoneUsed ?? const [];
 
   factory Order.fromMap(Map<String, dynamic> map) {
     List<String> parseChecklist(dynamic val) {
@@ -194,8 +199,9 @@ class Order {
       if (val is String && val.isNotEmpty) {
         try {
           final decoded = jsonDecode(val);
-          if (decoded is List)
+          if (decoded is List) {
             return List<String>.from(decoded.map((e) => e.toString()));
+          }
         } catch (_) {}
       }
       return [];
@@ -207,8 +213,29 @@ class Order {
       if (val is String && val.isNotEmpty) {
         try {
           final decoded = jsonDecode(val);
-          if (decoded is List)
+          if (decoded is List) {
             return List<String>.from(decoded.map((e) => e.toString()));
+          }
+        } catch (_) {}
+      }
+      return [];
+    }
+
+    List<Map<String, dynamic>> parseOrdersStoneUsed(dynamic val) {
+      if (val == null || val == '') return [];
+      if (val is List) {
+        return List<Map<String, dynamic>>.from(
+          val.map((e) => Map<String, dynamic>.from(e)),
+        );
+      }
+      if (val is String && val.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(val);
+          if (decoded is List) {
+            return List<Map<String, dynamic>>.from(
+              decoded.map((e) => Map<String, dynamic>.from(e)),
+            );
+          }
         } catch (_) {}
       }
       return [];
@@ -297,6 +324,7 @@ class Order {
               ? double.tryParse(map['inventory_items_price'].toString()) ?? 0
               : null,
       inventoryRingSize: map['inventory_ring_size']?.toString(),
+      ordersStoneUsed: parseOrdersStoneUsed(map['orders_stone_used']),
     );
   }
 
@@ -333,6 +361,7 @@ class Order {
     List<String>? inventoryImagePaths,
     double? inventoryItemsPrice,
     String? inventoryRingSize,
+    List<Map<String, dynamic>>? ordersStoneUsed,
   }) {
     return Order(
       ordersId: ordersId ?? this.ordersId,
@@ -375,6 +404,7 @@ class Order {
       inventoryImagePaths: inventoryImagePaths ?? this.inventoryImagePaths,
       inventoryItemsPrice: inventoryItemsPrice ?? this.inventoryItemsPrice,
       inventoryRingSize: inventoryRingSize ?? this.inventoryRingSize,
+      ordersStoneUsed: ordersStoneUsed ?? this.ordersStoneUsed,
     );
   }
 
@@ -385,8 +415,9 @@ class Order {
       if (val is String && val.isNotEmpty) {
         try {
           final decoded = jsonDecode(val);
-          if (decoded is List)
+          if (decoded is List) {
             return List<String>.from(decoded.map((e) => e.toString()));
+          }
         } catch (_) {}
       }
       return [];
@@ -398,8 +429,29 @@ class Order {
       if (val is String && val.isNotEmpty) {
         try {
           final decoded = jsonDecode(val);
-          if (decoded is List)
+          if (decoded is List) {
             return List<String>.from(decoded.map((e) => e.toString()));
+          }
+        } catch (_) {}
+      }
+      return [];
+    }
+
+    List<Map<String, dynamic>> parseOrdersStoneUsed(dynamic val) {
+      if (val == null || val == '') return [];
+      if (val is List) {
+        return List<Map<String, dynamic>>.from(
+          val.map((e) => Map<String, dynamic>.from(e)),
+        );
+      }
+      if (val is String && val.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(val);
+          if (decoded is List) {
+            return List<Map<String, dynamic>>.from(
+              decoded.map((e) => Map<String, dynamic>.from(e)),
+            );
+          }
         } catch (_) {}
       }
       return [];
@@ -490,6 +542,7 @@ class Order {
               ? double.tryParse(json['inventory_items_price'].toString()) ?? 0
               : null,
       inventoryRingSize: json['inventory_ring_size']?.toString(),
+      ordersStoneUsed: parseOrdersStoneUsed(json['orders_stone_used']),
     );
   }
 
@@ -519,6 +572,7 @@ class Order {
       'orders_carvingWorkChecklist': ordersCarvingWorkChecklist,
       'orders_diamondSettingWorkChecklist': ordersDiamondSettingWorkChecklist,
       'orders_finishingWorkChecklist': ordersFinishingWorkChecklist,
+      'orders_stone_used': ordersStoneUsed,
       'inventory_product_id': inventoryProductId,
       'inventory_jewelry_type': inventoryJewelryType,
       'inventory_gold_color': inventoryGoldColor,

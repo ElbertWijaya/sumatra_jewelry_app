@@ -12,7 +12,7 @@ import 'screens/cor/cor_dashboard_screen.dart';
 import 'screens/carver/carver_dashboard_screen.dart';
 import 'screens/diamond_setter/diamond_setter_dashboard_screen.dart';
 import 'screens/inventory/inventory_dashboard_screen.dart';
-import 'models/order.dart';
+import 'models/order.dart' as models;
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
@@ -35,8 +35,8 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/sales/edit': (context) {
           final args = ModalRoute.of(context)!.settings.arguments;
-          if (args is Order) {
-            return SalesEditScreen(order: args);
+          if (args is models.Order) {
+            return SalesEditScreen(orderData: args.toJson());
           }
           throw Exception('Order argument is required for /sales/edit route');
         },

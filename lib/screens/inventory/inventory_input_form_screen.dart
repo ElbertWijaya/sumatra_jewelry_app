@@ -33,7 +33,7 @@ class _InventoryInputFormScreenState extends State<InventoryInputFormScreen> {
   final List<XFile> _images = [];
 
   // Stone used
-  List<_StoneInput> _stones = [];
+  final List<_StoneInput> _stones = [];
 
   // Jewelry type options
   static const List<String> jewelryTypes = [

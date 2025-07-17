@@ -4,21 +4,20 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:photo_view/photo_view.dart';
 
-import '../../models/order.dart';
-import '../../utils/thousand_separator_input_formatter.dart';
-
-final _currencyFormatter = NumberFormat.currency(
-  locale: 'id',
-  symbol: 'Rp ',
-  decimalDigits: 0,
-);
+class StoneInput {
+  String? shape;
+  final TextEditingController countController = TextEditingController();
+  final TextEditingController caratController = TextEditingController();
+  void dispose() {
+    countController.dispose();
+    caratController.dispose();
+  }
+}
 
 class SalesEditScreen extends StatefulWidget {
-  final Order order;
-  const SalesEditScreen({super.key, required this.order});
-
+  final Map<String, dynamic> orderData;
+  const SalesEditScreen({super.key, required this.orderData});
   @override
   State<SalesEditScreen> createState() => _SalesEditScreenState();
 }
@@ -28,29 +27,29 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
   late TextEditingController _customerNameController;
   late TextEditingController _customerContactController;
   late TextEditingController _addressController;
-  late TextEditingController _finalPriceController;
-  late TextEditingController _notesController;
-  late TextEditingController _pickupDateController;
-  late TextEditingController _goldPricePerGramController;
-  late TextEditingController _stoneTypeController;
-  late TextEditingController _stoneSizeController;
   late TextEditingController _ringSizeController;
-  late TextEditingController _readyDateController;
+  late TextEditingController _goldPricePerGramController;
+  late TextEditingController _finalPriceController;
   late TextEditingController _dpController;
-  late TextEditingController _sisaLunasController;
+  late TextEditingController _notesController;
+  late TextEditingController _readyDateController;
+  late TextEditingController _pickupDateController;
+  final List<StoneInput> _stoneInputs = [];
+  final List<File> _pickedImages = [];
+  final List<String> _uploadedImageUrls = [];
 
   String? _selectedJewelryType;
   String? _selectedGoldType;
   String? _selectedGoldColor;
-  DateTime? _selectedPickupDate;
   DateTime? _selectedReadyDate;
+  DateTime? _selectedPickupDate;
   bool _isLoading = false;
-  final List<File> _pickedImages = [];
-  List<String> _uploadedImageUrls = [];
 
   final _jewelryTypes = [
-    'Bangle',
     'Ring',
+    'Women Ring',
+    'Men Ring',
+    'Bangle',
     'Earrings',
     'Necklace',
     'Bracelet',
@@ -59,61 +58,89 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
   ];
   final _goldTypes = ['24K', '22K', '18K', '14K', '10K', '9K'];
   final _goldColors = ['White Gold', 'Rose Gold', 'Yellow Gold'];
+  final _stoneShapes = [
+    'Round',
+    'Oval',
+    'Princess',
+    'Emerald',
+    'Pear',
+    'Marquise',
+    'Cushion',
+    'Asscher',
+    'Radiant',
+    'Heart',
+    'Other',
+  ];
 
   @override
   void initState() {
     super.initState();
-    final o = widget.order;
-    _customerNameController = TextEditingController(text: o.ordersCustomerName);
+    final o = widget.orderData;
+    _customerNameController = TextEditingController(
+      text: o['orders_customer_name'] ?? '',
+    );
     _customerContactController = TextEditingController(
-      text: o.ordersCustomerContact,
+      text: o['orders_customer_contact'] ?? '',
     );
-    _addressController = TextEditingController(text: o.ordersAddress);
-    _finalPriceController = TextEditingController(
-      text: o.ordersFinalPrice.toStringAsFixed(0),
-    );
-    _notesController = TextEditingController(text: o.ordersNote);
-    _pickupDateController = TextEditingController(
-      text:
-          o.ordersPickupDate != null
-              ? DateFormat('yyyy-MM-dd').format(o.ordersPickupDate!)
-              : '',
+    _addressController = TextEditingController(text: o['orders_address'] ?? '');
+    _ringSizeController = TextEditingController(
+      text: o['orders_ring_size']?.toString() ?? '',
     );
     _goldPricePerGramController = TextEditingController(
-      text: o.ordersGoldPricePerGram.toStringAsFixed(0),
+      text: o['orders_gold_price_per_gram']?.toString() ?? '',
     );
-    // Untuk batu, ambil dari inventoryStoneUsed jika ada
-    _stoneTypeController = TextEditingController(
-      text:
-          (o.inventoryStoneUsed != null && o.inventoryStoneUsed!.isNotEmpty)
-              ? (o.inventoryStoneUsed![0]['type'] ?? '')
-              : '',
+    _finalPriceController = TextEditingController(
+      text: o['orders_final_price']?.toString() ?? '',
     );
-    _stoneSizeController = TextEditingController(
-      text:
-          (o.inventoryStoneUsed != null && o.inventoryStoneUsed!.isNotEmpty)
-              ? (o.inventoryStoneUsed![0]['size'] ?? '')
-              : '',
+    _dpController = TextEditingController(
+      text: o['orders_dp']?.toString() ?? '',
     );
-    _ringSizeController = TextEditingController(text: o.ordersRingSize);
+    _notesController = TextEditingController(text: o['orders_note'] ?? '');
     _readyDateController = TextEditingController(
-      text:
-          o.ordersReadyDate != null
-              ? DateFormat('yyyy-MM-dd').format(o.ordersReadyDate!)
-              : '',
+      text: o['orders_ready_date'] ?? '',
     );
-    _dpController = TextEditingController(text: o.ordersDp.toStringAsFixed(0));
-    _sisaLunasController = TextEditingController(
-      text: (o.ordersFinalPrice - o.ordersDp)
-          .clamp(0, double.infinity)
-          .toStringAsFixed(0),
+    _pickupDateController = TextEditingController(
+      text: o['orders_pickup_date'] ?? '',
     );
-    _selectedJewelryType = o.ordersJewelryType;
-    _selectedGoldType = o.ordersGoldType;
-    _selectedGoldColor = o.ordersGoldColor;
-    _selectedPickupDate = o.ordersPickupDate;
-    _selectedReadyDate = o.ordersReadyDate;
-    _uploadedImageUrls = List<String>.from(o.ordersImagePaths);
+    _selectedJewelryType = o['orders_jewelry_type'];
+    _selectedGoldType = o['orders_gold_type'];
+    _selectedGoldColor = o['orders_gold_color'];
+    if (o['orders_ready_date'] != null &&
+        o['orders_ready_date'].toString().isNotEmpty) {
+      _selectedReadyDate = DateTime.tryParse(o['orders_ready_date']);
+    }
+    if (o['orders_pickup_date'] != null &&
+        o['orders_pickup_date'].toString().isNotEmpty) {
+      _selectedPickupDate = DateTime.tryParse(o['orders_pickup_date']);
+    }
+    // Stone used
+    var stonesData = o['orders_stone_used'];
+    if (stonesData != null && stonesData.toString().isNotEmpty) {
+      if (stonesData is String) {
+        stonesData = jsonDecode(stonesData);
+      }
+      if (stonesData is List) {
+        for (final s in stonesData) {
+          final input = StoneInput();
+          input.shape = s['shape'];
+          input.countController.text = s['count'] ?? '';
+          input.caratController.text = s['carat'] ?? '';
+          _stoneInputs.add(input);
+        }
+      }
+    }
+    // Images
+    var imgsData = o['orders_imagePaths'];
+    if (imgsData != null && imgsData.toString().isNotEmpty) {
+      if (imgsData is String) {
+        imgsData = jsonDecode(imgsData);
+      }
+      if (imgsData is List) {
+        for (final url in imgsData) {
+          _uploadedImageUrls.add(url.toString());
+        }
+      }
+    }
   }
 
   @override
@@ -121,209 +148,52 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
     _customerNameController.dispose();
     _customerContactController.dispose();
     _addressController.dispose();
-    _finalPriceController.dispose();
-    _notesController.dispose();
-    _pickupDateController.dispose();
-    _goldPricePerGramController.dispose();
-    _stoneTypeController.dispose();
-    _stoneSizeController.dispose();
     _ringSizeController.dispose();
-    _readyDateController.dispose();
+    _goldPricePerGramController.dispose();
+    _finalPriceController.dispose();
     _dpController.dispose();
-    _sisaLunasController.dispose();
+    _notesController.dispose();
+    _readyDateController.dispose();
+    _pickupDateController.dispose();
+    for (final input in _stoneInputs) {
+      input.dispose();
+    }
     super.dispose();
   }
 
-  Future<void> _pickPickupDate() async {
+  Future<void> _pickDate(
+    TextEditingController controller,
+    DateTime? initial,
+    ValueChanged<DateTime> onPicked,
+  ) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedPickupDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
+      initialDate:
+          (initial != null && initial.isAfter(today)) ? initial : today,
+      firstDate: DateTime(2000),
       lastDate: DateTime(2100),
-      builder: (context, Widget? child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Colors.amber,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child ?? const SizedBox.shrink(),
-        );
-      },
     );
     if (picked != null) {
-      setState(() {
-        _selectedPickupDate = picked;
-        _pickupDateController.text =
-            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-      });
+      controller.text = DateFormat('yyyy-MM-dd').format(picked);
+      onPicked(picked);
     }
   }
 
-  Future<void> _pickReadyDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedReadyDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-      builder: (context, Widget? child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Colors.amber,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child ?? const SizedBox.shrink(),
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() {
-        _selectedReadyDate = picked;
-        _readyDateController.text =
-            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-      });
-    }
+  void _clearDate(TextEditingController controller, void Function() onCleared) {
+    setState(() {
+      controller.clear();
+      onCleared();
+    });
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImages() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      // Upload to server
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('http://192.168.83.54/orders_photo/upload_image.php'),
-      );
-      request.files.add(
-        await http.MultipartFile.fromPath('image', picked.path),
-      );
-      var response = await request.send();
-      if (response.statusCode == 200) {
-        var respStr = await response.stream.bytesToString();
-        var jsonResp = json.decode(respStr);
-        if (jsonResp['success']) {
-          setState(() {
-            _uploadedImageUrls.add(jsonResp['url']); // URL penuh
-            _pickedImages.add(File(picked.path));
-          });
-        }
-      }
-    }
-  }
-
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isLoading = true);
-
-    final order = widget.order.copyWith(
-      ordersCustomerName: _customerNameController.text,
-      ordersCustomerContact: _customerContactController.text,
-      ordersAddress: _addressController.text,
-      ordersJewelryType: _selectedJewelryType ?? '',
-      ordersGoldType: _selectedGoldType ?? '',
-      ordersGoldColor: _selectedGoldColor ?? '',
-      ordersFinalPrice:
-          double.tryParse(_finalPriceController.text.replaceAll('.', '')) ?? 0,
-      ordersNote: _notesController.text,
-      ordersPickupDate: _selectedPickupDate,
-      ordersGoldPricePerGram:
-          _goldPricePerGramController.text.isNotEmpty
-              ? double.tryParse(
-                    _goldPricePerGramController.text.replaceAll('.', ''),
-                  ) ??
-                  0
-              : 0,
-      ordersRingSize:
-          _ringSizeController.text.isNotEmpty ? _ringSizeController.text : '',
-      ordersReadyDate: _selectedReadyDate,
-      ordersDp:
-          _dpController.text.isNotEmpty
-              ? double.tryParse(_dpController.text.replaceAll('.', '')) ?? 0
-              : 0,
-      ordersSisaLunas:
-          (double.tryParse(_finalPriceController.text.replaceAll('.', '')) ??
-              0) -
-          (double.tryParse(_dpController.text.replaceAll('.', '')) ?? 0),
-      ordersImagePaths: List<String>.from(_uploadedImageUrls),
-      inventoryStoneUsed:
-          (_stoneTypeController.text.isNotEmpty ||
-                  _stoneSizeController.text.isNotEmpty)
-              ? [
-                {
-                  'type': _stoneTypeController.text,
-                  'size': _stoneSizeController.text,
-                },
-              ]
-              : null,
-    );
-
-    try {
-      // DEBUG: print data yang akan dikirim ke backend
-      print('DEBUG order.ordersId: ${order.ordersId}');
-      print(
-        'DEBUG body: ${{'orders_id': order.ordersId, 'orders_customer_name': order.ordersCustomerName, 'orders_customer_contact': order.ordersCustomerContact, 'orders_address': order.ordersAddress, 'orders_jewelry_type': order.ordersJewelryType, 'orders_gold_type': order.ordersGoldType, 'orders_gold_color': order.ordersGoldColor, 'orders_final_price': order.ordersFinalPrice.toString(), 'orders_note': order.ordersNote, 'orders_pickup_date': order.ordersPickupDate != null ? DateFormat('yyyy-MM-dd').format(order.ordersPickupDate!) : '', 'orders_gold_price_per_gram': order.ordersGoldPricePerGram.toString(), 'orders_ring_size': order.ordersRingSize, 'orders_ready_date': order.ordersReadyDate != null ? DateFormat('yyyy-MM-dd').format(order.ordersReadyDate!) : '', 'orders_dp': order.ordersDp.toString(), 'orders_sisa_lunas': order.ordersSisaLunas.toString(), 'orders_imagePaths': jsonEncode(order.ordersImagePaths)}}',
-      );
-
-      final response = await http.post(
-        Uri.parse('http://192.168.83.54/sumatra_api/update_order.php'),
-        body: {
-          'orders_id': order.ordersId,
-          'orders_customer_name': order.ordersCustomerName,
-          'orders_customer_contact': order.ordersCustomerContact,
-          'orders_address': order.ordersAddress,
-          'orders_jewelry_type': order.ordersJewelryType,
-          'orders_gold_type': order.ordersGoldType,
-          'orders_gold_color': order.ordersGoldColor,
-          'orders_final_price': order.ordersFinalPrice.toString(),
-          'orders_note': order.ordersNote,
-          'orders_pickup_date':
-              order.ordersPickupDate != null
-                  ? DateFormat('yyyy-MM-dd').format(order.ordersPickupDate!)
-                  : '',
-          'orders_gold_price_per_gram': order.ordersGoldPricePerGram.toString(),
-          'orders_ring_size': order.ordersRingSize,
-          'orders_ready_date':
-              order.ordersReadyDate != null
-                  ? DateFormat('yyyy-MM-dd').format(order.ordersReadyDate!)
-                  : '',
-          'orders_dp': order.ordersDp.toString(),
-          'orders_sisa_lunas': order.ordersSisaLunas.toString(),
-          'orders_imagePaths': jsonEncode(order.ordersImagePaths),
-          if (order.inventoryStoneUsed != null)
-            'inventory_stone_used': jsonEncode(order.inventoryStoneUsed),
-        },
-      );
-      print('Response: ${response.body}');
-      final result = jsonDecode(response.body);
-
-      if (result['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pesanan berhasil diupdate!')),
-        );
-        Navigator.of(context).pop(true);
-      } else {
-        // Tampilkan error detail dari backend
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal update pesanan: ${result['error']}')),
-        );
-        print('Error dari backend: ${result['error']}');
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Gagal update pesanan: $e')));
-      print('Exception: $e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    final picked = await picker.pickMultiImage();
+    setState(() {
+      _pickedImages.addAll(picked.map((x) => File(x.path)));
+    });
   }
 
   InputDecoration _luxuryDecoration(
@@ -341,20 +211,200 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
     );
   }
 
-  double get _finalPrice =>
-      double.tryParse(_finalPriceController.text.replaceAll('.', '')) ?? 0;
-  double get _dp =>
-      double.tryParse(_dpController.text.replaceAll('.', '')) ?? 0;
-  double get _sisaLunas => (_finalPrice - _dp).clamp(0, double.infinity);
+  void _removeImage(int idx, {bool isUploaded = false}) {
+    setState(() {
+      if (isUploaded) {
+        _uploadedImageUrls.removeAt(idx);
+      } else {
+        _pickedImages.removeAt(idx);
+      }
+    });
+  }
+
+  Future<String?> uploadImage(File imageFile) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('http://192.168.83.54/sumatra_api/upload_image.php'),
+      );
+      request.files.add(
+        await http.MultipartFile.fromPath('image', imageFile.path),
+      );
+      var response = await request.send().timeout(const Duration(seconds: 20));
+      if (response.statusCode == 200) {
+        var respStr = await response.stream.bytesToString();
+        var jsonResp = jsonDecode(respStr);
+        if (jsonResp['success'] == true) {
+          return jsonResp['url'];
+        }
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_uploadedImageUrls.isEmpty && _pickedImages.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Minimal 1 gambar referensi wajib diupload.'),
+        ),
+      );
+      return;
+    }
+    setState(() => _isLoading = true);
+    // Upload gambar baru ke server dan simpan URL-nya
+    for (final file in _pickedImages) {
+      final url = await uploadImage(file);
+      if (url != null) {
+        _uploadedImageUrls.add(url);
+      } else {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Gagal upload salah satu gambar. Pastikan koneksi stabil dan file tidak terlalu besar.',
+            ),
+          ),
+        );
+        return;
+      }
+    }
+    final List<Map<String, String>> stoneUsedList =
+        _stoneInputs
+            .where(
+              (input) =>
+                  (input.shape != null && input.shape!.isNotEmpty) ||
+                  input.countController.text.isNotEmpty ||
+                  input.caratController.text.isNotEmpty,
+            )
+            .map(
+              (input) => {
+                'shape': input.shape ?? '',
+                'count': input.countController.text,
+                'carat': input.caratController.text,
+              },
+            )
+            .toList();
+    // Pastikan orders_stone_used dan orders_imagePaths dikirim sebagai String
+    final String ordersStoneUsedStr =
+        stoneUsedList.isNotEmpty ? jsonEncode(stoneUsedList) : '';
+    final String ordersImagePathsStr = jsonEncode(_uploadedImageUrls);
+    final updatedAt = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+    try {
+      final response = await http.post(
+        Uri.parse('http://192.168.83.54/sumatra_api/update_orders.php'),
+        body: {
+          'orders_id': widget.orderData['orders_id'],
+          'orders_customer_name': _customerNameController.text,
+          'orders_customer_contact': _customerContactController.text,
+          'orders_address': _addressController.text,
+          'orders_jewelry_type': _selectedJewelryType ?? '',
+          'orders_gold_color': _selectedGoldColor ?? '',
+          'orders_gold_type': _selectedGoldType ?? '',
+          'orders_ring_size': _ringSizeController.text,
+          'orders_stone_used': ordersStoneUsedStr,
+          'orders_ready_date':
+              _readyDateController.text.isEmpty
+                  ? ''
+                  : _readyDateController.text,
+          'orders_pickup_date':
+              _pickupDateController.text.isEmpty
+                  ? ''
+                  : _pickupDateController.text,
+          'orders_gold_price_per_gram': _goldPricePerGramController.text,
+          'orders_final_price': _finalPriceController.text,
+          'orders_dp': _dpController.text,
+          'orders_note': _notesController.text,
+          'orders_updated_at': updatedAt,
+          'orders_imagePaths': ordersImagePathsStr,
+        },
+      );
+      setState(() => _isLoading = false);
+      if (response.statusCode == 200) {
+        final resp = jsonDecode(response.body);
+        if (resp['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pesanan berhasil diupdate!')),
+          );
+          Navigator.of(context).pop(true);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Gagal update pesanan: ${resp['error'] ?? 'Unknown error'}',
+              ),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal update pesanan: ${response.body}')),
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal update pesanan: $e')));
+    }
+  }
+
+  Future<void> _deleteOrder() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await http.post(
+        Uri.parse('http://192.168.83.54/sumatra_api/delete_orders.php'),
+        body: {'orders_id': widget.orderData['orders_id']},
+      );
+      setState(() => _isLoading = false);
+      if (response.statusCode == 200) {
+        final resp = jsonDecode(response.body);
+        if (resp['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pesanan berhasil dihapus!')),
+          );
+          Navigator.of(context).pop(true);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Gagal hapus pesanan: ${resp['error'] ?? 'Unknown error'}',
+              ),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal hapus pesanan: ${response.body}')),
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal hapus pesanan: $e')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Pesanan'),
-        backgroundColor: const Color(0xFFD4AF37),
-        foregroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: Colors.amber[700],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.white),
+            tooltip: 'Edit',
+            onPressed: _submit,
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            tooltip: 'Hapus',
+            onPressed: _deleteOrder,
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
@@ -362,7 +412,6 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              // --- INFORMASI PELANGGAN ---
               const Text(
                 'Informasi Pelanggan',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -375,9 +424,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
                   required: true,
                   icon: Icons.person,
                 ),
-                validator:
-                    (value) =>
-                        value == null || value.isEmpty ? 'Wajib diisi' : null,
+                validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -388,9 +435,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
                   icon: Icons.phone,
                 ),
                 keyboardType: TextInputType.phone,
-                validator:
-                    (value) =>
-                        value == null || value.isEmpty ? 'Wajib diisi' : null,
+                validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -400,14 +445,9 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
                   required: true,
                   icon: Icons.location_on,
                 ),
-                validator:
-                    (value) =>
-                        value == null || value.isEmpty ? 'Wajib diisi' : null,
+                validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
               ),
-
               const SizedBox(height: 24),
-
-              // --- INFORMASI BARANG ---
               const Text(
                 'Informasi Barang',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -424,19 +464,13 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
                 items:
                     _jewelryTypes
                         .map(
-                          (type) => DropdownMenuItem(
-                            value: type,
-                            child: Text(
-                              type,
-                              style: const TextStyle(fontSize: 15),
-                            ),
-                          ),
+                          (type) =>
+                              DropdownMenuItem(value: type, child: Text(type)),
                         )
                         .toList(),
                 onChanged: (val) => setState(() => _selectedJewelryType = val),
                 validator:
-                    (value) =>
-                        value == null || value.isEmpty ? 'Wajib dipilih' : null,
+                    (v) => v == null || v.isEmpty ? 'Wajib dipilih' : null,
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
@@ -450,19 +484,13 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
                 items:
                     _goldTypes
                         .map(
-                          (type) => DropdownMenuItem(
-                            value: type,
-                            child: Text(
-                              type,
-                              style: const TextStyle(fontSize: 15),
-                            ),
-                          ),
+                          (type) =>
+                              DropdownMenuItem(value: type, child: Text(type)),
                         )
                         .toList(),
                 onChanged: (val) => setState(() => _selectedGoldType = val),
                 validator:
-                    (value) =>
-                        value == null || value.isEmpty ? 'Wajib dipilih' : null,
+                    (v) => v == null || v.isEmpty ? 'Wajib dipilih' : null,
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
@@ -478,135 +506,244 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
                         .map(
                           (color) => DropdownMenuItem(
                             value: color,
-                            child: Text(
-                              color,
-                              style: const TextStyle(fontSize: 15),
-                            ),
+                            child: Text(color),
                           ),
                         )
                         .toList(),
                 onChanged: (val) => setState(() => _selectedGoldColor = val),
                 validator:
-                    (value) =>
-                        value == null || value.isEmpty ? 'Wajib dipilih' : null,
+                    (v) => v == null || v.isEmpty ? 'Wajib dipilih' : null,
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _ringSizeController,
-                decoration: _luxuryDecoration(
-                  'Ukuran Cincin',
-                  icon: Icons.ring_volume,
+              if (_selectedJewelryType != null &&
+                  (_selectedJewelryType!.toLowerCase().contains('ring'))) ...[
+                TextFormField(
+                  controller: _ringSizeController,
+                  decoration: _luxuryDecoration('Ukuran Cincin'),
+                  keyboardType: TextInputType.number,
                 ),
-                keyboardType: TextInputType.number,
+                const SizedBox(height: 12),
+              ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Batu/Berlian',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  TextButton.icon(
+                    onPressed:
+                        () => setState(() => _stoneInputs.add(StoneInput())),
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Tambah Batu'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _stoneTypeController,
-                decoration: _luxuryDecoration('Tipe Batu'),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _stoneSizeController,
-                decoration: _luxuryDecoration('Ukuran Batu'),
-              ),
-
+              const SizedBox(height: 8),
+              if (_stoneInputs.isNotEmpty)
+                Column(
+                  children: [
+                    ..._stoneInputs.asMap().entries.map((entry) {
+                      final i = entry.key;
+                      final input = entry.value;
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 8,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: DropdownButtonFormField<String>(
+                                  value: input.shape,
+                                  isDense: true,
+                                  decoration: _luxuryDecoration('Bentuk Batu'),
+                                  items:
+                                      _stoneShapes
+                                          .map(
+                                            (shape) => DropdownMenuItem(
+                                              value: shape,
+                                              child: Text(shape),
+                                            ),
+                                          )
+                                          .toList(),
+                                  onChanged:
+                                      (val) =>
+                                          setState(() => input.shape = val),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                flex: 1,
+                                child: TextFormField(
+                                  controller: input.countController,
+                                  decoration: _luxuryDecoration('Jumlah'),
+                                  keyboardType: TextInputType.number,
+                                ),
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.only(left: 4),
+                                child: Text('pcs'),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                flex: 1,
+                                child: TextFormField(
+                                  controller: input.caratController,
+                                  decoration: _luxuryDecoration('Ukuran'),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                ),
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.only(left: 4),
+                                child: Text('ct'),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                onPressed:
+                                    () => setState(() {
+                                      input.dispose();
+                                      _stoneInputs.removeAt(i);
+                                    }),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
               const SizedBox(height: 24),
-
-              // --- INFORMASI HARGA ---
               const Text(
-                'Informasi Harga',
+                'Informasi Harga & Tanggal',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const Divider(),
               TextFormField(
-                controller: _finalPriceController,
-                decoration: _luxuryDecoration(
-                  'Harga Perkiraan',
-                  required: true,
-                  icon: Icons.attach_money,
-                ),
+                controller: _goldPricePerGramController,
+                decoration: _luxuryDecoration('Harga Emas per Gram'),
                 keyboardType: TextInputType.number,
-                onChanged: (_) => setState(() {}),
-                inputFormatters: [ThousandSeparatorInputFormatter()],
-                validator:
-                    (value) =>
-                        value == null || value.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
-                controller: _goldPricePerGramController,
-                decoration: _luxuryDecoration(
-                  'Harga Emas per Gram',
-                  icon: Icons.scale,
-                ),
+                controller: _finalPriceController,
+                decoration: _luxuryDecoration('Harga Perkiraan'),
                 keyboardType: TextInputType.number,
-                inputFormatters: [ThousandSeparatorInputFormatter()],
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _dpController,
-                decoration: _luxuryDecoration('DP', icon: Icons.payments),
+                decoration: _luxuryDecoration('DP'),
                 keyboardType: TextInputType.number,
-                onChanged: (_) => setState(() {}),
-                inputFormatters: [ThousandSeparatorInputFormatter()],
               ),
               const SizedBox(height: 12),
-              Container(
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                child: Text(
-                  'Sisa Lunas: ${_currencyFormatter.format(_sisaLunas)}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.redAccent,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // --- INFORMASI TANGGAL ---
-              const Text(
-                'Informasi Tanggal',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const Divider(),
-              GestureDetector(
-                onTap: _pickPickupDate,
-                child: AbsorbPointer(
-                  child: TextFormField(
-                    controller: _pickupDateController,
-                    decoration: _luxuryDecoration(
-                      'Tanggal Ambil',
-                      icon: Icons.calendar_today,
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _readyDateController,
+                      readOnly: true,
+                      onTap:
+                          () => _pickDate(
+                            _readyDateController,
+                            _selectedReadyDate,
+                            (d) => setState(() => _selectedReadyDate = d),
+                          ),
+                      decoration: _luxuryDecoration(
+                        'Tanggal Jadi',
+                        icon: Icons.event,
+                      ).copyWith(
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                Icons.calendar_today,
+                                color: Colors.amber,
+                              ),
+                              onPressed:
+                                  () => _pickDate(
+                                    _readyDateController,
+                                    _selectedReadyDate,
+                                    (d) =>
+                                        setState(() => _selectedReadyDate = d),
+                                  ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.red),
+                              onPressed:
+                                  () => _clearDate(
+                                    _readyDateController,
+                                    () => _selectedReadyDate = null,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: 12),
-              GestureDetector(
-                onTap: _pickReadyDate,
-                child: AbsorbPointer(
-                  child: TextFormField(
-                    controller: _readyDateController,
-                    decoration: _luxuryDecoration(
-                      'Tanggal Jadi',
-                      icon: Icons.event_available,
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _pickupDateController,
+                      readOnly: true,
+                      onTap:
+                          () => _pickDate(
+                            _pickupDateController,
+                            _selectedPickupDate,
+                            (d) => setState(() => _selectedPickupDate = d),
+                          ),
+                      decoration: _luxuryDecoration(
+                        'Tanggal Ambil',
+                        icon: Icons.event_available,
+                      ).copyWith(
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                Icons.calendar_today,
+                                color: Colors.amber,
+                              ),
+                              onPressed:
+                                  () => _pickDate(
+                                    _pickupDateController,
+                                    _selectedPickupDate,
+                                    (d) =>
+                                        setState(() => _selectedPickupDate = d),
+                                  ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.red),
+                              onPressed:
+                                  () => _clearDate(
+                                    _pickupDateController,
+                                    () => _selectedPickupDate = null,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-
               const SizedBox(height: 24),
-
-              // --- INFORMASI TAMBAHAN (opsional) ---
               const Text(
-                'Informasi Tambahan',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const Text(
-                'Referensi Gambar',
+                'Referensi Gambar (Wajib)',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
@@ -615,54 +752,12 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: [
-                    ..._pickedImages.map(
-                      (img) => GestureDetector(
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder:
-                                (_) => Dialog(
-                                  child: SizedBox(
-                                    width: 300,
-                                    height: 300,
-                                    child: PhotoView(
-                                      imageProvider: FileImage(img),
-                                      backgroundDecoration: const BoxDecoration(
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                          );
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(right: 10),
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.amber),
-                            image: DecorationImage(
-                              image: FileImage(img),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    // PATCH: preview gambar yang sudah (lama) dari server
-                    ..._uploadedImageUrls
-                        .where(
-                          (url) =>
-                              url.isNotEmpty &&
-                              !_pickedImages.any((file) => file.path == url),
-                        )
-                        .map((img) {
-                          final String imageUrl =
-                              img.startsWith('http')
-                                  ? img
-                                  : 'http://192.168.83.54/sumatra_api/$img';
-                          return Container(
+                    ..._uploadedImageUrls.asMap().entries.map((entry) {
+                      final i = entry.key;
+                      final url = entry.value;
+                      return Stack(
+                        children: [
+                          Container(
                             margin: const EdgeInsets.only(right: 10),
                             width: 80,
                             height: 80,
@@ -670,14 +765,73 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: Colors.amber),
                               image: DecorationImage(
-                                image: NetworkImage(imageUrl),
+                                image: NetworkImage(url),
                                 fit: BoxFit.cover,
                               ),
                             ),
-                          );
-                        }),
+                          ),
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () => _removeImage(i, isUploaded: true),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+                    ..._pickedImages.asMap().entries.map((entry) {
+                      final i = entry.key;
+                      final img = entry.value;
+                      return Stack(
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.only(right: 10),
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber),
+                              image: DecorationImage(
+                                image: FileImage(img),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () => _removeImage(i),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
                     GestureDetector(
-                      onTap: _pickImage,
+                      onTap: _pickImages,
                       child: Container(
                         width: 80,
                         height: 80,
@@ -697,73 +851,43 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              // Catatan (memo)
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.amber[50],
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.amber[200]!),
-                ),
-                padding: const EdgeInsets.all(10),
-                margin: const EdgeInsets.only(bottom: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: const [
-                        Icon(Icons.edit_note, color: Colors.amber, size: 20),
-                        SizedBox(width: 6),
-                        Text(
-                          'Catatan (Memo)',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _notesController,
-                      decoration: const InputDecoration(
-                        hintText:
-                            'Tulis permintaan khusus atau catatan di sini...',
-                        border: InputBorder.none,
-                        isDense: true,
-                      ),
-                      maxLines: 3,
-                      validator:
-                          (value) =>
-                              value == null || value.isEmpty
-                                  ? 'Wajib diisi'
-                                  : null,
-                      style: const TextStyle(
-                        fontFamily: 'Courier',
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
+              const Text(
+                'Catatan (Memo)',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
-
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: _notesController,
+                decoration: const InputDecoration(
+                  hintText: 'Tulis permintaan khusus atau catatan di sini...',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                maxLines: 3,
+                validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
+                style: const TextStyle(fontSize: 14),
+              ),
               const SizedBox(height: 20),
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD4AF37),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                  : MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber[700],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      textStyle: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      icon: const Icon(Icons.save),
+                      onPressed: _submit,
+                      label: const Text('Update Data'),
                     ),
-                    icon: const Icon(Icons.save),
-                    onPressed: _submit,
-                    label: const Text('Simpan Perubahan'),
                   ),
             ],
           ),

@@ -112,11 +112,9 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
   Future<void> _pickImages() async {
     final picker = ImagePicker();
     final picked = await picker.pickMultiImage();
-    if (picked != null) {
-      setState(() {
-        _pickedImages.addAll(picked.map((x) => File(x.path)));
-      });
-    }
+    setState(() {
+      _pickedImages.addAll(picked.map((x) => File(x.path)));
+    });
   }
 
   InputDecoration _luxuryDecoration(
@@ -229,8 +227,14 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
           'orders_ring_size': _ringSizeController.text,
           'orders_stone_used':
               stoneUsedList.isNotEmpty ? jsonEncode(stoneUsedList) : '',
-          'orders_ready_date': _readyDateController.text,
-          'orders_pickup_date': _pickupDateController.text,
+          'orders_ready_date':
+              _readyDateController.text.isEmpty
+                  ? ''
+                  : _readyDateController.text,
+          'orders_pickup_date':
+              _pickupDateController.text.isEmpty
+                  ? ''
+                  : _pickupDateController.text,
           'orders_gold_price_per_gram': _goldPricePerGramController.text,
           'orders_final_price': _finalPriceController.text,
           'orders_dp': _dpController.text,

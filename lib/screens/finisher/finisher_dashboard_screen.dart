@@ -1132,8 +1132,9 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                                             ),
                                                   ),
                                                 );
-                                                if (result == true)
+                                                if (result == true) {
                                                   _fetchOrders();
+                                                }
                                               },
                                             ),
                                           ],

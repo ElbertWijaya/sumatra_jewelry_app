@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/order_service.dart';
 import '../../services/inventory_service.dart';
-import '../../models/order.dart';
-import '../../models/inventory.dart';
 
 class BossDashboardScreen extends StatefulWidget {
   const BossDashboardScreen({super.key});

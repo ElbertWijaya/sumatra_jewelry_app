@@ -1135,8 +1135,9 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                                             ),
                                                   ),
                                                 );
-                                                if (result == true)
+                                                if (result == true) {
                                                   _fetchOrders();
+                                                }
                                               },
                                             ),
                                           ],
