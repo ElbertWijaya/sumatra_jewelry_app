@@ -1,5 +1,5 @@
 class Account {
-  final String accountsId;
+  final int accountsId;
   final String accountsUsername;
   final String accountsRole;
   final String accountsName;

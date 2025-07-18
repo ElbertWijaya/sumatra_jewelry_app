@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
+import '../../services/auth_service.dart';
 import 'designer_detail_screen.dart';
 
 class DesignerDashboardScreen extends StatefulWidget {
@@ -192,18 +193,29 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
               )
               .toList();
     } else if (_selectedTab == 'working') {
-      filtered =
-          filtered
-              .where(
-                (order) => workingStatuses.contains(order.ordersWorkflowStatus),
-              )
-              .toList();
-    } else if (_selectedTab == 'onprogress') {
+      // Filter berdasarkan designer yang sedang login dan status designing
+      final currentUserId = AuthService().currentUserId;
+      final currentUserIdInt =
+          currentUserId != null ? int.tryParse(currentUserId) : null;
       filtered =
           filtered
               .where(
                 (order) =>
-                    onProgressStatuses.contains(order.ordersWorkflowStatus),
+                    workingStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersDesignerAccountId == currentUserIdInt,
+              )
+              .toList();
+    } else if (_selectedTab == 'onprogress') {
+      // Filter berdasarkan designer yang sedang login dan status after designing
+      final currentUserId = AuthService().currentUserId;
+      final currentUserIdInt =
+          currentUserId != null ? int.tryParse(currentUserId) : null;
+      filtered =
+          filtered
+              .where(
+                (order) =>
+                    onProgressStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersDesignerAccountId == currentUserIdInt,
               )
               .toList();
     }
@@ -582,6 +594,10 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
   Widget _buildTabButton(String label, String value, Color color) {
     final bool selected = _selectedTab == value;
     int count = 0;
+    final currentUserId = AuthService().currentUserId;
+    final currentUserIdInt =
+        currentUserId != null ? int.tryParse(currentUserId) : null;
+
     if (value == 'waiting') {
       count =
           _orders
@@ -590,18 +606,23 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
               )
               .length;
     } else if (value == 'working') {
-      count =
-          _orders
-              .where(
-                (order) => workingStatuses.contains(order.ordersWorkflowStatus),
-              )
-              .length;
-    } else if (value == 'onprogress') {
+      // Filter berdasarkan designer yang sedang login dan status designing
       count =
           _orders
               .where(
                 (order) =>
-                    onProgressStatuses.contains(order.ordersWorkflowStatus),
+                    workingStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersDesignerAccountId == currentUserIdInt,
+              )
+              .length;
+    } else if (value == 'onprogress') {
+      // Filter berdasarkan designer yang sedang login dan status after designing
+      count =
+          _orders
+              .where(
+                (order) =>
+                    onProgressStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersDesignerAccountId == currentUserIdInt,
               )
               .length;
     }

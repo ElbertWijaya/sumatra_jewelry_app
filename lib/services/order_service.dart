@@ -83,48 +83,63 @@ class OrderService {
   }
 
   Future<bool> updateOrder(Order order) async {
+    final Map<String, String> body = {
+      'orders_id': order.ordersId,
+      'orders_customer_name': order.ordersCustomerName,
+      'orders_customer_contact': order.ordersCustomerContact,
+      'orders_address': order.ordersAddress,
+      'orders_jewelry_type': order.ordersJewelryType,
+      'orders_gold_type': order.ordersGoldType,
+      'orders_gold_color': order.ordersGoldColor,
+      'orders_note': order.ordersNote,
+      'orders_ring_size': order.ordersRingSize,
+      'orders_imagePaths': jsonEncode(order.ordersImagePaths),
+      'orders_workflowStatus': order.ordersWorkflowStatus.name,
+      'orders_designerWorkChecklist': jsonEncode(
+        order.ordersDesignerWorkChecklist,
+      ),
+      'orders_castingWorkChecklist': jsonEncode(
+        order.ordersCastingWorkChecklist,
+      ),
+      'orders_carvingWorkChecklist': jsonEncode(
+        order.ordersCarvingWorkChecklist,
+      ),
+      'orders_diamondSettingWorkChecklist': jsonEncode(
+        order.ordersDiamondSettingWorkChecklist,
+      ),
+      'orders_finishingWorkChecklist': jsonEncode(
+        order.ordersFinishingWorkChecklist,
+      ),
+    };
+    // Tanggal hanya dikirim jika tidak null
+    if (order.ordersPickupDate != null) {
+      body['orders_pickup_date'] =
+          "${order.ordersPickupDate!.year.toString().padLeft(4, '0')}-${order.ordersPickupDate!.month.toString().padLeft(2, '0')}-${order.ordersPickupDate!.day.toString().padLeft(2, '0')}";
+    }
+    if (order.ordersReadyDate != null) {
+      body['orders_ready_date'] =
+          "${order.ordersReadyDate!.year.toString().padLeft(4, '0')}-${order.ordersReadyDate!.month.toString().padLeft(2, '0')}-${order.ordersReadyDate!.day.toString().padLeft(2, '0')}";
+    }
+    // Angka hanya dikirim jika tidak null dan dikirim sebagai String
+    if (order.ordersGoldPricePerGram != null &&
+        order.ordersGoldPricePerGram != 0) {
+      body['orders_gold_price_per_gram'] =
+          order.ordersGoldPricePerGram!.toString();
+    }
+    if (order.ordersFinalPrice != null && order.ordersFinalPrice != 0) {
+      body['orders_final_price'] = order.ordersFinalPrice!.toString();
+    }
+    if (order.ordersDp != null && order.ordersDp != 0) {
+      body['orders_dp'] = order.ordersDp!.toString();
+    }
+    body['orders_sisa_lunas'] = order.ordersSisaLunas!.toInt().toString();
+    if (order.ordersDesignerAccountId != null) {
+      body['orders_designer_account_id'] =
+          order.ordersDesignerAccountId.toString();
+    }
     final response = await http.post(
       Uri.parse('http://192.168.110.147/sumatra_api/update_orders.php'),
-      body: {
-        'orders_id': order.ordersId,
-        'orders_customer_name': order.ordersCustomerName,
-        'orders_customer_contact': order.ordersCustomerContact,
-        'orders_address': order.ordersAddress,
-        'orders_jewelry_type': order.ordersJewelryType,
-        'orders_gold_type': order.ordersGoldType,
-        'orders_gold_color': order.ordersGoldColor,
-        'orders_final_price': order.ordersFinalPrice.toString(),
-        'orders_note': order.ordersNote,
-        'orders_pickup_date':
-            order.ordersPickupDate != null
-                ? "${order.ordersPickupDate!.year.toString().padLeft(4, '0')}-${order.ordersPickupDate!.month.toString().padLeft(2, '0')}-${order.ordersPickupDate!.day.toString().padLeft(2, '0')}"
-                : '',
-        'orders_gold_price_per_gram': order.ordersGoldPricePerGram.toString(),
-        'orders_ring_size': order.ordersRingSize,
-        'orders_ready_date':
-            order.ordersReadyDate != null
-                ? "${order.ordersReadyDate!.year.toString().padLeft(4, '0')}-${order.ordersReadyDate!.month.toString().padLeft(2, '0')}-${order.ordersReadyDate!.day.toString().padLeft(2, '0')}"
-                : '',
-        'orders_dp': order.ordersDp.toString(),
-        'orders_sisa_lunas': order.ordersSisaLunas.toString(),
-        'orders_imagePaths': jsonEncode(order.ordersImagePaths),
-        'orders_workflowStatus': order.ordersWorkflowStatus.name,
-        'orders_designerWorkChecklist': jsonEncode(
-          order.ordersDesignerWorkChecklist,
-        ),
-        'orders_castingWorkChecklist': jsonEncode(
-          order.ordersCastingWorkChecklist,
-        ),
-        'orders_carvingWorkChecklist': jsonEncode(
-          order.ordersCarvingWorkChecklist,
-        ),
-        'orders_diamondSettingWorkChecklist': jsonEncode(
-          order.ordersDiamondSettingWorkChecklist,
-        ),
-        'orders_finishingWorkChecklist': jsonEncode(
-          order.ordersFinishingWorkChecklist,
-        ),
-      },
+      body: body,
     );
     if (response.statusCode != 200) return false;
     final result = json.decode(response.body);

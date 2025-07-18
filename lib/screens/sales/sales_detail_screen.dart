@@ -47,25 +47,9 @@ class SalesDetailScreen extends StatelessWidget {
               ? AccountService.getAccountById(accountId)
               : Future.value(null),
       builder: (ctx, snapshot) {
-        String takenBy = '';
-        String? salesName;
-        if (title == 'Sales') {
-          debugPrint('[SALES CHECKLIST] ordersSalesAccountId: $accountId');
-        }
-        if (accountId != null) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            takenBy = ' (mengambil...)';
-          } else if (snapshot.hasData && snapshot.data != null) {
-            takenBy = ' taken by ${snapshot.data!.accountsName}';
-            salesName = snapshot.data!.accountsName;
-            if (title == 'Sales') {
-              debugPrint('[SALES CHECKLIST] Nama sales: $salesName');
-            }
-          } else if (snapshot.hasError) {
-            debugPrint('[SALES CHECKLIST] Error: ${snapshot.error}');
-          } else if (title == 'Sales') {
-            debugPrint('[SALES CHECKLIST] Nama sales tidak ditemukan');
-          }
+        String? userName;
+        if (accountId != null && snapshot.hasData && snapshot.data != null) {
+          userName = snapshot.data!.accountsName;
         }
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 6),
@@ -80,7 +64,7 @@ class SalesDetailScreen extends StatelessWidget {
                     Icon(icon, color: color, size: 22),
                     const SizedBox(width: 8),
                     Text(
-                      title + takenBy,
+                      title,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -89,10 +73,12 @@ class SalesDetailScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (title == 'Sales' && salesName != null) ...[
+                if (userName != null) ...[
                   const SizedBox(height: 2),
                   Text(
-                    'Dibuat oleh $salesName',
+                    title == 'Sales'
+                        ? 'Dibuat oleh $userName'
+                        : 'Dikerjakan oleh $userName',
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],

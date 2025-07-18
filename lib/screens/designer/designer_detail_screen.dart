@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
+import '../../services/auth_service.dart';
 
 class DesignerDetailScreen extends StatefulWidget {
   final Order order;
@@ -36,8 +37,33 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
   Future<void> _startDesigning() async {
     setState(() => _isProcessing = true);
     try {
+      // Ambil ID user yang sedang login
+      final String? currentUserIdStr = AuthService().currentUserId;
+      final int? currentUserId =
+          currentUserIdStr != null ? int.tryParse(currentUserIdStr) : null;
+      // Buat map untuk field yang akan diupdate
+      final Map<String, dynamic> updateFields = {
+        'ordersWorkflowStatus': OrderWorkflowStatus.designing,
+        'ordersDesignerAccountId': currentUserId,
+      };
+      // Hanya kirim field angka jika tidak null
+      if (_order.ordersGoldPricePerGram != null) {
+        updateFields['ordersGoldPricePerGram'] =
+            _order.ordersGoldPricePerGram.toString();
+      }
+      if (_order.ordersFinalPrice != null) {
+        updateFields['ordersFinalPrice'] = _order.ordersFinalPrice.toString();
+      }
+      if (_order.ordersDp != null) {
+        updateFields['ordersDp'] = _order.ordersDp.toString();
+      }
+      // Copy order dengan field yang diupdate
       final updatedOrder = _order.copyWith(
-        ordersWorkflowStatus: OrderWorkflowStatus.designing,
+        ordersWorkflowStatus: updateFields['ordersWorkflowStatus'],
+        ordersDesignerAccountId: updateFields['ordersDesignerAccountId'],
+        ordersGoldPricePerGram: _order.ordersGoldPricePerGram,
+        ordersFinalPrice: _order.ordersFinalPrice,
+        ordersDp: _order.ordersDp,
       );
       final result = await OrderService().updateOrder(updatedOrder);
       if (result == true) {
@@ -367,19 +393,19 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
             ListTile(
               leading: Icon(Icons.date_range, color: Colors.amber),
               title: Text(
-                'Tanggal Siap: ${_order.ordersReadyDate != null ? "${_order.ordersReadyDate!.day.toString().padLeft(2, '0')}/${_order.ordersReadyDate!.month.toString().padLeft(2, '0')}/${_order.ordersReadyDate!.year} ${_order.ordersReadyDate!.hour.toString().padLeft(2, '0')}:${_order.ordersReadyDate!.minute.toString().padLeft(2, '0')}:${_order.ordersReadyDate!.second.toString().padLeft(2, '0')}" : "-"}',
+                'Tanggal Siap: ${_order.ordersReadyDate != null ? "${_order.ordersReadyDate!.day.toString().padLeft(2, '0')}/${_order.ordersReadyDate!.month.toString().padLeft(2, '0')}/${_order.ordersReadyDate!.year}" : "-"}',
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Tanggal Pickup: ${_order.ordersPickupDate != null ? "${_order.ordersPickupDate!.day.toString().padLeft(2, '0')}/${_order.ordersPickupDate!.month.toString().padLeft(2, '0')}/${_order.ordersPickupDate!.year} ${_order.ordersPickupDate!.hour.toString().padLeft(2, '0')}:${_order.ordersPickupDate!.minute.toString().padLeft(2, '0')}:${_order.ordersPickupDate!.second.toString().padLeft(2, '0')}" : "-"}',
+                    'Tanggal Pickup: ${_order.ordersPickupDate != null ? "${_order.ordersPickupDate!.day.toString().padLeft(2, '0')}/${_order.ordersPickupDate!.month.toString().padLeft(2, '0')}/${_order.ordersPickupDate!.year}" : "-"}',
                   ),
                   Text(
-                    'Tanggal Dibuat: ${_order.ordersCreatedAt.day.toString().padLeft(2, '0')}/${_order.ordersCreatedAt.month.toString().padLeft(2, '0')}/${_order.ordersCreatedAt.year} ${_order.ordersCreatedAt.hour.toString().padLeft(2, '0')}:${_order.ordersCreatedAt.minute.toString().padLeft(2, '0')}:${_order.ordersCreatedAt.second.toString().padLeft(2, '0')}',
+                    'Tanggal Dibuat: ${_order.ordersCreatedAt.day.toString().padLeft(2, '0')}/${_order.ordersCreatedAt.month.toString().padLeft(2, '0')}/${_order.ordersCreatedAt.year}',
                   ),
                   Text(
-                    'Terakhir Update: ${_order.ordersUpdatedAt != null ? "${_order.ordersUpdatedAt!.day.toString().padLeft(2, '0')}/${_order.ordersUpdatedAt!.month.toString().padLeft(2, '0')}/${_order.ordersUpdatedAt!.year} ${_order.ordersUpdatedAt!.hour.toString().padLeft(2, '0')}:${_order.ordersUpdatedAt!.minute.toString().padLeft(2, '0')}:${_order.ordersUpdatedAt!.second.toString().padLeft(2, '0')}" : "-"}',
+                    'Terakhir Update: ${_order.ordersUpdatedAt != null ? "${_order.ordersUpdatedAt!.day.toString().padLeft(2, '0')}/${_order.ordersUpdatedAt!.month.toString().padLeft(2, '0')}/${_order.ordersUpdatedAt!.year}" : "-"}',
                   ),
                 ],
               ),
