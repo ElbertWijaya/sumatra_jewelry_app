@@ -38,7 +38,7 @@ class SalesDetailScreen extends StatelessWidget {
     List<String>? checkedTasks,
     IconData icon,
     Color color,
-    String? accountId,
+    int? accountId,
   ) {
     final checked = checkedTasks ?? [];
     return FutureBuilder<Account?>(
@@ -61,6 +61,8 @@ class SalesDetailScreen extends StatelessWidget {
             if (title == 'Sales') {
               debugPrint('[SALES CHECKLIST] Nama sales: $salesName');
             }
+          } else if (snapshot.hasError) {
+            debugPrint('[SALES CHECKLIST] Error: ${snapshot.error}');
           } else if (title == 'Sales') {
             debugPrint('[SALES CHECKLIST] Nama sales tidak ditemukan');
           }

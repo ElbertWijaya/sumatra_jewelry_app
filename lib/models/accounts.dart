@@ -17,7 +17,10 @@ class Account {
 
   factory Account.fromJson(Map<String, dynamic> json) {
     return Account(
-      accountsId: json['accounts_id'] ?? '',
+      accountsId:
+          json['accounts_id'] is int
+              ? json['accounts_id']
+              : int.tryParse(json['accounts_id'].toString()) ?? 0,
       accountsUsername: json['accounts_username'] ?? '',
       accountsRole: json['accounts_role'] ?? '',
       accountsName: json['accounts_name'] ?? '',

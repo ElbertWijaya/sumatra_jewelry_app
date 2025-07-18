@@ -150,13 +150,13 @@ class Order {
   final List<Map<String, dynamic>> ordersStoneUsed;
 
   // Tambahan: Account ID untuk setiap tahap pekerjaan
-  final String? ordersSalesAccountId;
-  final String? ordersDesignerAccountId;
-  final String? ordersCastingAccountId;
-  final String? ordersCarvingAccountId;
-  final String? ordersDiamondSettingAccountId;
-  final String? ordersFinishingAccountId;
-  final String? ordersInventoryAccountId;
+  final int? ordersSalesAccountId;
+  final int? ordersDesignerAccountId;
+  final int? ordersCastingAccountId;
+  final int? ordersCarvingAccountId;
+  final int? ordersDiamondSettingAccountId;
+  final int? ordersFinishingAccountId;
+  final int? ordersInventoryAccountId;
 
   Order({
     required this.ordersId,
@@ -258,6 +258,15 @@ class Order {
       return [];
     }
 
+    int? parseAccountId(dynamic val) {
+      if (val == null) return null;
+      if (val is int) return val;
+      if (val is String && val.isNotEmpty) {
+        return int.tryParse(val);
+      }
+      return null;
+    }
+
     return Order(
       ordersId: map['orders_id']?.toString() ?? '',
       ordersCustomerName: map['orders_customer_name']?.toString() ?? '',
@@ -321,14 +330,21 @@ class Order {
       ordersFinishingWorkChecklist: parseChecklist(
         map['orders_finishingWorkChecklist'],
       ),
-      ordersSalesAccountId: map['orders_sales_account_id']?.toString(),
-      ordersDesignerAccountId: map['orders_designer_account_id']?.toString(),
-      ordersCastingAccountId: map['orders_casting_account_id']?.toString(),
-      ordersCarvingAccountId: map['orders_carving_account_id']?.toString(),
-      ordersDiamondSettingAccountId:
-          map['orders_diamond_setting_account_id']?.toString(),
-      ordersFinishingAccountId: map['orders_finishing_account_id']?.toString(),
-      ordersInventoryAccountId: map['orders_inventory_account_id']?.toString(),
+      ordersSalesAccountId: parseAccountId(map['orders_sales_account_id']),
+      ordersDesignerAccountId: parseAccountId(
+        map['orders_designer_account_id'],
+      ),
+      ordersCastingAccountId: parseAccountId(map['orders_casting_account_id']),
+      ordersCarvingAccountId: parseAccountId(map['orders_carving_account_id']),
+      ordersDiamondSettingAccountId: parseAccountId(
+        map['orders_diamond_setting_account_id'],
+      ),
+      ordersFinishingAccountId: parseAccountId(
+        map['orders_finishing_account_id'],
+      ),
+      ordersInventoryAccountId: parseAccountId(
+        map['orders_inventory_account_id'],
+      ),
       inventoryProductId: map['inventory_product_id']?.toString() ?? '',
       inventoryJewelryType: map['inventory_jewelry_type']?.toString() ?? '',
       inventoryGoldColor: map['inventory_gold_color']?.toString() ?? '',
@@ -355,6 +371,13 @@ class Order {
   }
 
   Order copyWith({
+    int? ordersSalesAccountId,
+    int? ordersDesignerAccountId,
+    int? ordersCastingAccountId,
+    int? ordersCarvingAccountId,
+    int? ordersDiamondSettingAccountId,
+    int? ordersFinishingAccountId,
+    int? ordersInventoryAccountId,
     String? ordersId,
     String? ordersCustomerName,
     String? ordersCustomerContact,
@@ -388,11 +411,6 @@ class Order {
     double? inventoryItemsPrice,
     String? inventoryRingSize,
     List<Map<String, dynamic>>? ordersStoneUsed,
-    String? ordersDesignerAccountId,
-    String? ordersCastingAccountId,
-    String? ordersCarvingAccountId,
-    String? ordersDiamondSettingAccountId,
-    String? ordersFinishingAccountId,
   }) {
     return Order(
       ordersId: ordersId ?? this.ordersId,
@@ -436,6 +454,7 @@ class Order {
       inventoryItemsPrice: inventoryItemsPrice ?? this.inventoryItemsPrice,
       inventoryRingSize: inventoryRingSize ?? this.inventoryRingSize,
       ordersStoneUsed: ordersStoneUsed ?? this.ordersStoneUsed,
+      ordersSalesAccountId: ordersSalesAccountId ?? this.ordersSalesAccountId,
       ordersDesignerAccountId:
           ordersDesignerAccountId ?? this.ordersDesignerAccountId,
       ordersCastingAccountId:
@@ -446,6 +465,8 @@ class Order {
           ordersDiamondSettingAccountId ?? this.ordersDiamondSettingAccountId,
       ordersFinishingAccountId:
           ordersFinishingAccountId ?? this.ordersFinishingAccountId,
+      ordersInventoryAccountId:
+          ordersInventoryAccountId ?? this.ordersInventoryAccountId,
     );
   }
 
@@ -496,6 +517,15 @@ class Order {
         } catch (_) {}
       }
       return [];
+    }
+
+    int? parseAccountId(dynamic val) {
+      if (val == null) return null;
+      if (val is int) return val;
+      if (val is String && val.isNotEmpty) {
+        return int.tryParse(val);
+      }
+      return null;
     }
 
     return Order(
@@ -562,14 +592,21 @@ class Order {
       ordersFinishingWorkChecklist: parseChecklist(
         json['orders_finishingWorkChecklist'],
       ),
-      ordersSalesAccountId: json['orders_sales_account_id']?.toString(),
-      ordersDesignerAccountId: json['orders_designer_account_id']?.toString(),
-      ordersCastingAccountId: json['orders_casting_account_id']?.toString(),
-      ordersCarvingAccountId: json['orders_carving_account_id']?.toString(),
-      ordersDiamondSettingAccountId:
-          json['orders_diamond_setting_account_id']?.toString(),
-      ordersFinishingAccountId: json['orders_finishing_account_id']?.toString(),
-      ordersInventoryAccountId: json['orders_inventory_account_id']?.toString(),
+      ordersSalesAccountId: parseAccountId(json['orders_sales_account_id']),
+      ordersDesignerAccountId: parseAccountId(
+        json['orders_designer_account_id'],
+      ),
+      ordersCastingAccountId: parseAccountId(json['orders_casting_account_id']),
+      ordersCarvingAccountId: parseAccountId(json['orders_carving_account_id']),
+      ordersDiamondSettingAccountId: parseAccountId(
+        json['orders_diamond_setting_account_id'],
+      ),
+      ordersFinishingAccountId: parseAccountId(
+        json['orders_finishing_account_id'],
+      ),
+      ordersInventoryAccountId: parseAccountId(
+        json['orders_inventory_account_id'],
+      ),
       inventoryProductId: json['inventory_product_id']?.toString() ?? '',
       inventoryJewelryType: json['inventory_jewelry_type']?.toString() ?? '',
       inventoryGoldColor: json['inventory_gold_color']?.toString() ?? '',
