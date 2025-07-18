@@ -84,7 +84,7 @@ class OrderService {
 
   Future<bool> updateOrder(Order order) async {
     final response = await http.post(
-      Uri.parse('http://192.168.83.54/sumatra_api/update_order.php'),
+      Uri.parse('http://192.168.83.54/sumatra_api/update_orders.php'),
       body: {
         'orders_id': order.ordersId,
         'orders_customer_name': order.ordersCustomerName,

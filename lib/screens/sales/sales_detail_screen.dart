@@ -1,3 +1,5 @@
+import '../../services/account_service.dart';
+import '../../models/accounts.dart';
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import 'package:intl/intl.dart';
@@ -21,64 +23,92 @@ class SalesDetailScreen extends StatelessWidget {
   ];
   final List<String> finisherTasks = ['Chrome', 'Kasih ke Admin'];
   final Order order;
-  SalesDetailScreen({super.key, required this.order});
+  final bool isWaitingTab;
+  SalesDetailScreen({
+    super.key,
+    required this.order,
+    required this.isWaitingTab,
+  });
 
-  Widget _buildChecklist(
+  // Checklist dengan nama akun yang mengambil kerjaan
+  Widget _buildChecklistWithAccount(
+    BuildContext context,
     String title,
     List<String> defaultTasks,
     List<String>? checkedTasks,
     IconData icon,
     Color color,
+    String? accountId,
   ) {
     final checked = checkedTasks ?? [];
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return FutureBuilder<Account?>(
+      future:
+          accountId != null
+              ? AccountService.getAccountById(accountId)
+              : Future.value(null),
+      builder: (ctx, snapshot) {
+        String takenBy = '';
+        if (accountId != null) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            takenBy = ' (mengambil...)';
+          } else if (snapshot.hasData && snapshot.data != null) {
+            takenBy = ' taken by ${snapshot.data!.accountsName}';
+          }
+        }
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(icon, color: color, size: 22),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: color,
-                  ),
+                Row(
+                  children: [
+                    Icon(icon, color: color, size: 22),
+                    const SizedBox(width: 8),
+                    Text(
+                      title + takenBy,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: color,
+                      ),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 8),
+                ...defaultTasks.map((task) {
+                  final isChecked = checked.contains(task);
+                  return Row(
+                    children: [
+                      Container(
+                        width: 22,
+                        height: 22,
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isChecked ? color : Colors.grey[300],
+                          border: Border.all(color: color, width: 2),
+                        ),
+                        child:
+                            isChecked
+                                ? Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 16,
+                                )
+                                : null,
+                      ),
+                      Text(task, style: TextStyle(fontSize: 15)),
+                    ],
+                  );
+                }),
               ],
             ),
-            const SizedBox(height: 8),
-            ...defaultTasks.map((task) {
-              final isChecked = checked.contains(task);
-              return Row(
-                children: [
-                  Container(
-                    width: 22,
-                    height: 22,
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isChecked ? color : Colors.grey[300],
-                      border: Border.all(color: color, width: 2),
-                    ),
-                    child:
-                        isChecked
-                            ? Icon(Icons.check, color: Colors.white, size: 16)
-                            : null,
-                  ),
-                  Text(task, style: TextStyle(fontSize: 15)),
-                ],
-              );
-            }),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -123,7 +153,7 @@ class SalesDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildImageGallery() {
+  Widget _buildImageGallery(BuildContext context) {
     if (order.ordersImagePaths.isEmpty) {
       return Container(
         width: 80,
@@ -147,16 +177,55 @@ class SalesDetailScreen extends StatelessWidget {
                   img.startsWith('http')
                       ? img
                       : 'http://192.168.83.117/sumatra_api/orders_photo/$img';
-              return Container(
-                margin: const EdgeInsets.only(right: 10),
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.amber),
-                  image: DecorationImage(
-                    image: NetworkImage(imageUrl),
-                    fit: BoxFit.cover,
+              return GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder:
+                        (ctx) => Dialog(
+                          backgroundColor: Colors.black,
+                          insetPadding: const EdgeInsets.all(0),
+                          child: Stack(
+                            children: [
+                              InteractiveViewer(
+                                panEnabled: true,
+                                minScale: 1,
+                                maxScale: 5,
+                                child: Center(
+                                  child: Image.network(
+                                    imageUrl,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 24,
+                                right: 24,
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 32,
+                                  ),
+                                  onPressed: () => Navigator.of(ctx).pop(),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 10),
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.amber),
+                    image: DecorationImage(
+                      image: NetworkImage(imageUrl),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               );
@@ -182,118 +251,133 @@ class SalesDetailScreen extends StatelessWidget {
         title: const Text('Detail Pesanan'),
         backgroundColor: const Color(0xFFD4AF37),
         elevation: 0,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: const Color(0xFFD4AF37),
-                  child: IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.white),
-                    tooltip: 'Edit',
-                    onPressed: () async {
-                      final result = await Navigator.pushNamed(
-                        context,
-                        '/sales/edit',
-                        arguments: order,
-                      );
-                      if (result == true) Navigator.pop(context, true);
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                CircleAvatar(
-                  backgroundColor: Colors.red[700],
-                  child: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.white),
-                    tooltip: 'Hapus',
-                    onPressed: () async {
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder:
-                            (ctx) => AlertDialog(
-                              title: const Text('Konfirmasi Hapus'),
-                              content: const Text(
-                                'Yakin ingin menghapus pesanan ini?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  child: const Text('Batal'),
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                ),
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                  ),
-                                  child: const Text('Hapus'),
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                ),
-                              ],
-                            ),
-                      );
-                      if (confirm == true) {
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder:
-                              (ctx) => const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                        );
-                        try {
-                          // Panggil fungsi hapus pesanan dari backend
-                          final response = await http.post(
-                            Uri.parse(
-                              'http://192.168.83.54/sumatra_api/delete_orders.php',
-                            ),
-                            body: {'orders_id': order.ordersId.toString()},
-                          );
-                          Navigator.pop(context); // tutup loading
-                          if (response.statusCode == 200) {
-                            final resp = jsonDecode(response.body);
-                            if (resp['success'] == true) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Pesanan berhasil dihapus!'),
-                                ),
-                              );
-                              Navigator.pop(
+        actions:
+            isWaitingTab
+                ? [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: const Color(0xFFD4AF37),
+                          child: IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.white),
+                            tooltip: 'Edit',
+                            onPressed: () async {
+                              final result = await Navigator.pushNamed(
                                 context,
-                                true,
-                              ); // kembali ke list/dashboard
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Gagal menghapus: ${resp['error'] ?? 'Unknown error'}',
-                                  ),
-                                ),
+                                '/sales/edit',
+                                arguments: order,
                               );
-                            }
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Gagal menghapus: ${response.body}',
-                                ),
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          Navigator.pop(context); // tutup loading
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Gagal menghapus: $e')),
-                          );
-                        }
-                      }
-                    },
+                              if (result == true) Navigator.pop(context, true);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        CircleAvatar(
+                          backgroundColor: Colors.red[700],
+                          child: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.white),
+                            tooltip: 'Hapus',
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder:
+                                    (ctx) => AlertDialog(
+                                      title: const Text('Konfirmasi Hapus'),
+                                      content: const Text(
+                                        'Yakin ingin menghapus pesanan ini?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          child: const Text('Batal'),
+                                          onPressed:
+                                              () => Navigator.pop(ctx, false),
+                                        ),
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red,
+                                          ),
+                                          child: const Text('Hapus'),
+                                          onPressed:
+                                              () => Navigator.pop(ctx, true),
+                                        ),
+                                      ],
+                                    ),
+                              );
+                              if (confirm == true) {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder:
+                                      (ctx) => const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                );
+                                try {
+                                  // Panggil fungsi hapus pesanan dari backend
+                                  final response = await http.post(
+                                    Uri.parse(
+                                      'http://192.168.83.54/sumatra_api/delete_orders.php',
+                                    ),
+                                    body: {
+                                      'orders_id': order.ordersId.toString(),
+                                    },
+                                  );
+                                  Navigator.pop(context); // tutup loading
+                                  if (response.statusCode == 200) {
+                                    final resp = jsonDecode(response.body);
+                                    if (resp['success'] == true) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Pesanan berhasil dihapus!',
+                                          ),
+                                        ),
+                                      );
+                                      Navigator.pop(
+                                        context,
+                                        true,
+                                      ); // kembali ke list/dashboard
+                                    } else {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Gagal menghapus: ${resp['error'] ?? 'Unknown error'}',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Gagal menghapus: ${response.body}',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  Navigator.pop(context); // tutup loading
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Gagal menghapus: $e'),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ],
+                ]
+                : [],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -338,7 +422,7 @@ class SalesDetailScreen extends StatelessWidget {
               ),
             ),
             // Memo/Note
-            if (order.ordersNote != null && order.ordersNote.isNotEmpty)
+            if (order.ordersNote.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Transform.rotate(
@@ -491,7 +575,7 @@ class SalesDetailScreen extends StatelessWidget {
             ),
             const Divider(thickness: 2),
             const SizedBox(height: 6),
-            _buildImageGallery(),
+            _buildImageGallery(context),
             const Divider(),
             // Checklist Pekerja
             Text(
@@ -511,40 +595,50 @@ class SalesDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildChecklist(
+                  _buildChecklistWithAccount(
+                    context,
                     'Designer',
                     designerTasks,
                     order.ordersDesignerWorkChecklist,
                     Icons.design_services,
                     Colors.blue,
+                    order.ordersDesignerAccountId,
                   ),
-                  _buildChecklist(
+                  _buildChecklistWithAccount(
+                    context,
                     'Cor',
                     corTasks,
                     order.ordersCastingWorkChecklist,
                     Icons.local_fire_department,
                     Colors.orange,
+                    order.ordersCastingAccountId,
                   ),
-                  _buildChecklist(
+                  _buildChecklistWithAccount(
+                    context,
                     'Carver',
                     carverTasks,
                     order.ordersCarvingWorkChecklist,
                     Icons.handyman,
                     Colors.brown,
+                    order.ordersCarvingAccountId,
                   ),
-                  _buildChecklist(
+                  _buildChecklistWithAccount(
+                    context,
                     'Diamond Setter',
                     diamondSetterTasks,
                     order.ordersDiamondSettingWorkChecklist,
                     Icons.diamond,
                     Colors.purple,
+                    order.ordersDiamondSettingAccountId,
                   ),
-                  _buildChecklist(
+                  _buildChecklistWithAccount(
+                    context,
                     'Finisher',
                     finisherTasks,
                     order.ordersFinishingWorkChecklist,
                     Icons.check,
                     Colors.green,
+                    order.ordersFinishingAccountId,
                   ),
                 ],
               ),
@@ -553,37 +647,88 @@ class SalesDetailScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16),
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[700],
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-            icon: const Icon(Icons.send),
-            label: const Text(
-              'Submit ke Designer',
-              style: TextStyle(fontSize: 18),
-            ),
-            onPressed: () async {
-              // Submit ke Designer: update workflow pesanan
-              // TODO: Panggil OrderService.updateOrder dengan status waitingDesigner
-              // Contoh:
-              // await OrderService().updateOrder(order.copyWith(ordersWorkflowStatus: WorkflowStatus.waitingDesigner));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Pesanan dikirim ke Designer!')),
-              );
-              // Optionally, pop context or refresh
-            },
-          ),
-        ),
-      ),
+      bottomNavigationBar:
+          isWaitingTab
+              ? Padding(
+                padding: const EdgeInsets.all(16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue[700],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    icon: const Icon(Icons.send),
+                    label: const Text(
+                      'Submit ke Designer',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    onPressed: () async {
+                      // Submit ke Designer: update workflow pesanan ke waitingDesigner
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder:
+                            (ctx) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                      );
+                      try {
+                        final response = await http.post(
+                          Uri.parse(
+                            'http://192.168.83.54/sumatra_api/update_orders.php',
+                          ),
+                          body: {
+                            'orders_id': order.ordersId.toString(),
+                            'orders_workflowStatus': 'waitingDesigner',
+                            'orders_updated_at':
+                                DateTime.now().toIso8601String(),
+                          },
+                        );
+                        Navigator.pop(context); // tutup loading
+                        if (response.statusCode == 200) {
+                          final resp = jsonDecode(response.body);
+                          if (resp['success'] == true) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Pesanan dikirim ke Designer!'),
+                              ),
+                            );
+                            Navigator.pop(
+                              context,
+                              true,
+                            ); // kembali ke dashboard sales dan refresh
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Gagal submit: ${resp['error'] ?? 'Unknown error'}',
+                                ),
+                              ),
+                            );
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Gagal submit: ${response.body}'),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        Navigator.pop(context); // tutup loading
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Gagal submit: $e')),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              )
+              : null,
     );
   }
 }

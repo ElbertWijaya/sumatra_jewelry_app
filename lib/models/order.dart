@@ -149,6 +149,13 @@ class Order {
   // Tambahan: data batu/berlian pesanan
   final List<Map<String, dynamic>> ordersStoneUsed;
 
+  // Tambahan: Account ID untuk setiap tahap pekerjaan
+  final String? ordersDesignerAccountId;
+  final String? ordersCastingAccountId;
+  final String? ordersCarvingAccountId;
+  final String? ordersDiamondSettingAccountId;
+  final String? ordersFinishingAccountId;
+
   Order({
     required this.ordersId,
     required this.ordersCustomerName,
@@ -183,6 +190,11 @@ class Order {
     this.inventoryItemsPrice,
     this.inventoryRingSize,
     List<Map<String, dynamic>>? ordersStoneUsed,
+    this.ordersDesignerAccountId,
+    this.ordersCastingAccountId,
+    this.ordersCarvingAccountId,
+    this.ordersDiamondSettingAccountId,
+    this.ordersFinishingAccountId,
   }) : ordersImagePaths = ordersImagePaths ?? const [],
        ordersDesignerWorkChecklist = ordersDesignerWorkChecklist ?? const [],
        ordersCastingWorkChecklist = ordersCastingWorkChecklist ?? const [],
@@ -363,6 +375,11 @@ class Order {
     double? inventoryItemsPrice,
     String? inventoryRingSize,
     List<Map<String, dynamic>>? ordersStoneUsed,
+    String? ordersDesignerAccountId,
+    String? ordersCastingAccountId,
+    String? ordersCarvingAccountId,
+    String? ordersDiamondSettingAccountId,
+    String? ordersFinishingAccountId,
   }) {
     return Order(
       ordersId: ordersId ?? this.ordersId,
@@ -406,6 +423,16 @@ class Order {
       inventoryItemsPrice: inventoryItemsPrice ?? this.inventoryItemsPrice,
       inventoryRingSize: inventoryRingSize ?? this.inventoryRingSize,
       ordersStoneUsed: ordersStoneUsed ?? this.ordersStoneUsed,
+      ordersDesignerAccountId:
+          ordersDesignerAccountId ?? this.ordersDesignerAccountId,
+      ordersCastingAccountId:
+          ordersCastingAccountId ?? this.ordersCastingAccountId,
+      ordersCarvingAccountId:
+          ordersCarvingAccountId ?? this.ordersCarvingAccountId,
+      ordersDiamondSettingAccountId:
+          ordersDiamondSettingAccountId ?? this.ordersDiamondSettingAccountId,
+      ordersFinishingAccountId:
+          ordersFinishingAccountId ?? this.ordersFinishingAccountId,
     );
   }
 

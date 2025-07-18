@@ -1160,10 +1160,14 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
                                                 ).push(
                                                   MaterialPageRoute(
                                                     builder:
-                                                        (context) =>
-                                                            SalesDetailScreen(
-                                                              order: order,
-                                                            ),
+                                                        (
+                                                          context,
+                                                        ) => SalesDetailScreen(
+                                                          order: order,
+                                                          isWaitingTab:
+                                                              _selectedTab ==
+                                                              'waiting',
+                                                        ),
                                                   ),
                                                 );
                                                 if (result == true) {

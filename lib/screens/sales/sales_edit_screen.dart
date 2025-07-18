@@ -87,8 +87,9 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
   }
 
   String getInitialCurrency(dynamic val) {
-    if (val == null || val == 0 || val == '0' || val == '0.0' || val == '')
+    if (val == null || val == 0 || val == '0' || val == '0.0' || val == '') {
       return '';
+    }
     try {
       return formatRupiah(num.tryParse(val.toString()));
     } catch (_) {

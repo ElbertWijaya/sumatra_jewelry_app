@@ -16,6 +16,17 @@ class DesignerDetailScreen extends StatefulWidget {
 }
 
 class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
+  String formatRupiah(num? value) {
+    if (value == null || value == 0) return '-';
+    return 'Rp ' +
+        value
+            .toStringAsFixed(0)
+            .replaceAllMapped(
+              RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+              (Match m) => '${m[1]}.',
+            );
+  }
+
   final List<String> designerTasks = ['Designing', '3D Printing', 'Pengecekan'];
   late Order _order;
   List<String> _designerChecklist = [];
@@ -34,15 +45,27 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
       final updatedOrder = _order.copyWith(
         ordersWorkflowStatus: OrderWorkflowStatus.designing,
       );
-      await OrderService().updateOrder(updatedOrder);
-      setState(() {
-        _order = updatedOrder;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pesanan masuk tahap Designing')),
-      );
-      // Refresh layar
-      Navigator.of(context).pop(true);
+      final result = await OrderService().updateOrder(updatedOrder);
+      if (result == true) {
+        setState(() {
+          _order = updatedOrder;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pesanan masuk tahap Designing')),
+        );
+        // Refresh layar
+        Navigator.of(context).pop(true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal update status pesanan!'),
+          ), // tampilkan pesan default
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       setState(() => _isProcessing = false);
     }
@@ -212,16 +235,55 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
                   img.startsWith('http')
                       ? img
                       : 'http://192.168.83.117/sumatra_api/orders_photo/$img';
-              return Container(
-                margin: const EdgeInsets.only(right: 10),
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.amber),
-                  image: DecorationImage(
-                    image: NetworkImage(imageUrl),
-                    fit: BoxFit.cover,
+              return GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder:
+                        (ctx) => Dialog(
+                          backgroundColor: Colors.black,
+                          insetPadding: const EdgeInsets.all(0),
+                          child: Stack(
+                            children: [
+                              InteractiveViewer(
+                                panEnabled: true,
+                                minScale: 1,
+                                maxScale: 5,
+                                child: Center(
+                                  child: Image.network(
+                                    imageUrl,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 24,
+                                right: 24,
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 32,
+                                  ),
+                                  onPressed: () => Navigator.of(ctx).pop(),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 10),
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.amber),
+                    image: DecorationImage(
+                      image: NetworkImage(imageUrl),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               );
@@ -339,19 +401,15 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
             ListTile(
               leading: Icon(Icons.attach_money, color: Colors.amber),
               title: Text(
-                'Harga Perkiraan: Rp ${_order.ordersFinalPrice != null ? _order.ordersFinalPrice!.toStringAsFixed(0) : '-'}',
+                'Harga Perkiraan: ${formatRupiah(_order.ordersFinalPrice)}',
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text('Harga Akhir: ${formatRupiah(_order.ordersFinalPrice)}'),
+                  Text('DP: ${formatRupiah(_order.ordersDp)}'),
                   Text(
-                    'Harga Akhir: Rp ${_order.ordersFinalPrice != null ? _order.ordersFinalPrice!.toStringAsFixed(0) : '-'}',
-                  ),
-                  Text(
-                    'DP: Rp ${_order.ordersDp != null ? _order.ordersDp!.toStringAsFixed(0) : '-'}',
-                  ),
-                  Text(
-                    'Sisa Lunas: Rp ${_order.ordersFinalPrice != null && _order.ordersDp != null ? (_order.ordersFinalPrice! - _order.ordersDp!).toStringAsFixed(0) : '-'}',
+                    'Sisa Lunas: ${_order.ordersFinalPrice != null && _order.ordersDp != null ? formatRupiah(_order.ordersFinalPrice! - _order.ordersDp!) : '-'}',
                   ),
                 ],
               ),

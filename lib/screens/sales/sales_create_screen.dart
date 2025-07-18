@@ -5,6 +5,32 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+String formatRupiah(num? value) {
+  if (value == null || value == 0) return '';
+  final formatter = NumberFormat.currency(
+    locale: 'id',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
+  return formatter.format(value);
+}
+
+String cleanCurrency(String value) {
+  return value.replaceAll(RegExp(r'[^0-9]'), '');
+}
+
+void _onCurrencyChanged(TextEditingController controller, String value) {
+  String cleaned = value.replaceAll(RegExp(r'[^0-9]'), '');
+  if (cleaned.isEmpty) {
+    controller.text = '';
+  } else {
+    controller.text = formatRupiah(int.parse(cleaned));
+  }
+  controller.selection = TextSelection.fromPosition(
+    TextPosition(offset: controller.text.length),
+  );
+}
+
 class StoneInput {
   String? shape;
   final TextEditingController countController = TextEditingController();
@@ -87,6 +113,13 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
       input.dispose();
     }
     super.dispose();
+  }
+
+  void _clearDate(TextEditingController controller, void Function() onCleared) {
+    setState(() {
+      controller.clear();
+      onCleared();
+    });
   }
 
   Future<void> _pickDate(
@@ -249,9 +282,11 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
               stoneUsedList.isNotEmpty ? jsonEncode(stoneUsedList) : '',
           'orders_ready_date': readyDate,
           'orders_pickup_date': pickupDate,
-          'orders_gold_price_per_gram': _goldPricePerGramController.text,
-          'orders_final_price': _finalPriceController.text,
-          'orders_dp': _dpController.text,
+          'orders_gold_price_per_gram': cleanCurrency(
+            _goldPricePerGramController.text,
+          ),
+          'orders_final_price': cleanCurrency(_finalPriceController.text),
+          'orders_dp': cleanCurrency(_dpController.text),
           'orders_note': _notesController.text,
           'orders_created_at': createdAt,
           'orders_updated_at': createdAt,
@@ -294,7 +329,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tambah Pesanan'),
-        backgroundColor: Colors.amber[700],
+        backgroundColor: const Color(0xFFD4AF37),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
@@ -519,61 +554,123 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
               ),
               const Divider(),
               TextFormField(
-                controller: _goldPricePerGramController,
-                decoration: _luxuryDecoration('Harga Emas per Gram'),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
                 controller: _finalPriceController,
                 decoration: _luxuryDecoration('Harga Perkiraan'),
                 keyboardType: TextInputType.number,
+                onChanged:
+                    (value) => _onCurrencyChanged(_finalPriceController, value),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _goldPricePerGramController,
+                decoration: _luxuryDecoration('Harga Emas per Gram'),
+                keyboardType: TextInputType.number,
+                onChanged:
+                    (value) =>
+                        _onCurrencyChanged(_goldPricePerGramController, value),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _dpController,
                 decoration: _luxuryDecoration('DP'),
                 keyboardType: TextInputType.number,
+                onChanged: (value) => _onCurrencyChanged(_dpController, value),
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _readyDateController,
-                readOnly: true,
-                onTap:
-                    () => _pickDate(
-                      _readyDateController,
-                      _selectedReadyDate,
-                      (d) => setState(() => _selectedReadyDate = d),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _readyDateController,
+                      readOnly: true,
+                      onTap:
+                          () => _pickDate(
+                            _readyDateController,
+                            _selectedReadyDate,
+                            (d) => setState(() => _selectedReadyDate = d),
+                          ),
+                      decoration: _luxuryDecoration(
+                        'Tanggal Jadi',
+                        icon: Icons.event,
+                      ).copyWith(
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                Icons.calendar_today,
+                                color: Colors.amber,
+                              ),
+                              onPressed:
+                                  () => _pickDate(
+                                    _readyDateController,
+                                    _selectedReadyDate,
+                                    (d) =>
+                                        setState(() => _selectedReadyDate = d),
+                                  ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.red),
+                              onPressed:
+                                  () => _clearDate(
+                                    _readyDateController,
+                                    () => _selectedReadyDate = null,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                decoration: _luxuryDecoration(
-                  'Tanggal Jadi',
-                  icon: Icons.event,
-                ).copyWith(
-                  suffixIcon: const Icon(
-                    Icons.calendar_today,
-                    color: Colors.amber,
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _pickupDateController,
-                readOnly: true,
-                onTap:
-                    () => _pickDate(
-                      _pickupDateController,
-                      _selectedPickupDate,
-                      (d) => setState(() => _selectedPickupDate = d),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _pickupDateController,
+                      readOnly: true,
+                      onTap:
+                          () => _pickDate(
+                            _pickupDateController,
+                            _selectedPickupDate,
+                            (d) => setState(() => _selectedPickupDate = d),
+                          ),
+                      decoration: _luxuryDecoration(
+                        'Tanggal Ambil',
+                        icon: Icons.event_available,
+                      ).copyWith(
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                Icons.calendar_today,
+                                color: Colors.amber,
+                              ),
+                              onPressed:
+                                  () => _pickDate(
+                                    _pickupDateController,
+                                    _selectedPickupDate,
+                                    (d) =>
+                                        setState(() => _selectedPickupDate = d),
+                                  ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.red),
+                              onPressed:
+                                  () => _clearDate(
+                                    _pickupDateController,
+                                    () => _selectedPickupDate = null,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                decoration: _luxuryDecoration(
-                  'Tanggal Ambil',
-                  icon: Icons.event_available,
-                ).copyWith(
-                  suffixIcon: const Icon(
-                    Icons.calendar_today,
-                    color: Colors.amber,
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: 24),
               const Text(
