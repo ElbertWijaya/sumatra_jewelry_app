@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
-import 'carver_detail_screen.dart'; // Ganti import ke carver_detail_screen.dart
+import 'carver_detail_screen.dart';
 
 class CarverDashboardScreen extends StatefulWidget {
-  // Ganti nama class
   const CarverDashboardScreen({super.key});
 
   @override
@@ -19,7 +18,7 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   String _searchQuery = '';
-  String _selectedTab = 'waiting'; // default tab carver
+  String _selectedTab = 'waiting'; // default tab designer
 
   // Filter state
   List<String> selectedJewelryTypes = [];
@@ -34,15 +33,13 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
   List<String> _randomCategoryFilters = [];
   bool _isRandomCategoryActive = true;
 
-  // Status yang relevan untuk carver
+  // Tab logic khusus designer
   final List<OrderWorkflowStatus> waitingStatuses = [
     OrderWorkflowStatus.waitingCarving,
   ];
-
   final List<OrderWorkflowStatus> workingStatuses = [
     OrderWorkflowStatus.carving,
   ];
-
   final List<OrderWorkflowStatus> onProgressStatuses = [
     OrderWorkflowStatus.waitingDiamondSetting,
     OrderWorkflowStatus.stoneSetting,
@@ -50,6 +47,9 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
     OrderWorkflowStatus.finishing,
     OrderWorkflowStatus.waitingInventory,
     OrderWorkflowStatus.inventory,
+    OrderWorkflowStatus.waitingSalesCompletion,
+    OrderWorkflowStatus.done,
+    OrderWorkflowStatus.cancelled,
   ];
 
   // Daftar pilihan filter
@@ -62,7 +62,7 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
     "pin",
     "men ring",
     "women ring",
-    "engagement ring",
+    "Wedding ring",
     "custom",
   ];
   final List<String> goldColors = ["White Gold", "Rose Gold", "Yellow Gold"];
@@ -125,6 +125,11 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
       });
       _generateRandomCategoryFilters();
     } catch (e) {
+      print('ERROR: $e');
+      if (e is FormatException) {
+        // Jika pakai http package, bisa print response.body di sini
+        print('FormatException: ${e.message}');
+      }
       setState(() {
         _errorMessage =
             'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
@@ -142,17 +147,22 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
       order.ordersCustomerContact,
       order.ordersAddress,
       order.ordersJewelryType,
-      // Batu dari inventoryStoneUsed
-      if (order.inventoryStoneUsed != null &&
-          order.inventoryStoneUsed!.isNotEmpty) ...[
-        order.inventoryStoneUsed![0]['type'] ?? '',
-        order.inventoryStoneUsed![0]['size'] ?? '',
-      ],
+      (order.inventoryStoneUsed != null && order.inventoryStoneUsed!.isNotEmpty)
+          ? order.inventoryStoneUsed!
+              .map((e) => e['stone_type'] ?? '')
+              .join(', ')
+          : '',
       order.ordersRingSize,
-      order.ordersReadyDate?.toIso8601String() ?? '',
-      order.ordersPickupDate?.toIso8601String() ?? '',
-      order.ordersGoldPricePerGram.toString(),
-      order.ordersFinalPrice.toString(),
+      order.ordersReadyDate != null
+          ? order.ordersReadyDate!.toIso8601String()
+          : '',
+      order.ordersPickupDate != null
+          ? order.ordersPickupDate!.toIso8601String()
+          : '',
+      order.ordersGoldPricePerGram != null
+          ? order.ordersGoldPricePerGram!.toString()
+          : '-',
+      order.ordersFinalPrice != null ? order.ordersFinalPrice!.toString() : '-',
       order.ordersNote,
       order.ordersWorkflowStatus.label,
     ].join(' ').toLowerCase();
@@ -168,7 +178,7 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
             )
             .toList();
 
-    // Tab logic khusus designer
+    // Tab logic mirip designer
     if (_selectedTab == 'waiting') {
       filtered =
           filtered
@@ -191,8 +201,6 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
                     onProgressStatuses.contains(order.ordersWorkflowStatus),
               )
               .toList();
-    } else if (_selectedTab == 'all') {
-      // tampilkan semua yang bukan done/cancelled (sudah di atas)
     }
 
     // Filter kategori dari filter bar/sheet
@@ -233,11 +241,15 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
           filtered
               .where(
                 (order) => selectedStoneTypes.any((stone) {
+                  // Cek di inventoryStoneUsed jika ada
                   if (order.inventoryStoneUsed != null &&
                       order.inventoryStoneUsed!.isNotEmpty) {
-                    return (order.inventoryStoneUsed![0]['type'] ?? '')
-                        .toLowerCase()
-                        .contains(stone.toLowerCase());
+                    return order.inventoryStoneUsed!.any(
+                      (e) => (e['stone_type'] ?? '')
+                          .toString()
+                          .toLowerCase()
+                          .contains(stone.toLowerCase()),
+                    );
                   }
                   return false;
                 }),
@@ -247,13 +259,21 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
     if (priceMin != null) {
       filtered =
           filtered
-              .where((order) => (order.ordersFinalPrice) >= priceMin!)
+              .where(
+                (order) =>
+                    order.ordersFinalPrice != null &&
+                    order.ordersFinalPrice! >= priceMin!,
+              )
               .toList();
     }
     if (priceMax != null) {
       filtered =
           filtered
-              .where((order) => (order.ordersFinalPrice) <= priceMax!)
+              .where(
+                (order) =>
+                    order.ordersFinalPrice != null &&
+                    order.ordersFinalPrice! <= priceMax!,
+              )
               .toList();
     }
     if (ringSize != null && ringSize!.isNotEmpty) {
@@ -579,15 +599,6 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
                     onProgressStatuses.contains(order.ordersWorkflowStatus),
               )
               .length;
-    } else if (value == 'all') {
-      count =
-          _orders
-              .where(
-                (order) =>
-                    order.ordersWorkflowStatus != OrderWorkflowStatus.done &&
-                    order.ordersWorkflowStatus != OrderWorkflowStatus.cancelled,
-              )
-              .length;
     }
     return Expanded(
       child: Padding(
@@ -676,7 +687,7 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Carver Dashboard'), // Ganti label
+        title: const Text('Carver Dashboard'),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -687,17 +698,7 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
       ),
       extendBodyBehindAppBar: true,
       resizeToAvoidBottomInset: false,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.pushNamed(context, '/carver/create');
-          if (result == true) {
-            await _fetchOrders();
-          }
-        },
-        backgroundColor: Colors.amber[700],
-        tooltip: 'Buat Pesanan Baru',
-        child: const Icon(Icons.add, color: Colors.black),
-      ),
+      // Tidak perlu tombol tambah pesanan di designer
       body: Stack(
         children: [
           // Background image
@@ -922,6 +923,24 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
                               itemCount: _filteredOrders.length,
                               itemBuilder: (context, index) {
                                 final order = _filteredOrders[index];
+
+                                // DEBUG: Print imagePaths for troubleshooting
+                                print(
+                                  'order.ordersId: \\${order.ordersId} imagePaths: \\${order.ordersImagePaths}',
+                                );
+
+                                // PATCH: Ganti logic gambar utama menjadi selalu URL
+                                String? imageUrl;
+                                if (order.ordersImagePaths.isNotEmpty &&
+                                    order.ordersImagePaths.first.isNotEmpty &&
+                                    order.ordersImagePaths.first.startsWith(
+                                      'http',
+                                    )) {
+                                  imageUrl = order.ordersImagePaths.first;
+                                } else {
+                                  imageUrl = null;
+                                }
+
                                 return Card(
                                   margin: const EdgeInsets.symmetric(
                                     vertical: 12.0,
@@ -947,39 +966,34 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                               child:
-                                                  order
-                                                              .ordersImagePaths
-                                                              .isNotEmpty &&
-                                                          order
-                                                              .ordersImagePaths
-                                                              .first
-                                                              .isNotEmpty
+                                                  imageUrl != null
                                                       ? Image.network(
-                                                        order
-                                                            .ordersImagePaths
-                                                            .first,
+                                                        imageUrl,
                                                         width: 90,
                                                         height: 90,
                                                         fit: BoxFit.cover,
-                                                        errorBuilder:
-                                                            (
-                                                              context,
-                                                              error,
-                                                              stackTrace,
-                                                            ) => Container(
-                                                              width: 90,
-                                                              height: 90,
+                                                        errorBuilder: (
+                                                          context,
+                                                          error,
+                                                          stackTrace,
+                                                        ) {
+                                                          print(
+                                                            'Image.network error for order.id: \\${order.ordersId} url: \\$imageUrl error: \\$error',
+                                                          );
+                                                          return Container(
+                                                            width: 90,
+                                                            height: 90,
+                                                            color:
+                                                                Colors
+                                                                    .brown[100],
+                                                            child: const Icon(
+                                                              Icons.image,
+                                                              size: 40,
                                                               color:
-                                                                  Colors
-                                                                      .brown[100],
-                                                              child: const Icon(
-                                                                Icons.image,
-                                                                size: 40,
-                                                                color:
-                                                                    Colors
-                                                                        .brown,
-                                                              ),
+                                                                  Colors.brown,
                                                             ),
+                                                          );
+                                                        },
                                                       )
                                                       : Container(
                                                         width: 90,
@@ -1138,11 +1152,12 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
                                                 ).push(
                                                   MaterialPageRoute(
                                                     builder:
-                                                        (
-                                                          context,
-                                                        ) => CarverDetailScreen(
-                                                          order: order,
-                                                        ), // Ganti ke CarverDetailScreen
+                                                        (context) =>
+                                                            CarverDetailScreen(
+                                                              order: order,
+                                                              fromTab:
+                                                                  _selectedTab,
+                                                            ),
                                                   ),
                                                 );
                                                 if (result == true) {

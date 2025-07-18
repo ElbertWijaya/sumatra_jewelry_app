@@ -4,72 +4,52 @@ import '../../services/order_service.dart';
 
 class CarverDetailScreen extends StatefulWidget {
   final Order order;
-  const CarverDetailScreen({super.key, required this.order});
+  final String fromTab; // 'waiting', 'working', 'onprogress'
+  const CarverDetailScreen({
+    super.key,
+    required this.order,
+    required this.fromTab,
+  });
 
   @override
   State<CarverDetailScreen> createState() => _CarverDetailScreenState();
 }
 
 class _CarverDetailScreenState extends State<CarverDetailScreen> {
-  // Inisialisasi dengan order kosong agar tidak LateInitializationError
-  Order _order = Order(
-    ordersId: '',
-    ordersCustomerName: '',
-    ordersCustomerContact: '',
-    ordersAddress: '',
-    ordersJewelryType: '',
-    ordersCreatedAt: DateTime.now(),
-    ordersGoldType: '',
-    ordersGoldColor: '',
-    ordersRingSize: '',
-    ordersFinalPrice: 0,
-    ordersGoldPricePerGram: 0,
-    ordersDp: 0,
-    ordersImagePaths: const [],
-    ordersNote: '',
-    ordersWorkflowStatus: OrderWorkflowStatus.waitingCarving,
-    ordersCarvingWorkChecklist: const [],
-  );
-  List<String> _carverChecklist = [];
-  bool _isProcessing = false;
-  bool _isLoading = true;
-
-  final List<String> _carverTasks = [
+  final List<String> carverTasks = [
+    'Cap',
     'Bom',
-    'Polish',
     'Pengecekan',
     'Kasih ke Admin',
   ];
+  late Order _order;
+  List<String> _corChecklist = [];
+  bool _isProcessing = false;
 
   @override
   void initState() {
     super.initState();
     _order = widget.order;
-    _carverChecklist = List<String>.from(_order.ordersCarvingWorkChecklist);
-    _fetchOrderDetail();
+    _corChecklist = List<String>.from(_order.ordersCarvingWorkChecklist);
   }
 
-  Future<void> _fetchOrderDetail() async {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _startCor() async {
+    setState(() => _isProcessing = true);
     try {
-      final refreshedOrder = await OrderService().getOrderById(
-        widget.order.ordersId,
+      final updatedOrder = _order.copyWith(
+        ordersWorkflowStatus: OrderWorkflowStatus.designing,
       );
+      await OrderService().updateOrder(updatedOrder);
       setState(() {
-        _order = refreshedOrder;
-        _carverChecklist = List<String>.from(_order.ordersCarvingWorkChecklist);
+        _order = updatedOrder;
       });
-    } catch (e) {
-      setState(() {
-        _order = widget.order;
-        _carverChecklist = List<String>.from(_order.ordersCarvingWorkChecklist);
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pesanan masuk tahap Designing')),
+      );
+      // Refresh layar
+      Navigator.of(context).pop(true);
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isProcessing = false);
     }
   }
 
@@ -77,16 +57,15 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
     setState(() => _isProcessing = true);
     try {
       final updatedOrder = _order.copyWith(
-        ordersCarvingWorkChecklist: _carverChecklist,
+        ordersCarvingWorkChecklist: _corChecklist,
       );
       await OrderService().updateOrder(updatedOrder);
-
-      // Delay agar backend update
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      // Fetch order detail terbaru setelah update
-      await _fetchOrderDetail();
-
+      setState(() {
+        _order = updatedOrder;
+        _corChecklist = List<String>.from(
+          updatedOrder.ordersCarvingWorkChecklist,
+        );
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Checklist berhasil diupdate')),
       );
@@ -95,371 +74,415 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
     }
   }
 
+  Future<void> _submitToCor() async {
+    setState(() => _isProcessing = true);
+    try {
+      final updatedOrder = _order.copyWith(
+        ordersWorkflowStatus: OrderWorkflowStatus.waitingCasting,
+      );
+      await OrderService().updateOrder(updatedOrder);
+      setState(() {
+        _order = updatedOrder;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Pesanan dikirim ke Cor!')));
+      Navigator.of(context).pop(true);
+    } finally {
+      setState(() => _isProcessing = false);
+    }
+  }
+
+  Widget _buildChecklist(
+    String title,
+    List<String> defaultTasks,
+    List<String>? checkedTasks,
+    IconData icon,
+    Color color,
+  ) {
+    final checked = checkedTasks ?? [];
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: color, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ...defaultTasks.map((task) {
+              final isChecked = checked.contains(task);
+              return Row(
+                children: [
+                  Container(
+                    width: 22,
+                    height: 22,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isChecked ? color : Colors.grey[300],
+                      border: Border.all(color: color, width: 2),
+                    ),
+                    child:
+                        isChecked
+                            ? Icon(Icons.check, color: Colors.white, size: 16)
+                            : null,
+                  ),
+                  Text(task, style: TextStyle(fontSize: 15)),
+                ],
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStoneInfo() {
+    final stoneList = _order.ordersStoneUsed;
+    if (stoneList.isEmpty) {
+      return Card(
+        color: const Color(0xFFFFF8E1),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text('Tidak ada informasi batu'),
+        ),
+      );
+    }
+    return SizedBox(
+      height: 120,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children:
+            stoneList.map((stone) {
+              return Card(
+                margin: const EdgeInsets.only(right: 10),
+                color: const Color(0xFFFFF8E1),
+                child: Container(
+                  width: 110,
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Bentuk: ${stone['shape'] ?? '-'}',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text('Jumlah: ${stone['count'] ?? '-'} pcs'),
+                      Text('Ukuran: ${stone['carat'] ?? '-'} ct'),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildImageGallery() {
+    if (_order.ordersImagePaths.isEmpty) {
+      return Container(
+        width: 80,
+        height: 80,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.amber),
+          color: Colors.amber[50],
+        ),
+        child: const Text('-'),
+      );
+    }
+    return SizedBox(
+      height: 90,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children:
+            _order.ordersImagePaths.map((img) {
+              final String imageUrl =
+                  img.startsWith('http')
+                      ? img
+                      : 'http://192.168.83.117/sumatra_api/orders_photo/$img';
+              return Container(
+                margin: const EdgeInsets.only(right: 10),
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber),
+                  image: DecorationImage(
+                    image: NetworkImage(imageUrl),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              );
+            }).toList(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isWorking =
-        _order.ordersWorkflowStatus == OrderWorkflowStatus.carving;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Pesanan'),
         backgroundColor: const Color(0xFFD4AF37),
-        foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Padding(
-                padding: const EdgeInsets.all(16),
-                child: ListView(
-                  children: [
-                    // Informasi Pelanggan
-                    const Text(
-                      'Informasi Pelanggan',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Color(0xFF7C5E2C),
-                      ),
-                    ),
-                    const Divider(),
-                    Text(
-                      'Nama: ${_order.ordersCustomerName}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
-                    Text(
-                      'Kontak: ${_order.ordersCustomerContact}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
-                    Text(
-                      'Alamat: ${_order.ordersAddress}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Informasi Barang
-                    const Text(
-                      'Informasi Barang',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Color(0xFF7C5E2C),
-                      ),
-                    ),
-                    const Divider(),
-                    Text(
-                      'Jenis Perhiasan: ${_order.ordersJewelryType}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
-                    Text(
-                      'Jenis Emas: ${_order.ordersGoldType}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
-                    Text(
-                      'Warna Emas: ${_order.ordersGoldColor}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
-                    Text(
-                      'Ukuran Cincin: ${_order.ordersRingSize}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
-                    // Batu: gunakan inventoryStoneUsed jika ada
-                    if (_order.inventoryStoneUsed != null &&
-                        _order.inventoryStoneUsed!.isNotEmpty) ...[
-                      Text(
-                        'Tipe Batu: ${_order.inventoryStoneUsed![0]['type'] ?? '-'}',
-                        style: const TextStyle(color: Color(0xFF7C5E2C)),
-                      ),
-                      Text(
-                        'Ukuran Batu: ${_order.inventoryStoneUsed![0]['size'] ?? '-'}',
-                        style: const TextStyle(color: Color(0xFF7C5E2C)),
-                      ),
-                    ] else ...[
-                      Text(
-                        'Tipe Batu: -',
-                        style: const TextStyle(color: Color(0xFF7C5E2C)),
-                      ),
-                      Text(
-                        'Ukuran Batu: -',
-                        style: const TextStyle(color: Color(0xFF7C5E2C)),
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-
-                    // Informasi Harga
-                    const Text(
-                      'Informasi Harga',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Color(0xFF7C5E2C),
-                      ),
-                    ),
-                    const Divider(),
-                    Text(
-                      'Harga Perkiraan: Rp ${_order.ordersFinalPrice.toStringAsFixed(0)}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
-                    Text(
-                      'Harga Emas per Gram: Rp ${_order.ordersGoldPricePerGram.toStringAsFixed(0)}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
-                    Text(
-                      'DP: Rp ${_order.ordersDp.toStringAsFixed(0)}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
-                    Text(
-                      'Sisa Lunas: Rp ${(_order.ordersFinalPrice - _order.ordersDp).clamp(0, double.infinity).toStringAsFixed(0)}',
-                      style: const TextStyle(color: Colors.redAccent),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Informasi Tanggal
-                    const Text(
-                      'Informasi Tanggal',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Color(0xFF7C5E2C),
-                      ),
-                    ),
-                    const Divider(),
-                    Text(
-                      'Tanggal Order: ${_order.ordersCreatedAt.day}/${_order.ordersCreatedAt.month}/${_order.ordersCreatedAt.year}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
-                    Text(
-                      'Tanggal Ambil: ${_order.ordersPickupDate != null ? "${_order.ordersPickupDate!.day}/${_order.ordersPickupDate!.month}/${_order.ordersPickupDate!.year}" : "-"}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
-                    Text(
-                      'Tanggal Jadi: ${_order.ordersReadyDate != null ? "${_order.ordersReadyDate!.day}/${_order.ordersReadyDate!.month}/${_order.ordersReadyDate!.year}" : "-"}',
-                      style: const TextStyle(color: Color(0xFF7C5E2C)),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Gambar Referensi
-                    const Text(
-                      'Referensi Gambar',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Color(0xFF7C5E2C),
-                      ),
-                    ),
-                    if (_order.ordersImagePaths.isNotEmpty)
-                      SizedBox(
-                        height: 100,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _order.ordersImagePaths.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: 8),
-                          itemBuilder: (context, idx) {
-                            final url = _order.ordersImagePaths[idx];
-                            return GestureDetector(
-                              onTap: () {
-                                showDialog(
-                                  context: context,
-                                  builder:
-                                      (_) => Dialog(
-                                        child: InteractiveViewer(
-                                          child: Image.network(
-                                            url,
-                                            fit: BoxFit.contain,
-                                          ),
-                                        ),
-                                      ),
-                                );
-                              },
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  url,
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.cover,
-                                  errorBuilder:
-                                      (c, e, s) =>
-                                          const Icon(Icons.broken_image),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      )
-                    else
-                      const Text('Tidak ada gambar referensi.'),
-                    const SizedBox(height: 12),
-
-                    // Catatan
-                    const Text(
-                      'Catatan (Memo)',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Color(0xFF7C5E2C),
-                      ),
-                    ),
-                    Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.amber[50],
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.amber[200]!),
-                      ),
-                      child: Text(
-                        _order.ordersNote,
-                        style: const TextStyle(
-                          fontFamily: 'Courier',
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-
-                    // Status
-                    const SizedBox(height: 8),
-                    Text(
-                      'Status: ${_order.ordersWorkflowStatus.label}',
-                      style: const TextStyle(
-                        color: Color(0xFFD4AF37),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Divider(),
-
-                    // Checklist hanya untuk carver
-                    if (isWorking) ...[
-                      const Divider(),
-                      const Text(
-                        'Tugas Carver',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      ..._carverTasks.map(
-                        (task) => CheckboxListTile(
-                          value: _carverChecklist.contains(task),
-                          title: Text(task),
-                          onChanged:
-                              _isProcessing
-                                  ? null
-                                  : (val) {
-                                    setState(() {
-                                      if (val == true) {
-                                        if (!_carverChecklist.contains(task)) {
-                                          _carverChecklist.add(task);
-                                        }
-                                      } else {
-                                        _carverChecklist.remove(task);
-                                      }
-                                    });
-                                  },
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: _isProcessing ? null : _updateChecklist,
-                        child:
-                            _isProcessing
-                                ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                                : const Text('Update Checklist'),
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed:
-                            (_isProcessing ||
-                                    !_carverTasks.every(
-                                      (task) => _order
-                                          .ordersCarvingWorkChecklist
-                                          .contains(task),
-                                    ))
-                                ? null
-                                : () async {
-                                  setState(() => _isProcessing = true);
-                                  try {
-                                    final updatedOrder = _order.copyWith(
-                                      ordersWorkflowStatus:
-                                          OrderWorkflowStatus
-                                              .waitingDiamondSetting,
-                                    );
-                                    await OrderService().updateOrder(
-                                      updatedOrder,
-                                    );
-                                    await _fetchOrderDetail();
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Order berhasil disubmit ke Diamond Setting',
-                                        ),
-                                      ),
-                                    );
-                                    Navigator.of(context).pop(true);
-                                  } finally {
-                                    setState(() => _isProcessing = false);
-                                  }
-                                },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Submit ke Diamond Setting'),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-
-                    // Tombol Terima Pesanan
-                    if (_order.ordersWorkflowStatus ==
-                        OrderWorkflowStatus.waitingCarving) ...[
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.play_arrow),
-                        label: const Text('Terima Pesanan'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size.fromHeight(48),
-                        ),
-                        onPressed:
-                            _isProcessing
-                                ? null
-                                : () async {
-                                  setState(() => _isProcessing = true);
-                                  try {
-                                    final updatedOrder = _order.copyWith(
-                                      ordersWorkflowStatus:
-                                          OrderWorkflowStatus.carving,
-                                    );
-                                    await OrderService().updateOrder(
-                                      updatedOrder,
-                                    );
-                                    await _fetchOrderDetail();
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Pesanan diterima, status menjadi Carving',
-                                        ),
-                                      ),
-                                    );
-                                    Navigator.of(context).pop(true);
-                                  } finally {
-                                    setState(() => _isProcessing = false);
-                                  }
-                                },
-                      ),
-                    ],
-                  ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ...existing info widgets...
+            // Informasi Pelanggan
+            Text(
+              'Informasi Pelanggan',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+            const Divider(thickness: 2),
+            const SizedBox(height: 6),
+            ListTile(
+              leading: Icon(Icons.person, color: Colors.amber),
+              title: Text(_order.ordersCustomerName),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Telepon: ${_order.ordersCustomerContact}'),
+                  Text('Alamat: ${_order.ordersAddress}'),
+                ],
+              ),
+            ),
+            const Divider(),
+            // Informasi Barang
+            Text(
+              'Informasi Barang',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+            const Divider(thickness: 2),
+            const SizedBox(height: 6),
+            ListTile(
+              leading: Icon(Icons.shopping_bag, color: Colors.amber),
+              title: Text(_order.ordersJewelryType),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Jenis Emas: ${_order.ordersGoldType}'),
+                  Text('Warna Emas: ${_order.ordersGoldColor}'),
+                ],
+              ),
+            ),
+            const Divider(),
+            // Informasi Batu (Card)
+            Text(
+              'Informasi Batu',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+            const Divider(thickness: 2),
+            Card(
+              elevation: 2,
+              color: const Color(0xFFFFF8E1),
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [_buildStoneInfo()],
                 ),
               ),
+            ),
+            const Divider(),
+            // Informasi Tanggal
+            Text(
+              'Informasi Tanggal',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+            const Divider(thickness: 2),
+            const SizedBox(height: 6),
+            ListTile(
+              leading: Icon(Icons.date_range, color: Colors.amber),
+              title: Text(
+                'Tanggal Siap: ${_order.ordersReadyDate != null ? "${_order.ordersReadyDate!.day.toString().padLeft(2, '0')}/${_order.ordersReadyDate!.month.toString().padLeft(2, '0')}/${_order.ordersReadyDate!.year} ${_order.ordersReadyDate!.hour.toString().padLeft(2, '0')}:${_order.ordersReadyDate!.minute.toString().padLeft(2, '0')}:${_order.ordersReadyDate!.second.toString().padLeft(2, '0')}" : "-"}',
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tanggal Pickup: ${_order.ordersPickupDate != null ? "${_order.ordersPickupDate!.day.toString().padLeft(2, '0')}/${_order.ordersPickupDate!.month.toString().padLeft(2, '0')}/${_order.ordersPickupDate!.year} ${_order.ordersPickupDate!.hour.toString().padLeft(2, '0')}:${_order.ordersPickupDate!.minute.toString().padLeft(2, '0')}:${_order.ordersPickupDate!.second.toString().padLeft(2, '0')}" : "-"}',
+                  ),
+                  Text(
+                    'Tanggal Dibuat: ${_order.ordersCreatedAt.day.toString().padLeft(2, '0')}/${_order.ordersCreatedAt.month.toString().padLeft(2, '0')}/${_order.ordersCreatedAt.year} ${_order.ordersCreatedAt.hour.toString().padLeft(2, '0')}:${_order.ordersCreatedAt.minute.toString().padLeft(2, '0')}:${_order.ordersCreatedAt.second.toString().padLeft(2, '0')}',
+                  ),
+                  Text(
+                    'Terakhir Update: ${_order.ordersUpdatedAt != null ? "${_order.ordersUpdatedAt!.day.toString().padLeft(2, '0')}/${_order.ordersUpdatedAt!.month.toString().padLeft(2, '0')}/${_order.ordersUpdatedAt!.year} ${_order.ordersUpdatedAt!.hour.toString().padLeft(2, '0')}:${_order.ordersUpdatedAt!.minute.toString().padLeft(2, '0')}:${_order.ordersUpdatedAt!.second.toString().padLeft(2, '0')}" : "-"}',
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            // Informasi Harga
+            Text(
+              'Informasi Harga',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+            const Divider(thickness: 2),
+            const SizedBox(height: 6),
+            ListTile(
+              leading: Icon(Icons.attach_money, color: Colors.amber),
+              title: Text(
+                'Harga Perkiraan: Rp ${_order.ordersFinalPrice != null ? _order.ordersFinalPrice!.toStringAsFixed(0) : '-'}',
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Harga Akhir: Rp ${_order.ordersFinalPrice != null ? _order.ordersFinalPrice!.toStringAsFixed(0) : '-'}',
+                  ),
+                  Text(
+                    'DP: Rp ${_order.ordersDp != null ? _order.ordersDp!.toStringAsFixed(0) : '-'}',
+                  ),
+                  Text(
+                    'Sisa Lunas: Rp ${_order.ordersFinalPrice != null && _order.ordersDp != null ? (_order.ordersFinalPrice! - _order.ordersDp!).toStringAsFixed(0) : '-'}',
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            // Gambar Referensi
+            Text(
+              'Gambar Referensi',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+            const Divider(thickness: 2),
+            const SizedBox(height: 6),
+            _buildImageGallery(),
+            const Divider(),
+            // Checklist Pekerja
+            Text(
+              'Checklist Pekerja',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+            const Divider(thickness: 2),
+            const SizedBox(height: 6),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildChecklist(
+                    'Carver',
+                    carverTasks,
+                    _order.ordersCarvingWorkChecklist,
+                    Icons.design_services,
+                    Colors.blue,
+                  ),
+                  // ...existing code for other roles...
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Bagian bawah sesuai tab
+            if (widget.fromTab == 'waiting')
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue[700],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text(
+                      'Mulai Design',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    onPressed: _isProcessing ? null : _startCor,
+                  ),
+                ),
+              ),
+            if (widget.fromTab == 'working')
+              Column(
+                children: [
+                  ...carverTasks.map(
+                    (task) => CheckboxListTile(
+                      value: _corChecklist.contains(task),
+                      title: Text(task),
+                      onChanged: (val) {
+                        setState(() {
+                          if (val == true) {
+                            _corChecklist.add(task);
+                          } else {
+                            _corChecklist.remove(task);
+                          }
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: _isProcessing ? null : _updateChecklist,
+                    child:
+                        _isProcessing
+                            ? const CircularProgressIndicator()
+                            : const Text('Update Progress'),
+                  ),
+                  const SizedBox(height: 12),
+                  if (_corChecklist.length == carverTasks.length &&
+                      _corChecklist.toSet().containsAll(carverTasks.toSet()) &&
+                      _order.ordersCarvingWorkChecklist.length ==
+                          carverTasks.length &&
+                      _order.ordersCarvingWorkChecklist.toSet().containsAll(
+                        carverTasks.toSet(),
+                      ))
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green[700],
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        icon: const Icon(Icons.send),
+                        label: const Text(
+                          'Submit ke Cor',
+                          style: TextStyle(fontSize: 18),
+                        ),
+                        onPressed: _isProcessing ? null : _submitToCor,
+                      ),
+                    ),
+                ],
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

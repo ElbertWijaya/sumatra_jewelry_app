@@ -72,6 +72,30 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
     'Other',
   ];
 
+  String formatRupiah(num? value) {
+    if (value == null || value == 0) return '';
+    final formatter = NumberFormat.currency(
+      locale: 'id',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
+    return formatter.format(value);
+  }
+
+  String cleanCurrency(String value) {
+    return value.replaceAll(RegExp(r'[^0-9]'), '');
+  }
+
+  String getInitialCurrency(dynamic val) {
+    if (val == null || val == 0 || val == '0' || val == '0.0' || val == '')
+      return '';
+    try {
+      return formatRupiah(num.tryParse(val.toString()));
+    } catch (_) {
+      return '';
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -87,13 +111,13 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
       text: o['orders_ring_size']?.toString() ?? '',
     );
     _goldPricePerGramController = TextEditingController(
-      text: o['orders_gold_price_per_gram']?.toString() ?? '',
+      text: getInitialCurrency(o['orders_gold_price_per_gram']),
     );
     _finalPriceController = TextEditingController(
-      text: o['orders_final_price']?.toString() ?? '',
+      text: getInitialCurrency(o['orders_final_price']),
     );
     _dpController = TextEditingController(
-      text: o['orders_dp']?.toString() ?? '',
+      text: getInitialCurrency(o['orders_dp']),
     );
     _notesController = TextEditingController(text: o['orders_note'] ?? '');
     _readyDateController = TextEditingController(
@@ -107,11 +131,15 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
     _selectedGoldColor = o['orders_gold_color'];
     if (o['orders_ready_date'] != null &&
         o['orders_ready_date'].toString().isNotEmpty) {
-      _selectedReadyDate = DateTime.tryParse(o['orders_ready_date']);
+      final dateStr = o['orders_ready_date'].toString().substring(0, 10);
+      _selectedReadyDate = DateTime.tryParse(dateStr);
+      _readyDateController.text = dateStr;
     }
     if (o['orders_pickup_date'] != null &&
         o['orders_pickup_date'].toString().isNotEmpty) {
-      _selectedPickupDate = DateTime.tryParse(o['orders_pickup_date']);
+      final dateStr = o['orders_pickup_date'].toString().substring(0, 10);
+      _selectedPickupDate = DateTime.tryParse(dateStr);
+      _pickupDateController.text = dateStr;
     }
     // Stone used
     var stonesData = o['orders_stone_used'];
@@ -242,6 +270,19 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
     return null;
   }
 
+  // --- Format input harga saat user mengetik ---
+  void _onCurrencyChanged(TextEditingController controller, String value) {
+    String cleaned = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleaned.isEmpty) {
+      controller.text = '';
+    } else {
+      controller.text = formatRupiah(int.parse(cleaned));
+    }
+    controller.selection = TextSelection.fromPosition(
+      TextPosition(offset: controller.text.length),
+    );
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_uploadedImageUrls.isEmpty && _pickedImages.isEmpty) {
@@ -253,7 +294,6 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
       return;
     }
     setState(() => _isLoading = true);
-    // Upload gambar baru ke server dan simpan URL-nya
     for (final file in _pickedImages) {
       final url = await uploadImage(file);
       if (url != null) {
@@ -286,7 +326,6 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
               },
             )
             .toList();
-    // Pastikan orders_stone_used dan orders_imagePaths dikirim sebagai String
     final String ordersStoneUsedStr =
         stoneUsedList.isNotEmpty ? jsonEncode(stoneUsedList) : '';
     final String ordersImagePathsStr = jsonEncode(_uploadedImageUrls);
@@ -306,15 +345,27 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
           'orders_stone_used': ordersStoneUsedStr,
           'orders_ready_date':
               _readyDateController.text.isEmpty
-                  ? ''
+                  ? 'NULL'
                   : _readyDateController.text,
           'orders_pickup_date':
               _pickupDateController.text.isEmpty
-                  ? ''
+                  ? 'NULL'
                   : _pickupDateController.text,
-          'orders_gold_price_per_gram': _goldPricePerGramController.text,
-          'orders_final_price': _finalPriceController.text,
-          'orders_dp': _dpController.text,
+          'orders_gold_price_per_gram':
+              _goldPricePerGramController.text.isEmpty ||
+                      cleanCurrency(_goldPricePerGramController.text) == '0'
+                  ? 'NULL'
+                  : cleanCurrency(_goldPricePerGramController.text),
+          'orders_final_price':
+              _finalPriceController.text.isEmpty ||
+                      cleanCurrency(_finalPriceController.text) == '0'
+                  ? 'NULL'
+                  : cleanCurrency(_finalPriceController.text),
+          'orders_dp':
+              _dpController.text.isEmpty ||
+                      cleanCurrency(_dpController.text) == '0'
+                  ? 'NULL'
+                  : cleanCurrency(_dpController.text),
           'orders_note': _notesController.text,
           'orders_updated_at': updatedAt,
           'orders_imagePaths': ordersImagePathsStr,
@@ -392,19 +443,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Pesanan'),
-        backgroundColor: Colors.amber[700],
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white),
-            tooltip: 'Edit',
-            onPressed: _submit,
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
-            tooltip: 'Hapus',
-            onPressed: _deleteOrder,
-          ),
-        ],
+        backgroundColor: const Color(0xFFD4AF37),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
@@ -629,21 +668,27 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
               ),
               const Divider(),
               TextFormField(
-                controller: _goldPricePerGramController,
-                decoration: _luxuryDecoration('Harga Emas per Gram'),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
                 controller: _finalPriceController,
                 decoration: _luxuryDecoration('Harga Perkiraan'),
                 keyboardType: TextInputType.number,
+                onChanged:
+                    (value) => _onCurrencyChanged(_finalPriceController, value),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _goldPricePerGramController,
+                decoration: _luxuryDecoration('Harga Emas per Gram'),
+                keyboardType: TextInputType.number,
+                onChanged:
+                    (value) =>
+                        _onCurrencyChanged(_goldPricePerGramController, value),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _dpController,
                 decoration: _luxuryDecoration('DP'),
                 keyboardType: TextInputType.number,
+                onChanged: (value) => _onCurrencyChanged(_dpController, value),
               ),
               const SizedBox(height: 12),
               Row(

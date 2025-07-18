@@ -20,7 +20,7 @@ class _DiamondSetterDashboardScreenState
   bool _isLoading = true;
   String _errorMessage = '';
   String _searchQuery = '';
-  String _selectedTab = 'waiting'; // default tab diamond setter
+  String _selectedTab = 'waiting'; // default tab designer
 
   // Filter state
   List<String> selectedJewelryTypes = [];
@@ -35,20 +35,28 @@ class _DiamondSetterDashboardScreenState
   List<String> _randomCategoryFilters = [];
   bool _isRandomCategoryActive = true;
 
-  // Status yang relevan untuk diamond setter
+  // Tab logic khusus diamond setter
   final List<OrderWorkflowStatus> waitingStatuses = [
     OrderWorkflowStatus.waitingDiamondSetting,
   ];
-
   final List<OrderWorkflowStatus> workingStatuses = [
     OrderWorkflowStatus.stoneSetting,
   ];
-
   final List<OrderWorkflowStatus> onProgressStatuses = [
     OrderWorkflowStatus.waitingFinishing,
     OrderWorkflowStatus.finishing,
     OrderWorkflowStatus.waitingInventory,
     OrderWorkflowStatus.inventory,
+    OrderWorkflowStatus.waitingSalesCompletion,
+    OrderWorkflowStatus.done,
+    OrderWorkflowStatus.cancelled,
+  ];
+
+  // Checklist tugas diamond setter
+  final List<String> diamondSetterTasks = [
+    'Pilih batu',
+    'Pasang batu',
+    'Pengecekan',
   ];
 
   // Daftar pilihan filter
@@ -61,7 +69,7 @@ class _DiamondSetterDashboardScreenState
     "pin",
     "men ring",
     "women ring",
-    "engagement ring",
+    "Wedding ring",
     "custom",
   ];
   final List<String> goldColors = ["White Gold", "Rose Gold", "Yellow Gold"];
@@ -124,6 +132,11 @@ class _DiamondSetterDashboardScreenState
       });
       _generateRandomCategoryFilters();
     } catch (e) {
+      print('ERROR: $e');
+      if (e is FormatException) {
+        // Jika pakai http package, bisa print response.body di sini
+        print('FormatException: ${e.message}');
+      }
       setState(() {
         _errorMessage =
             'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
@@ -136,26 +149,27 @@ class _DiamondSetterDashboardScreenState
   }
 
   String orderFullText(Order order) {
-    // Ambil info batu dari inventoryStoneUsed
-    String stoneType = '-';
-    String stoneSize = '-';
-    if (order.inventoryStoneUsed != null &&
-        order.inventoryStoneUsed!.isNotEmpty) {
-      stoneType = order.inventoryStoneUsed![0]['type']?.toString() ?? '-';
-      stoneSize = order.inventoryStoneUsed![0]['size']?.toString() ?? '-';
-    }
     return [
       order.ordersCustomerName,
       order.ordersCustomerContact,
       order.ordersAddress,
       order.ordersJewelryType,
-      stoneType,
-      stoneSize,
+      (order.inventoryStoneUsed != null && order.inventoryStoneUsed!.isNotEmpty)
+          ? order.inventoryStoneUsed!
+              .map((e) => e['stone_type'] ?? '')
+              .join(', ')
+          : '',
       order.ordersRingSize,
-      order.ordersReadyDate?.toIso8601String() ?? '',
-      order.ordersPickupDate?.toIso8601String() ?? '',
-      order.ordersGoldPricePerGram.toString(),
-      order.ordersFinalPrice.toString(),
+      order.ordersReadyDate != null
+          ? order.ordersReadyDate!.toIso8601String()
+          : '',
+      order.ordersPickupDate != null
+          ? order.ordersPickupDate!.toIso8601String()
+          : '',
+      order.ordersGoldPricePerGram != null
+          ? order.ordersGoldPricePerGram!.toString()
+          : '-',
+      order.ordersFinalPrice != null ? order.ordersFinalPrice!.toString() : '-',
       order.ordersNote,
       order.ordersWorkflowStatus.label,
     ].join(' ').toLowerCase();
@@ -171,7 +185,7 @@ class _DiamondSetterDashboardScreenState
             )
             .toList();
 
-    // Tab logic khusus designer
+    // Tab logic mirip designer
     if (_selectedTab == 'waiting') {
       filtered =
           filtered
@@ -194,8 +208,6 @@ class _DiamondSetterDashboardScreenState
                     onProgressStatuses.contains(order.ordersWorkflowStatus),
               )
               .toList();
-    } else if (_selectedTab == 'all') {
-      // tampilkan semua yang bukan done/cancelled (sudah di atas)
     }
 
     // Filter kategori dari filter bar/sheet
@@ -236,14 +248,15 @@ class _DiamondSetterDashboardScreenState
           filtered
               .where(
                 (order) => selectedStoneTypes.any((stone) {
+                  // Cek di inventoryStoneUsed jika ada
                   if (order.inventoryStoneUsed != null &&
                       order.inventoryStoneUsed!.isNotEmpty) {
-                    final type =
-                        order.inventoryStoneUsed![0]['type']
-                            ?.toString()
-                            .toLowerCase() ??
-                        '';
-                    return type.contains(stone.toLowerCase());
+                    return order.inventoryStoneUsed!.any(
+                      (e) => (e['stone_type'] ?? '')
+                          .toString()
+                          .toLowerCase()
+                          .contains(stone.toLowerCase()),
+                    );
                   }
                   return false;
                 }),
@@ -253,13 +266,21 @@ class _DiamondSetterDashboardScreenState
     if (priceMin != null) {
       filtered =
           filtered
-              .where((order) => order.ordersFinalPrice >= priceMin!)
+              .where(
+                (order) =>
+                    order.ordersFinalPrice != null &&
+                    order.ordersFinalPrice! >= priceMin!,
+              )
               .toList();
     }
     if (priceMax != null) {
       filtered =
           filtered
-              .where((order) => order.ordersFinalPrice <= priceMax!)
+              .where(
+                (order) =>
+                    order.ordersFinalPrice != null &&
+                    order.ordersFinalPrice! <= priceMax!,
+              )
               .toList();
     }
     if (ringSize != null && ringSize!.isNotEmpty) {
@@ -585,15 +606,6 @@ class _DiamondSetterDashboardScreenState
                     onProgressStatuses.contains(order.ordersWorkflowStatus),
               )
               .length;
-    } else if (value == 'all') {
-      count =
-          _orders
-              .where(
-                (order) =>
-                    order.ordersWorkflowStatus != OrderWorkflowStatus.done &&
-                    order.ordersWorkflowStatus != OrderWorkflowStatus.cancelled,
-              )
-              .length;
     }
     return Expanded(
       child: Padding(
@@ -682,7 +694,7 @@ class _DiamondSetterDashboardScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Diamond Setter Dashboard'),
+        title: const Text('Sales Dashboard'),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -693,20 +705,7 @@ class _DiamondSetterDashboardScreenState
       ),
       extendBodyBehindAppBar: true,
       resizeToAvoidBottomInset: false,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.pushNamed(
-            context,
-            '/diamondsetter/create',
-          );
-          if (result == true) {
-            await _fetchOrders();
-          }
-        },
-        backgroundColor: Colors.amber[700],
-        tooltip: 'Buat Pesanan Baru',
-        child: const Icon(Icons.add, color: Colors.black),
-      ),
+      // Tidak perlu tombol tambah pesanan di designer
       body: Stack(
         children: [
           // Background image
@@ -932,6 +931,23 @@ class _DiamondSetterDashboardScreenState
                               itemBuilder: (context, index) {
                                 final order = _filteredOrders[index];
 
+                                // DEBUG: Print imagePaths for troubleshooting
+                                print(
+                                  'order.ordersId: \\${order.ordersId} imagePaths: \\${order.ordersImagePaths}',
+                                );
+
+                                // PATCH: Ganti logic gambar utama menjadi selalu URL
+                                String? imageUrl;
+                                if (order.ordersImagePaths.isNotEmpty &&
+                                    order.ordersImagePaths.first.isNotEmpty &&
+                                    order.ordersImagePaths.first.startsWith(
+                                      'http',
+                                    )) {
+                                  imageUrl = order.ordersImagePaths.first;
+                                } else {
+                                  imageUrl = null;
+                                }
+
                                 return Card(
                                   margin: const EdgeInsets.symmetric(
                                     vertical: 12.0,
@@ -957,39 +973,34 @@ class _DiamondSetterDashboardScreenState
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                               child:
-                                                  order
-                                                              .ordersImagePaths
-                                                              .isNotEmpty &&
-                                                          order
-                                                              .ordersImagePaths
-                                                              .first
-                                                              .isNotEmpty
+                                                  imageUrl != null
                                                       ? Image.network(
-                                                        order
-                                                            .ordersImagePaths
-                                                            .first,
+                                                        imageUrl,
                                                         width: 90,
                                                         height: 90,
                                                         fit: BoxFit.cover,
-                                                        errorBuilder:
-                                                            (
-                                                              context,
-                                                              error,
-                                                              stackTrace,
-                                                            ) => Container(
-                                                              width: 90,
-                                                              height: 90,
+                                                        errorBuilder: (
+                                                          context,
+                                                          error,
+                                                          stackTrace,
+                                                        ) {
+                                                          print(
+                                                            'Image.network error for order.id: \\${order.ordersId} url: \\$imageUrl error: \\$error',
+                                                          );
+                                                          return Container(
+                                                            width: 90,
+                                                            height: 90,
+                                                            color:
+                                                                Colors
+                                                                    .brown[100],
+                                                            child: const Icon(
+                                                              Icons.image,
+                                                              size: 40,
                                                               color:
-                                                                  Colors
-                                                                      .brown[100],
-                                                              child: const Icon(
-                                                                Icons.image,
-                                                                size: 40,
-                                                                color:
-                                                                    Colors
-                                                                        .brown,
-                                                              ),
+                                                                  Colors.brown,
                                                             ),
+                                                          );
+                                                        },
                                                       )
                                                       : Container(
                                                         width: 90,
@@ -1037,9 +1048,8 @@ class _DiamondSetterDashboardScreenState
                                                       const SizedBox(width: 6),
                                                       Text(
                                                         order
-                                                                    .ordersJewelryType
-                                                                    .isNotEmpty ==
-                                                                true
+                                                                .ordersJewelryType
+                                                                .isNotEmpty
                                                             ? order
                                                                 .ordersJewelryType
                                                             : "-",
@@ -1085,7 +1095,7 @@ class _DiamondSetterDashboardScreenState
                                                   ),
                                                   const SizedBox(width: 6),
                                                   Text(
-                                                    'Ambil: ${order.ordersPickupDate != null ? '${order.ordersPickupDate!.day}/${order.ordersPickupDate!.month}/${order.ordersPickupDate!.year}' : '-'}',
+                                                    'Ambil: ${order.ordersPickupDate!.day}/${order.ordersPickupDate!.month}/${order.ordersPickupDate!.year}',
                                                     style: const TextStyle(
                                                       fontSize: 13,
                                                       color: Color(0xFF7C5E2C),
@@ -1098,26 +1108,24 @@ class _DiamondSetterDashboardScreenState
                                         const SizedBox(height: 12),
                                         Row(
                                           children: [
-                                            Padding(
+                                            Chip(
+                                              label: Text(
+                                                order
+                                                    .ordersWorkflowStatus
+                                                    .label,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              backgroundColor: const Color(
+                                                0xFFD4AF37,
+                                              ), // gold
                                               padding:
                                                   const EdgeInsets.symmetric(
                                                     horizontal: 10,
                                                     vertical: 2,
                                                   ),
-                                              child: Chip(
-                                                label: Text(
-                                                  order
-                                                      .ordersWorkflowStatus
-                                                      .label,
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                backgroundColor: const Color(
-                                                  0xFFD4AF37,
-                                                ), // gold
-                                              ),
                                             ),
                                             const Spacer(),
                                             ElevatedButton.icon(
@@ -1151,10 +1159,14 @@ class _DiamondSetterDashboardScreenState
                                                 ).push(
                                                   MaterialPageRoute(
                                                     builder:
-                                                        (context) =>
-                                                            DiamondSetterDetailScreen(
-                                                              order: order,
-                                                            ),
+                                                        (
+                                                          context,
+                                                        ) => DiamondSetterDetailScreen(
+                                                          order: order,
+                                                          fromTab: _selectedTab,
+                                                          diamondSetterTasks:
+                                                              diamondSetterTasks,
+                                                        ),
                                                   ),
                                                 );
                                                 if (result == true) {

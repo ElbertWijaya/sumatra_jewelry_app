@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
+import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class SalesDetailScreen extends StatelessWidget {
   // Daftar tugas default per role
@@ -164,6 +167,16 @@ class SalesDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String formatRupiah(num? value) {
+      if (value == null || value == 0) return '-';
+      final formatter = NumberFormat.currency(
+        locale: 'id',
+        symbol: 'Rp ',
+        decimalDigits: 0,
+      );
+      return formatter.format(value);
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Pesanan'),
@@ -229,14 +242,44 @@ class SalesDetailScreen extends StatelessWidget {
                               ),
                         );
                         try {
-                          // Ganti dengan OrderService().deleteOrders jika ada
-                          Navigator.pop(context); // tutup loading
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Pesanan berhasil dihapus!'),
+                          // Panggil fungsi hapus pesanan dari backend
+                          final response = await http.post(
+                            Uri.parse(
+                              'http://192.168.83.54/sumatra_api/delete_orders.php',
                             ),
+                            body: {'orders_id': order.ordersId.toString()},
                           );
-                          Navigator.pop(context, true); // kembali ke list
+                          Navigator.pop(context); // tutup loading
+                          if (response.statusCode == 200) {
+                            final resp = jsonDecode(response.body);
+                            if (resp['success'] == true) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Pesanan berhasil dihapus!'),
+                                ),
+                              );
+                              Navigator.pop(
+                                context,
+                                true,
+                              ); // kembali ke list/dashboard
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Gagal menghapus: ${resp['error'] ?? 'Unknown error'}',
+                                  ),
+                                ),
+                              );
+                            }
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Gagal menghapus: ${response.body}',
+                                ),
+                              ),
+                            );
+                          }
                         } catch (e) {
                           Navigator.pop(context); // tutup loading
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -294,6 +337,79 @@ class SalesDetailScreen extends StatelessWidget {
                 ],
               ),
             ),
+            // Memo/Note
+            if (order.ordersNote != null && order.ordersNote.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Transform.rotate(
+                  angle: -0.01, // Sedikit miring seperti memo
+                  child: Stack(
+                    children: [
+                      CustomPaint(
+                        painter: _DashedBorderPainter(),
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.yellow[50],
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.amber.withOpacity(0.12),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 18,
+                              horizontal: 20,
+                            ),
+                            child: Text(
+                              order.ordersNote,
+                              style: const TextStyle(
+                                fontFamily:
+                                    'Montserrat', // atau font tipis lain
+                                fontSize: 16,
+                                color: Color(0xFF6D4C00),
+                                fontWeight: FontWeight.w300,
+                                letterSpacing: 0.2,
+                              ),
+                              textAlign: TextAlign.justify,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Sticky tape di pojok kiri atas
+                      Positioned(
+                        left: 18,
+                        top: 0,
+                        child: Container(
+                          width: 32,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Colors.blue[200],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                      // Sticky tape di pojok kanan bawah
+                      Positioned(
+                        right: 18,
+                        bottom: 0,
+                        child: Container(
+                          width: 32,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Colors.red[200],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             const Divider(),
             // Informasi Batu (Card)
             Text(
@@ -324,13 +440,13 @@ class SalesDetailScreen extends StatelessWidget {
             ListTile(
               leading: Icon(Icons.date_range, color: Colors.amber),
               title: Text(
-                'Tanggal Siap: ${order.ordersReadyDate != null ? "${order.ordersReadyDate!.day.toString().padLeft(2, '0')}/${order.ordersReadyDate!.month.toString().padLeft(2, '0')}/${order.ordersReadyDate!.year} ${order.ordersReadyDate!.hour.toString().padLeft(2, '0')}:${order.ordersReadyDate!.minute.toString().padLeft(2, '0')}:${order.ordersReadyDate!.second.toString().padLeft(2, '0')}" : "-"}',
+                'Tanggal Siap: ${order.ordersReadyDate != null ? "${order.ordersReadyDate!.day.toString().padLeft(2, '0')}/${order.ordersReadyDate!.month.toString().padLeft(2, '0')}/${order.ordersReadyDate!.year}" : "-"}',
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Tanggal Pickup: ${order.ordersPickupDate != null ? "${order.ordersPickupDate!.day.toString().padLeft(2, '0')}/${order.ordersPickupDate!.month.toString().padLeft(2, '0')}/${order.ordersPickupDate!.year} ${order.ordersPickupDate!.hour.toString().padLeft(2, '0')}:${order.ordersPickupDate!.minute.toString().padLeft(2, '0')}:${order.ordersPickupDate!.second.toString().padLeft(2, '0')}" : "-"}',
+                    'Tanggal Pickup: ${order.ordersPickupDate != null ? "${order.ordersPickupDate!.day.toString().padLeft(2, '0')}/${order.ordersPickupDate!.month.toString().padLeft(2, '0')}/${order.ordersPickupDate!.year}" : "-"}',
                   ),
                   Text(
                     'Tanggal Dibuat: ${order.ordersCreatedAt.day.toString().padLeft(2, '0')}/${order.ordersCreatedAt.month.toString().padLeft(2, '0')}/${order.ordersCreatedAt.year} ${order.ordersCreatedAt.hour.toString().padLeft(2, '0')}:${order.ordersCreatedAt.minute.toString().padLeft(2, '0')}:${order.ordersCreatedAt.second.toString().padLeft(2, '0')}',
@@ -352,17 +468,17 @@ class SalesDetailScreen extends StatelessWidget {
             ListTile(
               leading: Icon(Icons.attach_money, color: Colors.amber),
               title: Text(
-                'Harga Perkiraan: Rp ${order.ordersFinalPrice.toStringAsFixed(0)}',
+                'Harga Perkiraan: ${formatRupiah(order.ordersFinalPrice)}',
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Harga Akhir: Rp ${order.ordersFinalPrice.toStringAsFixed(0)}',
+                    'Harga Emas per Gram: ${formatRupiah(order.ordersGoldPricePerGram)}',
                   ),
-                  Text('DP: Rp ${order.ordersDp.toStringAsFixed(0)}'),
+                  Text('DP: ${formatRupiah(order.ordersDp)}'),
                   Text(
-                    'Sisa Lunas: Rp ${(order.ordersFinalPrice - order.ordersDp).toStringAsFixed(0)}',
+                    'Sisa Lunas: ${order.ordersFinalPrice != null && order.ordersDp != null && order.ordersFinalPrice != 0 && order.ordersDp != 0 ? formatRupiah(order.ordersFinalPrice! - order.ordersDp!) : '-'}',
                   ),
                 ],
               ),
@@ -470,4 +586,41 @@ class SalesDetailScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+// CustomPainter untuk border putus-putus memo
+class _DashedBorderPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final radius = 12.0;
+    final paint =
+        Paint()
+          ..color = Colors.amber
+          ..strokeWidth = 1.5
+          ..style = PaintingStyle.stroke;
+    final path =
+        Path()..addRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(1, 1, size.width - 2, size.height - 2),
+            Radius.circular(radius),
+          ),
+        );
+    _drawDashedPath(canvas, path, paint);
+  }
+
+  void _drawDashedPath(Canvas canvas, Path path, Paint paint) {
+    const dashWidth = 7.0;
+    const dashSpace = 5.0;
+    for (final metric in path.computeMetrics()) {
+      double distance = 0.0;
+      while (distance < metric.length) {
+        final next = distance + dashWidth;
+        canvas.drawPath(metric.extractPath(distance, next), paint);
+        distance = next + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

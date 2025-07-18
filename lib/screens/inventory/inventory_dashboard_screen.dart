@@ -252,25 +252,24 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     }
     if (priceMin != null) {
       filtered =
-          filtered
-              .where((order) => (order.ordersFinalPrice) >= priceMin!)
-              .toList();
+          filtered.where((order) {
+            final price = order.ordersFinalPrice;
+            return price != null && price >= priceMin!;
+          }).toList();
     }
     if (priceMax != null) {
       filtered =
-          filtered
-              .where((order) => (order.ordersFinalPrice) <= priceMax!)
-              .toList();
+          filtered.where((order) {
+            final price = order.ordersFinalPrice;
+            return price != null && price <= priceMax!;
+          }).toList();
     }
     if (ringSize != null && ringSize!.isNotEmpty) {
       filtered =
-          filtered
-              .where(
-                (order) => (order.inventoryRingSize ?? '')
-                    .toLowerCase()
-                    .contains(ringSize!.toLowerCase()),
-              )
-              .toList();
+          filtered.where((order) {
+            final rs = order.inventoryRingSize ?? '';
+            return rs.toLowerCase().contains(ringSize!.toLowerCase());
+          }).toList();
     }
 
     if (_searchQuery.isNotEmpty) {

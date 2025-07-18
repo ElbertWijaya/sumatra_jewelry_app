@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,7 +19,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   String _searchQuery = '';
-  String _selectedTab = 'waiting'; // default tab diamond setter
+  String _selectedTab = 'waiting'; // default tab designer
 
   // Filter state
   List<String> selectedJewelryTypes = [];
@@ -35,19 +34,23 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
   List<String> _randomCategoryFilters = [];
   bool _isRandomCategoryActive = true;
 
-  // Status yang relevan untuk finisher
+  // Tab logic khusus finisher
   final List<OrderWorkflowStatus> waitingStatuses = [
     OrderWorkflowStatus.waitingFinishing,
   ];
-
   final List<OrderWorkflowStatus> workingStatuses = [
     OrderWorkflowStatus.finishing,
   ];
-
   final List<OrderWorkflowStatus> onProgressStatuses = [
     OrderWorkflowStatus.waitingInventory,
     OrderWorkflowStatus.inventory,
+    OrderWorkflowStatus.waitingSalesCompletion,
+    OrderWorkflowStatus.done,
+    OrderWorkflowStatus.cancelled,
   ];
+
+  // Checklist tugas finisher
+  final List<String> finisherTasks = ['Poles', 'Cuci', 'Quality Control'];
 
   // Daftar pilihan filter
   final List<String> jewelryTypes = [
@@ -59,7 +62,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
     "pin",
     "men ring",
     "women ring",
-    "engagement ring",
+    "Wedding ring",
     "custom",
   ];
   final List<String> goldColors = ["White Gold", "Rose Gold", "Yellow Gold"];
@@ -122,6 +125,11 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
       });
       _generateRandomCategoryFilters();
     } catch (e) {
+      print('ERROR: $e');
+      if (e is FormatException) {
+        // Jika pakai http package, bisa print response.body di sini
+        print('FormatException: ${e.message}');
+      }
       setState(() {
         _errorMessage =
             'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
@@ -134,31 +142,28 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
   }
 
   String orderFullText(Order order) {
-    // Use new orders_* and inventory* fields
-    final stoneType =
-        (order.inventoryStoneUsed != null &&
-                order.inventoryStoneUsed!.isNotEmpty)
-            ? (order.inventoryStoneUsed![0]['type']?.toString() ?? '')
-            : '';
-    final stoneSize =
-        (order.inventoryStoneUsed != null &&
-                order.inventoryStoneUsed!.isNotEmpty)
-            ? (order.inventoryStoneUsed![0]['size']?.toString() ?? '')
-            : '';
     return [
       order.ordersCustomerName,
       order.ordersCustomerContact,
       order.ordersAddress,
-      order.inventoryJewelryType ?? '',
-      stoneType,
-      stoneSize,
-      order.inventoryRingSize ?? '',
-      order.ordersReadyDate?.toIso8601String() ?? '',
-      order.ordersPickupDate?.toIso8601String() ?? '',
-      order.ordersGoldPricePerGram.toString(),
-      order.ordersFinalPrice.toString(),
-      // notes field not available in new model, skip or use ''
-      '',
+      order.ordersJewelryType,
+      (order.inventoryStoneUsed != null && order.inventoryStoneUsed!.isNotEmpty)
+          ? order.inventoryStoneUsed!
+              .map((e) => e['stone_type'] ?? '')
+              .join(', ')
+          : '',
+      order.ordersRingSize,
+      order.ordersReadyDate != null
+          ? order.ordersReadyDate!.toIso8601String()
+          : '',
+      order.ordersPickupDate != null
+          ? order.ordersPickupDate!.toIso8601String()
+          : '',
+      order.ordersGoldPricePerGram != null
+          ? order.ordersGoldPricePerGram!.toString()
+          : '-',
+      order.ordersFinalPrice != null ? order.ordersFinalPrice!.toString() : '-',
+      order.ordersNote,
       order.ordersWorkflowStatus.label,
     ].join(' ').toLowerCase();
   }
@@ -173,7 +178,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
             )
             .toList();
 
-    // Tab logic khusus designer
+    // Tab logic mirip designer
     if (_selectedTab == 'waiting') {
       filtered =
           filtered
@@ -196,8 +201,6 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                     onProgressStatuses.contains(order.ordersWorkflowStatus),
               )
               .toList();
-    } else if (_selectedTab == 'all') {
-      // tampilkan semua yang bukan done/cancelled (sudah di atas)
     }
 
     // Filter kategori dari filter bar/sheet
@@ -206,9 +209,9 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
           filtered
               .where(
                 (order) => selectedJewelryTypes.any(
-                  (t) => (order.inventoryJewelryType ?? '')
-                      .toLowerCase()
-                      .contains(t.toLowerCase()),
+                  (t) => order.ordersJewelryType.toLowerCase().contains(
+                    t.toLowerCase(),
+                  ),
                 ),
               )
               .toList();
@@ -237,38 +240,49 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
       filtered =
           filtered
               .where(
-                (order) => selectedStoneTypes.any(
-                  (stone) =>
-                      (order.inventoryStoneUsed != null &&
-                              order.inventoryStoneUsed!.isNotEmpty)
-                          ? (order.inventoryStoneUsed![0]['type']?.toString() ??
-                                  '')
-                              .toLowerCase()
-                              .contains(stone.toLowerCase())
-                          : false,
-                ),
+                (order) => selectedStoneTypes.any((stone) {
+                  // Cek di inventoryStoneUsed jika ada
+                  if (order.inventoryStoneUsed != null &&
+                      order.inventoryStoneUsed!.isNotEmpty) {
+                    return order.inventoryStoneUsed!.any(
+                      (e) => (e['stone_type'] ?? '')
+                          .toString()
+                          .toLowerCase()
+                          .contains(stone.toLowerCase()),
+                    );
+                  }
+                  return false;
+                }),
               )
               .toList();
     }
     if (priceMin != null) {
       filtered =
           filtered
-              .where((order) => (order.ordersFinalPrice) >= priceMin!)
+              .where(
+                (order) =>
+                    order.ordersFinalPrice != null &&
+                    order.ordersFinalPrice! >= priceMin!,
+              )
               .toList();
     }
     if (priceMax != null) {
       filtered =
           filtered
-              .where((order) => (order.ordersFinalPrice) <= priceMax!)
+              .where(
+                (order) =>
+                    order.ordersFinalPrice != null &&
+                    order.ordersFinalPrice! <= priceMax!,
+              )
               .toList();
     }
     if (ringSize != null && ringSize!.isNotEmpty) {
       filtered =
           filtered
               .where(
-                (order) => (order.inventoryRingSize ?? '')
-                    .toLowerCase()
-                    .contains(ringSize!.toLowerCase()),
+                (order) => order.ordersRingSize.toLowerCase().contains(
+                  ringSize!.toLowerCase(),
+                ),
               )
               .toList();
     }
@@ -585,15 +599,6 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                     onProgressStatuses.contains(order.ordersWorkflowStatus),
               )
               .length;
-    } else if (value == 'all') {
-      count =
-          _orders
-              .where(
-                (order) =>
-                    order.ordersWorkflowStatus != OrderWorkflowStatus.done &&
-                    order.ordersWorkflowStatus != OrderWorkflowStatus.cancelled,
-              )
-              .length;
     }
     return Expanded(
       child: Padding(
@@ -682,7 +687,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Finisher Dashboard'),
+        title: const Text('Sales Dashboard'),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -693,17 +698,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
       ),
       extendBodyBehindAppBar: true,
       resizeToAvoidBottomInset: false,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.pushNamed(context, '/finisher/create');
-          if (result == true) {
-            await _fetchOrders();
-          }
-        },
-        backgroundColor: Colors.amber[700],
-        tooltip: 'Buat Pesanan Baru',
-        child: const Icon(Icons.add, color: Colors.black),
-      ),
+      // Tidak perlu tombol tambah pesanan di designer
       body: Stack(
         children: [
           // Background image
@@ -928,8 +923,24 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                               itemCount: _filteredOrders.length,
                               itemBuilder: (context, index) {
                                 final order = _filteredOrders[index];
-                                // Use new fields for display
-                                // stoneType variable removed (was unused)
+
+                                // DEBUG: Print imagePaths for troubleshooting
+                                print(
+                                  'order.ordersId: \\${order.ordersId} imagePaths: \\${order.ordersImagePaths}',
+                                );
+
+                                // PATCH: Ganti logic gambar utama menjadi selalu URL
+                                String? imageUrl;
+                                if (order.ordersImagePaths.isNotEmpty &&
+                                    order.ordersImagePaths.first.isNotEmpty &&
+                                    order.ordersImagePaths.first.startsWith(
+                                      'http',
+                                    )) {
+                                  imageUrl = order.ordersImagePaths.first;
+                                } else {
+                                  imageUrl = null;
+                                }
+
                                 return Card(
                                   margin: const EdgeInsets.symmetric(
                                     vertical: 12.0,
@@ -938,40 +949,51 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(18),
                                   ),
-                                  color: const Color(0xFFFDF6E3),
+                                  color: const Color(
+                                    0xFFFDF6E3,
+                                  ), // luxurious light gold background
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
                                     child: Column(
                                       children: [
+                                        // Row pertama: gambar dan info utama
                                         Row(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
+                                            // Gambar 1:1
                                             ClipRRect(
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                               child:
-                                                  order
-                                                              .ordersImagePaths
-                                                              .isNotEmpty &&
-                                                          order
-                                                              .ordersImagePaths
-                                                              .first
-                                                              .isNotEmpty &&
-                                                          File(
-                                                            order
-                                                                .ordersImagePaths
-                                                                .first,
-                                                          ).existsSync()
-                                                      ? Image.file(
-                                                        File(
-                                                          order
-                                                              .ordersImagePaths
-                                                              .first,
-                                                        ),
+                                                  imageUrl != null
+                                                      ? Image.network(
+                                                        imageUrl,
                                                         width: 90,
                                                         height: 90,
                                                         fit: BoxFit.cover,
+                                                        errorBuilder: (
+                                                          context,
+                                                          error,
+                                                          stackTrace,
+                                                        ) {
+                                                          print(
+                                                            'Image.network error for order.id: \\${order.ordersId} url: \\$imageUrl error: \\$error',
+                                                          );
+                                                          return Container(
+                                                            width: 90,
+                                                            height: 90,
+                                                            color:
+                                                                Colors
+                                                                    .brown[100],
+                                                            child: const Icon(
+                                                              Icons.image,
+                                                              size: 40,
+                                                              color:
+                                                                  Colors.brown,
+                                                            ),
+                                                          );
+                                                        },
                                                       )
                                                       : Container(
                                                         width: 90,
@@ -986,6 +1008,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                                       ),
                                             ),
                                             const SizedBox(width: 18),
+                                            // Nama & jenis perhiasan
                                             Expanded(
                                               child: Column(
                                                 crossAxisAlignment:
@@ -997,7 +1020,9 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                                       fontWeight:
                                                           FontWeight.bold,
                                                       fontSize: 18,
-                                                      color: Color(0xFF7C5E2C),
+                                                      color: Color(
+                                                        0xFF7C5E2C,
+                                                      ), // deep gold
                                                       letterSpacing: 0.5,
                                                     ),
                                                     overflow:
@@ -1015,11 +1040,11 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                                       ),
                                                       const SizedBox(width: 6),
                                                       Text(
-                                                        (order.inventoryJewelryType ??
-                                                                    '')
+                                                        order
+                                                                .ordersJewelryType
                                                                 .isNotEmpty
                                                             ? order
-                                                                .inventoryJewelryType!
+                                                                .ordersJewelryType
                                                             : "-",
                                                         style: const TextStyle(
                                                           fontSize: 15,
@@ -1036,6 +1061,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                           ],
                                         ),
                                         const SizedBox(height: 18),
+                                        // Row kedua: info tanggal, status, tombol
                                         Row(
                                           children: [
                                             const Icon(
@@ -1087,7 +1113,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                               ),
                                               backgroundColor: const Color(
                                                 0xFFD4AF37,
-                                              ),
+                                              ), // gold
                                               padding:
                                                   const EdgeInsets.symmetric(
                                                     horizontal: 10,
@@ -1099,7 +1125,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor: const Color(
                                                   0xFFD4AF37,
-                                                ),
+                                                ), // gold
                                                 foregroundColor: Colors.white,
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
@@ -1129,6 +1155,10 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
                                                         (context) =>
                                                             FinisherDetailScreen(
                                                               order: order,
+                                                              fromTab:
+                                                                  _selectedTab,
+                                                              finisherTasks:
+                                                                  finisherTasks,
                                                             ),
                                                   ),
                                                 );

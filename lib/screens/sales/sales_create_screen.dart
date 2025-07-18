@@ -213,6 +213,26 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
     final ordersId = now.millisecondsSinceEpoch.toString();
     final createdAt = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
 
+    // Pastikan tanggal yang dikirim hanya format yyyy-MM-dd
+    String readyDate = '';
+    if (_readyDateController.text.isNotEmpty) {
+      try {
+        final dt = DateFormat('yyyy-MM-dd').parse(_readyDateController.text);
+        readyDate = DateFormat('yyyy-MM-dd').format(dt);
+      } catch (_) {
+        readyDate = _readyDateController.text;
+      }
+    }
+    String pickupDate = '';
+    if (_pickupDateController.text.isNotEmpty) {
+      try {
+        final dt = DateFormat('yyyy-MM-dd').parse(_pickupDateController.text);
+        pickupDate = DateFormat('yyyy-MM-dd').format(dt);
+      } catch (_) {
+        pickupDate = _pickupDateController.text;
+      }
+    }
+
     try {
       final response = await http.post(
         Uri.parse('http://192.168.83.54/sumatra_api/add_orders.php'),
@@ -227,14 +247,8 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
           'orders_ring_size': _ringSizeController.text,
           'orders_stone_used':
               stoneUsedList.isNotEmpty ? jsonEncode(stoneUsedList) : '',
-          'orders_ready_date':
-              _readyDateController.text.isEmpty
-                  ? ''
-                  : _readyDateController.text,
-          'orders_pickup_date':
-              _pickupDateController.text.isEmpty
-                  ? ''
-                  : _pickupDateController.text,
+          'orders_ready_date': readyDate,
+          'orders_pickup_date': pickupDate,
           'orders_gold_price_per_gram': _goldPricePerGramController.text,
           'orders_final_price': _finalPriceController.text,
           'orders_dp': _dpController.text,

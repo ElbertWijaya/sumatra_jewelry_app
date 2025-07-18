@@ -33,15 +33,13 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
   List<String> _randomCategoryFilters = [];
   bool _isRandomCategoryActive = true;
 
-  // Status yang relevan untuk caster
+  // Tab logic khusus designer
   final List<OrderWorkflowStatus> waitingStatuses = [
     OrderWorkflowStatus.waitingCasting,
   ];
-
   final List<OrderWorkflowStatus> workingStatuses = [
     OrderWorkflowStatus.casting,
   ];
-
   final List<OrderWorkflowStatus> onProgressStatuses = [
     OrderWorkflowStatus.waitingCarving,
     OrderWorkflowStatus.carving,
@@ -51,6 +49,9 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
     OrderWorkflowStatus.finishing,
     OrderWorkflowStatus.waitingInventory,
     OrderWorkflowStatus.inventory,
+    OrderWorkflowStatus.waitingSalesCompletion,
+    OrderWorkflowStatus.done,
+    OrderWorkflowStatus.cancelled,
   ];
 
   // Daftar pilihan filter
@@ -63,7 +64,7 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
     "pin",
     "men ring",
     "women ring",
-    "engagement ring",
+    "Wedding ring",
     "custom",
   ];
   final List<String> goldColors = ["White Gold", "Rose Gold", "Yellow Gold"];
@@ -126,6 +127,11 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
       });
       _generateRandomCategoryFilters();
     } catch (e) {
+      print('ERROR: $e');
+      if (e is FormatException) {
+        // Jika pakai http package, bisa print response.body di sini
+        print('FormatException: ${e.message}');
+      }
       setState(() {
         _errorMessage =
             'Gagal memuat pesanan: ${e.toString().replaceAll('Exception: ', '')}';
@@ -138,29 +144,27 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
   }
 
   String orderFullText(Order order) {
-    // Gunakan inventoryStoneUsed jika ada, jika tidak fallback ke ordersStoneType
-    String stoneType = '';
-    String stoneSize = '';
-    if (order.inventoryStoneUsed != null &&
-        order.inventoryStoneUsed!.isNotEmpty) {
-      stoneType = order.inventoryStoneUsed![0]['type']?.toString() ?? '';
-      stoneSize = order.inventoryStoneUsed![0]['size']?.toString() ?? '';
-    } else {
-      stoneType = '';
-      stoneSize = '';
-    }
     return [
       order.ordersCustomerName,
       order.ordersCustomerContact,
       order.ordersAddress,
       order.ordersJewelryType,
-      stoneType,
-      stoneSize,
+      (order.inventoryStoneUsed != null && order.inventoryStoneUsed!.isNotEmpty)
+          ? order.inventoryStoneUsed!
+              .map((e) => e['stone_type'] ?? '')
+              .join(', ')
+          : '',
       order.ordersRingSize,
-      order.ordersReadyDate?.toIso8601String() ?? '',
-      order.ordersPickupDate?.toIso8601String() ?? '',
-      order.ordersGoldPricePerGram.toString(),
-      order.ordersFinalPrice.toString(),
+      order.ordersReadyDate != null
+          ? order.ordersReadyDate!.toIso8601String()
+          : '',
+      order.ordersPickupDate != null
+          ? order.ordersPickupDate!.toIso8601String()
+          : '',
+      order.ordersGoldPricePerGram != null
+          ? order.ordersGoldPricePerGram!.toString()
+          : '-',
+      order.ordersFinalPrice != null ? order.ordersFinalPrice!.toString() : '-',
       order.ordersNote,
       order.ordersWorkflowStatus.label,
     ].join(' ').toLowerCase();
@@ -176,7 +180,7 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
             )
             .toList();
 
-    // Tab logic khusus caster
+    // Tab logic mirip designer
     if (_selectedTab == 'waiting') {
       filtered =
           filtered
@@ -199,8 +203,6 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
                     onProgressStatuses.contains(order.ordersWorkflowStatus),
               )
               .toList();
-    } else if (_selectedTab == 'all') {
-      // tampilkan semua yang bukan done/cancelled (sudah di atas)
     }
 
     // Filter kategori dari filter bar/sheet
@@ -240,29 +242,40 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
       filtered =
           filtered
               .where(
-                (order) => selectedStoneTypes.any(
-                  (stone) =>
-                      ((order.inventoryStoneUsed != null &&
-                              order.inventoryStoneUsed!.isNotEmpty)
-                          ? (order.inventoryStoneUsed![0]['type']?.toString() ??
-                                  '')
-                              .toLowerCase()
-                              .contains(stone.toLowerCase())
-                          : ''.contains(stone.toLowerCase())),
-                ),
+                (order) => selectedStoneTypes.any((stone) {
+                  // Cek di inventoryStoneUsed jika ada
+                  if (order.inventoryStoneUsed != null &&
+                      order.inventoryStoneUsed!.isNotEmpty) {
+                    return order.inventoryStoneUsed!.any(
+                      (e) => (e['stone_type'] ?? '')
+                          .toString()
+                          .toLowerCase()
+                          .contains(stone.toLowerCase()),
+                    );
+                  }
+                  return false;
+                }),
               )
               .toList();
     }
     if (priceMin != null) {
       filtered =
           filtered
-              .where((order) => (order.ordersFinalPrice) >= priceMin!)
+              .where(
+                (order) =>
+                    order.ordersFinalPrice != null &&
+                    order.ordersFinalPrice! >= priceMin!,
+              )
               .toList();
     }
     if (priceMax != null) {
       filtered =
           filtered
-              .where((order) => (order.ordersFinalPrice) <= priceMax!)
+              .where(
+                (order) =>
+                    order.ordersFinalPrice != null &&
+                    order.ordersFinalPrice! <= priceMax!,
+              )
               .toList();
     }
     if (ringSize != null && ringSize!.isNotEmpty) {
@@ -588,15 +601,6 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
                     onProgressStatuses.contains(order.ordersWorkflowStatus),
               )
               .length;
-    } else if (value == 'all') {
-      count =
-          _orders
-              .where(
-                (order) =>
-                    order.ordersWorkflowStatus != OrderWorkflowStatus.done &&
-                    order.ordersWorkflowStatus != OrderWorkflowStatus.cancelled,
-              )
-              .length;
     }
     return Expanded(
       child: Padding(
@@ -685,7 +689,7 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Caster Dashboard'),
+        title: const Text('Sales Dashboard'),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -696,17 +700,7 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
       ),
       extendBodyBehindAppBar: true,
       resizeToAvoidBottomInset: false,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.pushNamed(context, '/caster/create');
-          if (result == true) {
-            await _fetchOrders();
-          }
-        },
-        backgroundColor: Colors.amber[700],
-        tooltip: 'Buat Pesanan Baru',
-        child: const Icon(Icons.add, color: Colors.black),
-      ),
+      // Tidak perlu tombol tambah pesanan di designer
       body: Stack(
         children: [
           // Background image
@@ -931,6 +925,24 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
                               itemCount: _filteredOrders.length,
                               itemBuilder: (context, index) {
                                 final order = _filteredOrders[index];
+
+                                // DEBUG: Print imagePaths for troubleshooting
+                                print(
+                                  'order.ordersId: \\${order.ordersId} imagePaths: \\${order.ordersImagePaths}',
+                                );
+
+                                // PATCH: Ganti logic gambar utama menjadi selalu URL
+                                String? imageUrl;
+                                if (order.ordersImagePaths.isNotEmpty &&
+                                    order.ordersImagePaths.first.isNotEmpty &&
+                                    order.ordersImagePaths.first.startsWith(
+                                      'http',
+                                    )) {
+                                  imageUrl = order.ordersImagePaths.first;
+                                } else {
+                                  imageUrl = null;
+                                }
+
                                 return Card(
                                   margin: const EdgeInsets.symmetric(
                                     vertical: 12.0,
@@ -956,39 +968,34 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                               child:
-                                                  order
-                                                              .ordersImagePaths
-                                                              .isNotEmpty &&
-                                                          order
-                                                              .ordersImagePaths
-                                                              .first
-                                                              .isNotEmpty
+                                                  imageUrl != null
                                                       ? Image.network(
-                                                        order
-                                                            .ordersImagePaths
-                                                            .first,
+                                                        imageUrl,
                                                         width: 90,
                                                         height: 90,
                                                         fit: BoxFit.cover,
-                                                        errorBuilder:
-                                                            (
-                                                              context,
-                                                              error,
-                                                              stackTrace,
-                                                            ) => Container(
-                                                              width: 90,
-                                                              height: 90,
+                                                        errorBuilder: (
+                                                          context,
+                                                          error,
+                                                          stackTrace,
+                                                        ) {
+                                                          print(
+                                                            'Image.network error for order.id: \\${order.ordersId} url: \\$imageUrl error: \\$error',
+                                                          );
+                                                          return Container(
+                                                            width: 90,
+                                                            height: 90,
+                                                            color:
+                                                                Colors
+                                                                    .brown[100],
+                                                            child: const Icon(
+                                                              Icons.image,
+                                                              size: 40,
                                                               color:
-                                                                  Colors
-                                                                      .brown[100],
-                                                              child: const Icon(
-                                                                Icons.image,
-                                                                size: 40,
-                                                                color:
-                                                                    Colors
-                                                                        .brown,
-                                                              ),
+                                                                  Colors.brown,
                                                             ),
+                                                          );
+                                                        },
                                                       )
                                                       : Container(
                                                         width: 90,
@@ -1096,7 +1103,6 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
                                         const SizedBox(height: 12),
                                         Row(
                                           children: [
-                                            // Chip for status (ordersWorkflowStatus only)
                                             Chip(
                                               label: Text(
                                                 order
@@ -1107,19 +1113,33 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               ),
-                                              backgroundColor:
-                                                  order.ordersWorkflowStatus ==
-                                                          OrderWorkflowStatus
-                                                              .done
-                                                      ? Colors.green
-                                                      : order.ordersWorkflowStatus ==
-                                                          OrderWorkflowStatus
-                                                              .cancelled
-                                                      ? Colors.red
-                                                      : const Color(0xFFD4AF37),
+                                              backgroundColor: const Color(
+                                                0xFFD4AF37,
+                                              ), // gold
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 2,
+                                                  ),
                                             ),
-                                            const SizedBox(width: 12),
+                                            const Spacer(),
                                             ElevatedButton.icon(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: const Color(
+                                                  0xFFD4AF37,
+                                                ), // gold
+                                                foregroundColor: Colors.white,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                elevation: 0,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 16,
+                                                      vertical: 8,
+                                                    ),
+                                              ),
                                               icon: const Icon(
                                                 Icons.arrow_forward_ios,
                                                 size: 16,
@@ -1135,10 +1155,13 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
                                                     ).push(
                                                       MaterialPageRoute(
                                                         builder:
-                                                            (context) =>
-                                                                CorDetailScreen(
-                                                                  order: order,
-                                                                ),
+                                                            (
+                                                              context,
+                                                            ) => CorDetailScreen(
+                                                              order: order,
+                                                              fromTab:
+                                                                  _selectedTab,
+                                                            ),
                                                       ),
                                                     );
                                                 if (result == true) {

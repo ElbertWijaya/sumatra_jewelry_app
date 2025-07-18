@@ -148,7 +148,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       order.ordersCustomerContact,
       order.ordersAddress,
       order.ordersJewelryType,
-      // Jika ada field batu, gunakan dari inventoryStoneUsed jika perlu
       (order.inventoryStoneUsed != null && order.inventoryStoneUsed!.isNotEmpty)
           ? order.inventoryStoneUsed!
               .map((e) => e['stone_type'] ?? '')
@@ -161,8 +160,10 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       order.ordersPickupDate != null
           ? order.ordersPickupDate!.toIso8601String()
           : '',
-      order.ordersGoldPricePerGram.toString(),
-      order.ordersFinalPrice.toString(),
+      order.ordersGoldPricePerGram != null
+          ? order.ordersGoldPricePerGram!.toString()
+          : '-',
+      order.ordersFinalPrice != null ? order.ordersFinalPrice!.toString() : '-',
       order.ordersNote,
       order.ordersWorkflowStatus.label,
     ].join(' ').toLowerCase();
@@ -254,13 +255,21 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     if (priceMin != null) {
       filtered =
           filtered
-              .where((order) => order.ordersFinalPrice >= priceMin!)
+              .where(
+                (order) =>
+                    order.ordersFinalPrice != null &&
+                    order.ordersFinalPrice! >= priceMin!,
+              )
               .toList();
     }
     if (priceMax != null) {
       filtered =
           filtered
-              .where((order) => order.ordersFinalPrice <= priceMax!)
+              .where(
+                (order) =>
+                    order.ordersFinalPrice != null &&
+                    order.ordersFinalPrice! <= priceMax!,
+              )
               .toList();
     }
     if (ringSize != null && ringSize!.isNotEmpty) {

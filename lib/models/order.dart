@@ -122,9 +122,9 @@ class Order {
   final String ordersRingSize;
   final DateTime? ordersReadyDate;
   final DateTime? ordersPickupDate;
-  final double ordersGoldPricePerGram;
-  final double ordersFinalPrice;
-  final double ordersDp;
+  final double? ordersGoldPricePerGram;
+  final double? ordersFinalPrice;
+  final double? ordersDp;
   final double ordersSisaLunas;
   final String ordersNote;
   final DateTime? ordersUpdatedAt;
@@ -263,18 +263,19 @@ class Order {
               ? DateTime.tryParse(map['orders_pickup_date'])
               : null,
       ordersGoldPricePerGram:
-          map['orders_gold_price_per_gram'] != null
-              ? double.tryParse(map['orders_gold_price_per_gram'].toString()) ??
-                  0
-              : 0,
+          map['orders_gold_price_per_gram'] != null &&
+                  map['orders_gold_price_per_gram'].toString().isNotEmpty
+              ? double.tryParse(map['orders_gold_price_per_gram'].toString())
+              : null,
       ordersFinalPrice:
-          map['orders_final_price'] != null
-              ? double.tryParse(map['orders_final_price'].toString()) ?? 0
-              : 0,
+          map['orders_final_price'] != null &&
+                  map['orders_final_price'].toString().isNotEmpty
+              ? double.tryParse(map['orders_final_price'].toString())
+              : null,
       ordersDp:
-          map['orders_dp'] != null
-              ? double.tryParse(map['orders_dp'].toString()) ?? 0
-              : 0,
+          map['orders_dp'] != null && map['orders_dp'].toString().isNotEmpty
+              ? double.tryParse(map['orders_dp'].toString())
+              : null,
       ordersSisaLunas:
           map['orders_sisa_lunas'] != null
               ? double.tryParse(map['orders_sisa_lunas'].toString()) ?? 0

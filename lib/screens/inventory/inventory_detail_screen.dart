@@ -181,19 +181,19 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
                     ),
                     const Divider(),
                     Text(
-                      'Harga Perkiraan: Rp ${_order.ordersFinalPrice.toStringAsFixed(0)}',
+                      'Harga Perkiraan: Rp ${_order.ordersFinalPrice != null ? _order.ordersFinalPrice!.toStringAsFixed(0) : '-'}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Harga Emas per Gram: Rp ${_order.ordersGoldPricePerGram.toStringAsFixed(0)}',
+                      'Harga Emas per Gram: Rp ${_order.ordersGoldPricePerGram != null ? _order.ordersGoldPricePerGram!.toStringAsFixed(0) : '-'}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'DP: Rp ${_order.ordersDp.toStringAsFixed(0)}',
+                      'DP: Rp ${_order.ordersDp != null ? _order.ordersDp!.toStringAsFixed(0) : '-'}',
                       style: const TextStyle(color: Color(0xFF7C5E2C)),
                     ),
                     Text(
-                      'Sisa Lunas: Rp ${(_order.ordersFinalPrice - _order.ordersDp).clamp(0, double.infinity).toStringAsFixed(0)}',
+                      'Sisa Lunas: Rp ${(_order.ordersFinalPrice != null && _order.ordersDp != null) ? (_order.ordersFinalPrice! - _order.ordersDp!).clamp(0, double.infinity).toStringAsFixed(0) : '-'}',
                       style: const TextStyle(color: Colors.redAccent),
                     ),
                     const SizedBox(height: 12),
