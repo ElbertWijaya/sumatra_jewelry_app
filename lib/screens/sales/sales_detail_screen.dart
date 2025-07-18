@@ -48,11 +48,21 @@ class SalesDetailScreen extends StatelessWidget {
               : Future.value(null),
       builder: (ctx, snapshot) {
         String takenBy = '';
+        String? salesName;
+        if (title == 'Sales') {
+          debugPrint('[SALES CHECKLIST] ordersSalesAccountId: $accountId');
+        }
         if (accountId != null) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             takenBy = ' (mengambil...)';
           } else if (snapshot.hasData && snapshot.data != null) {
             takenBy = ' taken by ${snapshot.data!.accountsName}';
+            salesName = snapshot.data!.accountsName;
+            if (title == 'Sales') {
+              debugPrint('[SALES CHECKLIST] Nama sales: $salesName');
+            }
+          } else if (title == 'Sales') {
+            debugPrint('[SALES CHECKLIST] Nama sales tidak ditemukan');
           }
         }
         return Card(
@@ -77,6 +87,13 @@ class SalesDetailScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (title == 'Sales' && salesName != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Dibuat oleh $salesName',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 ...defaultTasks.map((task) {
                   final isChecked = checked.contains(task);
@@ -176,7 +193,7 @@ class SalesDetailScreen extends StatelessWidget {
               final String imageUrl =
                   img.startsWith('http')
                       ? img
-                      : 'http://192.168.83.117/sumatra_api/orders_photo/$img';
+                      : 'http://192.168.110.147/sumatra_api/orders_photo/$img';
               return GestureDetector(
                 onTap: () {
                   showDialog(
@@ -318,7 +335,7 @@ class SalesDetailScreen extends StatelessWidget {
                                   // Panggil fungsi hapus pesanan dari backend
                                   final response = await http.post(
                                     Uri.parse(
-                                      'http://192.168.83.54/sumatra_api/delete_orders.php',
+                                      'http://192.168.110.147/sumatra_api/delete_orders.php',
                                     ),
                                     body: {
                                       'orders_id': order.ordersId.toString(),
@@ -597,6 +614,15 @@ class SalesDetailScreen extends StatelessWidget {
                 children: [
                   _buildChecklistWithAccount(
                     context,
+                    'Sales',
+                    [], // Tambahkan jika ada checklist sales
+                    null,
+                    Icons.person,
+                    Colors.amber,
+                    order.ordersSalesAccountId,
+                  ),
+                  _buildChecklistWithAccount(
+                    context,
                     'Designer',
                     designerTasks,
                     order.ordersDesignerWorkChecklist,
@@ -640,6 +666,15 @@ class SalesDetailScreen extends StatelessWidget {
                     Colors.green,
                     order.ordersFinishingAccountId,
                   ),
+                  _buildChecklistWithAccount(
+                    context,
+                    'Inventory',
+                    [], // Tambahkan jika ada checklist inventory
+                    null,
+                    Icons.inventory,
+                    Colors.teal,
+                    order.ordersInventoryAccountId,
+                  ),
                 ],
               ),
             ),
@@ -680,7 +715,7 @@ class SalesDetailScreen extends StatelessWidget {
                       try {
                         final response = await http.post(
                           Uri.parse(
-                            'http://192.168.83.54/sumatra_api/update_orders.php',
+                            'http://192.168.110.147/sumatra_api/update_orders.php',
                           ),
                           body: {
                             'orders_id': order.ordersId.toString(),

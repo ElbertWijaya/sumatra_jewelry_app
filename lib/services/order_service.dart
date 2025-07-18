@@ -5,7 +5,7 @@ import '../models/order.dart';
 
 class OrderService {
   static const String baseUrl =
-      'http://192.168.83.54/sumatra_api/get_orders.php';
+      'http://192.168.110.147/sumatra_api/get_orders.php';
 
   Future<List<Order>> getOrders() async {
     final response = await http.get(Uri.parse(baseUrl));
@@ -28,7 +28,7 @@ class OrderService {
   Future<void> addOrders(Order order) async {
     print('ImagePaths yang dikirim: ${jsonEncode(order.ordersImagePaths)}');
     final response = await http.post(
-      Uri.parse('http://192.168.83.54/sumatra_api/add_orders.php'),
+      Uri.parse('http://192.168.110.147/sumatra_api/add_orders.php'),
       body: {
         'orders_id': order.ordersId,
         'orders_customer_name': order.ordersCustomerName,
@@ -84,7 +84,7 @@ class OrderService {
 
   Future<bool> updateOrder(Order order) async {
     final response = await http.post(
-      Uri.parse('http://192.168.83.54/sumatra_api/update_orders.php'),
+      Uri.parse('http://192.168.110.147/sumatra_api/update_orders.php'),
       body: {
         'orders_id': order.ordersId,
         'orders_customer_name': order.ordersCustomerName,
@@ -134,7 +134,7 @@ class OrderService {
   Future<void> deleteOrders(String ordersId) async {
     final response = await http.delete(
       Uri.parse(
-        'http://192.168.83.54/sumatra_api/delete_orders.php?orders_id=$ordersId',
+        'http://192.168.110.147/sumatra_api/delete_orders.php?orders_id=$ordersId',
       ),
     );
     if (response.statusCode != 200) {
@@ -151,6 +151,8 @@ class OrderService {
     print('API Response: ${response.body}'); // DEBUG: print response API
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
+      // Tambahkan print untuk memastikan key dan value
+      print('Parsed JSON: $data'); // DEBUG: print hasil parsing
       return Order.fromJson(data);
     } else {
       throw Exception('Gagal memuat pesanan: ${response.statusCode}');

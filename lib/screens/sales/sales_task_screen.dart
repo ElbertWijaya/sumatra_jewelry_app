@@ -63,7 +63,7 @@ class _SalesTaskScreenState extends State<SalesTaskScreen> {
                     final String imageUrl =
                         img.startsWith('http')
                             ? img
-                            : 'http://192.168.83.54/sumatra_api/$img';
+                            : 'http://192.168.110.147/sumatra_api/$img';
                     return Container(
                       margin: const EdgeInsets.only(right: 10),
                       width: 80,

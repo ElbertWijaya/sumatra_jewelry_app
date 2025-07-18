@@ -130,7 +130,7 @@ class _InventoryInputFormScreenState extends State<InventoryInputFormScreen> {
       final request = http.MultipartRequest(
         'POST',
         Uri.parse(
-          'http://192.168.83.54/sumatra_api/upload_inventory_image.php',
+          'http://192.168.110.147/sumatra_api/upload_inventory_image.php',
         ),
       );
       request.files.add(await http.MultipartFile.fromPath('image', image.path));
@@ -195,7 +195,7 @@ class _InventoryInputFormScreenState extends State<InventoryInputFormScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.83.54/sumatra_api/update_inventory.php'),
+        Uri.parse('http://192.168.110.147/sumatra_api/update_inventory.php'),
         body: inventoryData,
       );
       final result = jsonDecode(response.body);

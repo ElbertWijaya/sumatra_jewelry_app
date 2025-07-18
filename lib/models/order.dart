@@ -150,11 +150,13 @@ class Order {
   final List<Map<String, dynamic>> ordersStoneUsed;
 
   // Tambahan: Account ID untuk setiap tahap pekerjaan
+  final String? ordersSalesAccountId;
   final String? ordersDesignerAccountId;
   final String? ordersCastingAccountId;
   final String? ordersCarvingAccountId;
   final String? ordersDiamondSettingAccountId;
   final String? ordersFinishingAccountId;
+  final String? ordersInventoryAccountId;
 
   Order({
     required this.ordersId,
@@ -181,6 +183,7 @@ class Order {
     List<String>? ordersCarvingWorkChecklist,
     List<String>? ordersDiamondSettingWorkChecklist,
     List<String>? ordersFinishingWorkChecklist,
+
     this.inventoryProductId,
     this.inventoryJewelryType,
     this.inventoryGoldColor,
@@ -190,11 +193,13 @@ class Order {
     this.inventoryItemsPrice,
     this.inventoryRingSize,
     List<Map<String, dynamic>>? ordersStoneUsed,
+    this.ordersSalesAccountId,
     this.ordersDesignerAccountId,
     this.ordersCastingAccountId,
     this.ordersCarvingAccountId,
     this.ordersDiamondSettingAccountId,
     this.ordersFinishingAccountId,
+    this.ordersInventoryAccountId,
   }) : ordersImagePaths = ordersImagePaths ?? const [],
        ordersDesignerWorkChecklist = ordersDesignerWorkChecklist ?? const [],
        ordersCastingWorkChecklist = ordersCastingWorkChecklist ?? const [],
@@ -316,6 +321,14 @@ class Order {
       ordersFinishingWorkChecklist: parseChecklist(
         map['orders_finishingWorkChecklist'],
       ),
+      ordersSalesAccountId: map['orders_sales_account_id']?.toString(),
+      ordersDesignerAccountId: map['orders_designer_account_id']?.toString(),
+      ordersCastingAccountId: map['orders_casting_account_id']?.toString(),
+      ordersCarvingAccountId: map['orders_carving_account_id']?.toString(),
+      ordersDiamondSettingAccountId:
+          map['orders_diamond_setting_account_id']?.toString(),
+      ordersFinishingAccountId: map['orders_finishing_account_id']?.toString(),
+      ordersInventoryAccountId: map['orders_inventory_account_id']?.toString(),
       inventoryProductId: map['inventory_product_id']?.toString() ?? '',
       inventoryJewelryType: map['inventory_jewelry_type']?.toString() ?? '',
       inventoryGoldColor: map['inventory_gold_color']?.toString() ?? '',
@@ -549,6 +562,14 @@ class Order {
       ordersFinishingWorkChecklist: parseChecklist(
         json['orders_finishingWorkChecklist'],
       ),
+      ordersSalesAccountId: json['orders_sales_account_id']?.toString(),
+      ordersDesignerAccountId: json['orders_designer_account_id']?.toString(),
+      ordersCastingAccountId: json['orders_casting_account_id']?.toString(),
+      ordersCarvingAccountId: json['orders_carving_account_id']?.toString(),
+      ordersDiamondSettingAccountId:
+          json['orders_diamond_setting_account_id']?.toString(),
+      ordersFinishingAccountId: json['orders_finishing_account_id']?.toString(),
+      ordersInventoryAccountId: json['orders_inventory_account_id']?.toString(),
       inventoryProductId: json['inventory_product_id']?.toString() ?? '',
       inventoryJewelryType: json['inventory_jewelry_type']?.toString() ?? '',
       inventoryGoldColor: json['inventory_gold_color']?.toString() ?? '',
@@ -600,6 +621,13 @@ class Order {
       'orders_carvingWorkChecklist': ordersCarvingWorkChecklist,
       'orders_diamondSettingWorkChecklist': ordersDiamondSettingWorkChecklist,
       'orders_finishingWorkChecklist': ordersFinishingWorkChecklist,
+      'orders_sales_account_id': ordersSalesAccountId,
+      'orders_designer_account_id': ordersDesignerAccountId,
+      'orders_casting_account_id': ordersCastingAccountId,
+      'orders_carving_account_id': ordersCarvingAccountId,
+      'orders_diamond_setting_account_id': ordersDiamondSettingAccountId,
+      'orders_finishing_account_id': ordersFinishingAccountId,
+      'orders_inventory_account_id': ordersInventoryAccountId,
       'orders_stone_used': ordersStoneUsed,
       'inventory_product_id': inventoryProductId,
       'inventory_jewelry_type': inventoryJewelryType,

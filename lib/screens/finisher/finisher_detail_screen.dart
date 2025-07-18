@@ -211,7 +211,7 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
               final String imageUrl =
                   img.startsWith('http')
                       ? img
-                      : 'http://192.168.83.117/sumatra_api/orders_photo/$img';
+                      : 'http://192.168.110.147/sumatra_api/orders_photo/$img';
               return Container(
                 margin: const EdgeInsets.only(right: 10),
                 width: 80,

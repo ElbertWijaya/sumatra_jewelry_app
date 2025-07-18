@@ -692,7 +692,7 @@ class _DesignerDashboardScreenState extends State<DesignerDashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sales Dashboard'),
+        title: const Text('Designer Dashboard'),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,

@@ -20,7 +20,7 @@ class AuthService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.83.54/sumatra_api/login.php'),
+        Uri.parse('http://192.168.110.147/sumatra_api/login.php'),
         body: {
           'username': username,
           'password': password, // Kirim plain, hash di backend
@@ -30,6 +30,9 @@ class AuthService {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
           _currentAccount = data['account'];
+          debugPrint(
+            '[AuthService] Login berhasil, accounts_id: [33m${_currentAccount?['accounts_id']}[0m',
+          );
           return true;
         }
       }
@@ -50,7 +53,13 @@ class AuthService {
   bool get isLoggedIn => _currentAccount != null;
 
   /// Returns the current user ID, if logged in.
-  String? get currentUserId => _currentAccount?['accounts_id']?.toString();
+  String? get currentUserId {
+    final id = _currentAccount?['accounts_id']?.toString();
+    debugPrint(
+      '[AuthService] currentUserId dipanggil, accounts_id: \x1B[36m$id\x1B[0m',
+    );
+    return id;
+  }
 
   /// Returns the current user role, if logged in.
   String? get currentRole => _currentAccount?['accounts_role'];

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:sumatra_jewelry_app/services/auth_service.dart';
 
 String formatRupiah(num? value) {
   if (value == null || value == 0) return '';
@@ -175,7 +176,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.83.54/sumatra_api/upload_image.php'),
+        Uri.parse('http://192.168.110.147/sumatra_api/upload_image.php'),
       );
       request.files.add(
         await http.MultipartFile.fromPath('image', imageFile.path),
@@ -267,8 +268,10 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
     }
 
     try {
+      // Ambil id user sales dari AuthService
+      final salesAccountId = AuthService().currentUserId;
       final response = await http.post(
-        Uri.parse('http://192.168.83.54/sumatra_api/add_orders.php'),
+        Uri.parse('http://192.168.110.147/sumatra_api/add_orders.php'),
         body: {
           'orders_id': ordersId,
           'orders_customer_name': _customerNameController.text,
@@ -292,6 +295,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
           'orders_updated_at': createdAt,
           'orders_imagePaths': jsonEncode(_uploadedImageUrls),
           'orders_workflowStatus': 'waitingSalesCheck',
+          'orders_sales_account_id': salesAccountId,
         },
       );
       setState(() => _isLoading = false);

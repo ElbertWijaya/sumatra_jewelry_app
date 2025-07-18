@@ -18,13 +18,7 @@ class DesignerDetailScreen extends StatefulWidget {
 class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
   String formatRupiah(num? value) {
     if (value == null || value == 0) return '-';
-    return 'Rp ' +
-        value
-            .toStringAsFixed(0)
-            .replaceAllMapped(
-              RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-              (Match m) => '${m[1]}.',
-            );
+    return 'Rp ${value.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
   }
 
   final List<String> designerTasks = ['Designing', '3D Printing', 'Pengecekan'];
@@ -234,7 +228,7 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
               final String imageUrl =
                   img.startsWith('http')
                       ? img
-                      : 'http://192.168.83.117/sumatra_api/orders_photo/$img';
+                      : 'http://192.168.110.147/sumatra_api/orders_photo/$img';
               return GestureDetector(
                 onTap: () {
                   showDialog(
