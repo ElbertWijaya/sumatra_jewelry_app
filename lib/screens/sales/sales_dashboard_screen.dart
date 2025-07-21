@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
+import '../../services/auth_service.dart';
 import 'sales_detail_screen.dart';
 
 class SalesDashboardScreen extends StatefulWidget {
@@ -181,18 +182,29 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
 
     // Tab logic mirip designer
     if (_selectedTab == 'waiting') {
-      filtered =
-          filtered
-              .where(
-                (order) => waitingStatuses.contains(order.ordersWorkflowStatus),
-              )
-              .toList();
-    } else if (_selectedTab == 'onprogress') {
+      // Filter berdasarkan sales yang sedang login dan status waiting
+      final currentUserId = AuthService().currentUserId;
+      final currentUserIdInt =
+          currentUserId != null ? int.tryParse(currentUserId) : null;
       filtered =
           filtered
               .where(
                 (order) =>
-                    onProgressStatuses.contains(order.ordersWorkflowStatus),
+                    waitingStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersSalesAccountId == currentUserIdInt,
+              )
+              .toList();
+    } else if (_selectedTab == 'onprogress') {
+      // Filter berdasarkan sales yang sedang login dan status on progress
+      final currentUserId = AuthService().currentUserId;
+      final currentUserIdInt =
+          currentUserId != null ? int.tryParse(currentUserId) : null;
+      filtered =
+          filtered
+              .where(
+                (order) =>
+                    onProgressStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersSalesAccountId == currentUserIdInt,
               )
               .toList();
     } else if (_selectedTab == 'all') {
@@ -573,19 +585,28 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
   Widget _buildTabButton(String label, String value, Color color) {
     final bool selected = _selectedTab == value;
     int count = 0;
+    final currentUserId = AuthService().currentUserId;
+    final currentUserIdInt =
+        currentUserId != null ? int.tryParse(currentUserId) : null;
+
     if (value == 'waiting') {
-      count =
-          _orders
-              .where(
-                (order) => waitingStatuses.contains(order.ordersWorkflowStatus),
-              )
-              .length;
-    } else if (value == 'onprogress') {
+      // Filter berdasarkan sales yang sedang login dan status waiting
       count =
           _orders
               .where(
                 (order) =>
-                    onProgressStatuses.contains(order.ordersWorkflowStatus),
+                    waitingStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersSalesAccountId == currentUserIdInt,
+              )
+              .length;
+    } else if (value == 'onprogress') {
+      // Filter berdasarkan sales yang sedang login dan status on progress
+      count =
+          _orders
+              .where(
+                (order) =>
+                    onProgressStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersSalesAccountId == currentUserIdInt,
               )
               .length;
     } else if (value == 'all') {

@@ -132,7 +132,7 @@ class OrderService {
     if (order.ordersDp != null && order.ordersDp != 0) {
       body['orders_dp'] = order.ordersDp!.toString();
     }
-    body['orders_sisa_lunas'] = order.ordersSisaLunas!.toInt().toString();
+    body['orders_sisa_lunas'] = order.ordersSisaLunas.toInt().toString();
     if (order.ordersDesignerAccountId != null) {
       body['orders_designer_account_id'] =
           order.ordersDesignerAccountId.toString();

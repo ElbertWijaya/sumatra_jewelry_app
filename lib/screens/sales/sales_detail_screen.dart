@@ -120,41 +120,135 @@ class SalesDetailScreen extends StatelessWidget {
   Widget _buildStoneInfo() {
     final stoneList = order.ordersStoneUsed;
     if (stoneList.isEmpty) {
-      return Card(
-        color: const Color(0xFFFFF8E1),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text('Tidak ada informasi batu'),
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF8E1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.amber.withOpacity(0.3)),
+        ),
+        child: Text(
+          'Tidak ada informasi batu',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+            fontStyle: FontStyle.italic,
+          ),
+          textAlign: TextAlign.center,
         ),
       );
     }
-    return SizedBox(
-      height: 120,
-      child: ListView(
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minHeight: 120,
+        maxHeight: 150, // Batasan maksimal yang fleksibel
+      ),
+      child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        children:
-            stoneList.map((stone) {
-              return Card(
-                margin: const EdgeInsets.only(right: 10),
-                color: const Color(0xFFFFF8E1),
-                child: Container(
-                  width: 110,
-                  padding: const EdgeInsets.all(8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Bentuk: ${stone['shape'] ?? '-'}',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text('Jumlah: ${stone['count'] ?? '-'} pcs'),
-                      Text('Ukuran: ${stone['carat'] ?? '-'} ct'),
-                    ],
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        itemCount: stoneList.length,
+        itemBuilder: (context, index) {
+          final stone = stoneList[index];
+          return Container(
+            margin: const EdgeInsets.only(right: 12),
+            child: Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              color: const Color(0xFFFFF8E1),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                constraints: const BoxConstraints(
+                  minWidth: 120, // Lebar minimum untuk readability
+                  maxWidth:
+                      200, // Lebar maksimal untuk mencegah card terlalu lebar
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.diamond, color: Colors.amber[700], size: 18),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'Batu ${index + 1}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.amber[800],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildStoneDetailRow(
+                      'Bentuk',
+                      stone['shape'] ?? '-',
+                      Icons.category,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildStoneDetailRow(
+                      'Jumlah',
+                      '${stone['count'] ?? '-'} pcs',
+                      Icons.confirmation_number,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildStoneDetailRow(
+                      'Ukuran',
+                      '${stone['carat'] ?? '-'} ct',
+                      Icons.straighten,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStoneDetailRow(String label, String value, IconData icon) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: Colors.amber[600]),
+        const SizedBox(width: 6),
+        Expanded(
+          child: RichText(
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2, // Izinkan maksimal 2 baris untuk teks yang panjang
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: '$label: ',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
                   ),
                 ),
-              );
-            }).toList(),
-      ),
+                TextSpan(
+                  text: value,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
