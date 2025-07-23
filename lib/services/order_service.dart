@@ -133,10 +133,36 @@ class OrderService {
       body['orders_dp'] = order.ordersDp!.toString();
     }
     body['orders_sisa_lunas'] = order.ordersSisaLunas.toInt().toString();
+
+    // Tambahkan semua account ID fields
+    if (order.ordersSalesAccountId != null) {
+      body['orders_sales_account_id'] = order.ordersSalesAccountId.toString();
+    }
     if (order.ordersDesignerAccountId != null) {
       body['orders_designer_account_id'] =
           order.ordersDesignerAccountId.toString();
     }
+    if (order.ordersCastingAccountId != null) {
+      body['orders_casting_account_id'] =
+          order.ordersCastingAccountId.toString();
+    }
+    if (order.ordersCarvingAccountId != null) {
+      body['orders_carving_account_id'] =
+          order.ordersCarvingAccountId.toString();
+    }
+    if (order.ordersDiamondSettingAccountId != null) {
+      body['orders_diamond_setting_account_id'] =
+          order.ordersDiamondSettingAccountId.toString();
+    }
+    if (order.ordersFinishingAccountId != null) {
+      body['orders_finishing_account_id'] =
+          order.ordersFinishingAccountId.toString();
+    }
+    if (order.ordersInventoryAccountId != null) {
+      body['orders_inventory_account_id'] =
+          order.ordersInventoryAccountId.toString();
+    }
+
     final response = await http.post(
       Uri.parse('http://192.168.110.147/sumatra_api/update_orders.php'),
       body: body,
@@ -162,7 +188,11 @@ class OrderService {
   }
 
   Future<Order> getOrderById(String ordersId) async {
-    final response = await http.get(Uri.parse('$baseUrl?orders_id=$ordersId'));
+    final response = await http.get(
+      Uri.parse(
+        'http://192.168.110.147/sumatra_api/get_order_by_id.php?orders_id=$ordersId',
+      ),
+    );
     print('API Response: ${response.body}'); // DEBUG: print response API
     if (response.statusCode == 200) {
       final data = json.decode(response.body);

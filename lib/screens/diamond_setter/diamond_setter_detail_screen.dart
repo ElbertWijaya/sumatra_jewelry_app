@@ -30,6 +30,23 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
     _diamondSetterChecklist = List<String>.from(
       _order.ordersDiamondSettingWorkChecklist,
     );
+    // Fetch latest data dari database ketika screen dibuka
+    _refreshOrderData();
+  }
+
+  Future<void> _refreshOrderData() async {
+    try {
+      final refreshedOrder = await OrderService().getOrderById(_order.ordersId);
+      setState(() {
+        _order = refreshedOrder;
+        _diamondSetterChecklist = List<String>.from(
+          refreshedOrder.ordersDiamondSettingWorkChecklist,
+        );
+      });
+    } catch (e) {
+      // Jika gagal fetch, tetap gunakan data yang ada
+      print('Failed to refresh order data: $e');
+    }
   }
 
   Future<void> _startDiamondSetting() async {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
+import '../../services/auth_service.dart';
 import 'cor_detail_screen.dart';
 
 class CorDashboardScreen extends StatefulWidget {
@@ -180,6 +181,11 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
             )
             .toList();
 
+    // Get current user ID untuk filtering
+    final currentUserId = AuthService().currentUserId;
+    final currentUserIdInt =
+        currentUserId != null ? int.tryParse(currentUserId) : null;
+
     // Tab logic mirip designer
     if (_selectedTab == 'waiting') {
       filtered =
@@ -189,18 +195,23 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
               )
               .toList();
     } else if (_selectedTab == 'working') {
-      filtered =
-          filtered
-              .where(
-                (order) => workingStatuses.contains(order.ordersWorkflowStatus),
-              )
-              .toList();
-    } else if (_selectedTab == 'onprogress') {
+      // Filter berdasarkan caster yang sedang login dan status casting
       filtered =
           filtered
               .where(
                 (order) =>
-                    onProgressStatuses.contains(order.ordersWorkflowStatus),
+                    workingStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersCastingAccountId == currentUserIdInt,
+              )
+              .toList();
+    } else if (_selectedTab == 'onprogress') {
+      // Filter berdasarkan caster yang sedang login dan status after casting
+      filtered =
+          filtered
+              .where(
+                (order) =>
+                    onProgressStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersCastingAccountId == currentUserIdInt,
               )
               .toList();
     }
@@ -579,6 +590,10 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
   Widget _buildTabButton(String label, String value, Color color) {
     final bool selected = _selectedTab == value;
     int count = 0;
+    final currentUserId = AuthService().currentUserId;
+    final currentUserIdInt =
+        currentUserId != null ? int.tryParse(currentUserId) : null;
+
     if (value == 'waiting') {
       count =
           _orders
@@ -587,18 +602,23 @@ class _CorDashboardScreenState extends State<CorDashboardScreen> {
               )
               .length;
     } else if (value == 'working') {
-      count =
-          _orders
-              .where(
-                (order) => workingStatuses.contains(order.ordersWorkflowStatus),
-              )
-              .length;
-    } else if (value == 'onprogress') {
+      // Filter berdasarkan caster yang sedang login dan status casting
       count =
           _orders
               .where(
                 (order) =>
-                    onProgressStatuses.contains(order.ordersWorkflowStatus),
+                    workingStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersCastingAccountId == currentUserIdInt,
+              )
+              .length;
+    } else if (value == 'onprogress') {
+      // Filter berdasarkan caster yang sedang login dan status after casting
+      count =
+          _orders
+              .where(
+                (order) =>
+                    onProgressStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersCastingAccountId == currentUserIdInt,
               )
               .length;
     }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/account_service.dart';
+import '../../models/accounts.dart';
 
 class DesignerDetailScreen extends StatefulWidget {
   final Order order;
@@ -23,6 +25,20 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
   }
 
   final List<String> designerTasks = ['Designing', '3D Printing', 'Pengecekan'];
+  final List<String> corTasks = ['Lilin', 'Cor', 'Kasih ke Admin'];
+  final List<String> carverTasks = [
+    'Cap',
+    'Bom',
+    'Pengecekan',
+    'Kasih ke Admin',
+  ];
+  final List<String> diamondSetterTasks = [
+    'Pilih batu',
+    'Pasang Batu',
+    'Pengecekan',
+  ];
+  final List<String> finisherTasks = ['Chrome', 'Kasih ke Admin'];
+
   late Order _order;
   List<String> _designerChecklist = [];
   bool _isProcessing = false;
@@ -32,6 +48,23 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
     super.initState();
     _order = widget.order;
     _designerChecklist = List<String>.from(_order.ordersDesignerWorkChecklist);
+    // Fetch latest data dari database ketika screen dibuka
+    _refreshOrderData();
+  }
+
+  Future<void> _refreshOrderData() async {
+    try {
+      final refreshedOrder = await OrderService().getOrderById(_order.ordersId);
+      setState(() {
+        _order = refreshedOrder;
+        _designerChecklist = List<String>.from(
+          refreshedOrder.ordersDesignerWorkChecklist,
+        );
+      });
+    } catch (e) {
+      // Jika gagal fetch, tetap gunakan data yang ada
+      print('Failed to refresh order data: $e');
+    }
   }
 
   Future<void> _startDesigning() async {
@@ -131,62 +164,87 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
     }
   }
 
-  Widget _buildChecklist(
+  Widget _buildChecklistWithAccount(
+    BuildContext context,
     String title,
     List<String> defaultTasks,
     List<String>? checkedTasks,
     IconData icon,
     Color color,
+    int? accountId,
   ) {
     final checked = checkedTasks ?? [];
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return FutureBuilder<Account?>(
+      future:
+          accountId != null
+              ? AccountService.getAccountById(accountId)
+              : Future.value(null),
+      builder: (ctx, snapshot) {
+        String? userName;
+        if (accountId != null && snapshot.hasData && snapshot.data != null) {
+          userName = snapshot.data!.accountsName;
+        }
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(icon, color: color, size: 22),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: color,
-                  ),
+                Row(
+                  children: [
+                    Icon(icon, color: color, size: 22),
+                    const SizedBox(width: 8),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: color,
+                      ),
+                    ),
+                  ],
                 ),
+                if (userName != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Dikerjakan oleh $userName',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                ...defaultTasks.map((task) {
+                  final isChecked = checked.contains(task);
+                  return Row(
+                    children: [
+                      Container(
+                        width: 22,
+                        height: 22,
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isChecked ? color : Colors.grey[300],
+                          border: Border.all(color: color, width: 2),
+                        ),
+                        child:
+                            isChecked
+                                ? Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 16,
+                                )
+                                : null,
+                      ),
+                      Text(task, style: TextStyle(fontSize: 15)),
+                    ],
+                  );
+                }),
               ],
             ),
-            const SizedBox(height: 8),
-            ...defaultTasks.map((task) {
-              final isChecked = checked.contains(task);
-              return Row(
-                children: [
-                  Container(
-                    width: 22,
-                    height: 22,
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isChecked ? color : Colors.grey[300],
-                      border: Border.all(color: color, width: 2),
-                    ),
-                    child:
-                        isChecked
-                            ? Icon(Icons.check, color: Colors.white, size: 16)
-                            : null,
-                  ),
-                  Text(task, style: TextStyle(fontSize: 15)),
-                ],
-              );
-            }),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -556,14 +614,65 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildChecklist(
-                    'Designer',
-                    designerTasks,
-                    _order.ordersDesignerWorkChecklist,
-                    Icons.design_services,
-                    Colors.blue,
-                  ),
-                  // ...existing code for other roles...
+                  // Jika tab onprogress, tampilkan semua checklist untuk tracking
+                  if (widget.fromTab == 'onprogress') ...[
+                    _buildChecklistWithAccount(
+                      context,
+                      'Designer',
+                      designerTasks,
+                      _order.ordersDesignerWorkChecklist,
+                      Icons.design_services,
+                      Colors.blue,
+                      _order.ordersDesignerAccountId,
+                    ),
+                    _buildChecklistWithAccount(
+                      context,
+                      'Cor',
+                      corTasks,
+                      _order.ordersCastingWorkChecklist,
+                      Icons.local_fire_department,
+                      Colors.orange,
+                      _order.ordersCastingAccountId,
+                    ),
+                    _buildChecklistWithAccount(
+                      context,
+                      'Carver',
+                      carverTasks,
+                      _order.ordersCarvingWorkChecklist,
+                      Icons.handyman,
+                      Colors.brown,
+                      _order.ordersCarvingAccountId,
+                    ),
+                    _buildChecklistWithAccount(
+                      context,
+                      'Diamond Setter',
+                      diamondSetterTasks,
+                      _order.ordersDiamondSettingWorkChecklist,
+                      Icons.diamond,
+                      Colors.purple,
+                      _order.ordersDiamondSettingAccountId,
+                    ),
+                    _buildChecklistWithAccount(
+                      context,
+                      'Finisher',
+                      finisherTasks,
+                      _order.ordersFinishingWorkChecklist,
+                      Icons.check_circle,
+                      Colors.green,
+                      _order.ordersFinishingAccountId,
+                    ),
+                  ] else ...[
+                    // Untuk tab lain, tampilkan hanya checklist designer
+                    _buildChecklistWithAccount(
+                      context,
+                      'Designer',
+                      designerTasks,
+                      _order.ordersDesignerWorkChecklist,
+                      Icons.design_services,
+                      Colors.blue,
+                      _order.ordersDesignerAccountId,
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
+import '../../services/auth_service.dart';
 import 'carver_detail_screen.dart';
 
 class CarverDashboardScreen extends StatefulWidget {
@@ -18,7 +19,7 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   String _searchQuery = '';
-  String _selectedTab = 'waiting'; // default tab designer
+  String _selectedTab = 'waiting'; // default tab carver
 
   // Filter state
   List<String> selectedJewelryTypes = [];
@@ -33,7 +34,7 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
   List<String> _randomCategoryFilters = [];
   bool _isRandomCategoryActive = true;
 
-  // Tab logic khusus designer
+  // Tab logic khusus carver
   final List<OrderWorkflowStatus> waitingStatuses = [
     OrderWorkflowStatus.waitingCarving,
   ];
@@ -178,7 +179,12 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
             )
             .toList();
 
-    // Tab logic mirip designer
+    // Get current user ID untuk filtering
+    final currentUserId = AuthService().currentUserId;
+    final currentUserIdInt =
+        currentUserId != null ? int.tryParse(currentUserId) : null;
+
+    // Tab logic mirip carver
     if (_selectedTab == 'waiting') {
       filtered =
           filtered
@@ -187,18 +193,23 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
               )
               .toList();
     } else if (_selectedTab == 'working') {
-      filtered =
-          filtered
-              .where(
-                (order) => workingStatuses.contains(order.ordersWorkflowStatus),
-              )
-              .toList();
-    } else if (_selectedTab == 'onprogress') {
+      // Filter berdasarkan carver yang sedang login dan status carving
       filtered =
           filtered
               .where(
                 (order) =>
-                    onProgressStatuses.contains(order.ordersWorkflowStatus),
+                    workingStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersCarvingAccountId == currentUserIdInt,
+              )
+              .toList();
+    } else if (_selectedTab == 'onprogress') {
+      // Filter berdasarkan carver yang sedang login dan status after carving
+      filtered =
+          filtered
+              .where(
+                (order) =>
+                    onProgressStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersCarvingAccountId == currentUserIdInt,
               )
               .toList();
     }
@@ -577,6 +588,10 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
   Widget _buildTabButton(String label, String value, Color color) {
     final bool selected = _selectedTab == value;
     int count = 0;
+    final currentUserId = AuthService().currentUserId;
+    final currentUserIdInt =
+        currentUserId != null ? int.tryParse(currentUserId) : null;
+
     if (value == 'waiting') {
       count =
           _orders
@@ -585,18 +600,23 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
               )
               .length;
     } else if (value == 'working') {
-      count =
-          _orders
-              .where(
-                (order) => workingStatuses.contains(order.ordersWorkflowStatus),
-              )
-              .length;
-    } else if (value == 'onprogress') {
+      // Filter berdasarkan carver yang sedang login dan status carving
       count =
           _orders
               .where(
                 (order) =>
-                    onProgressStatuses.contains(order.ordersWorkflowStatus),
+                    workingStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersCarvingAccountId == currentUserIdInt,
+              )
+              .length;
+    } else if (value == 'onprogress') {
+      // Filter berdasarkan carver yang sedang login dan status after carving
+      count =
+          _orders
+              .where(
+                (order) =>
+                    onProgressStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersCarvingAccountId == currentUserIdInt,
               )
               .length;
     }
@@ -698,7 +718,7 @@ class _CarverDashboardScreenState extends State<CarverDashboardScreen> {
       ),
       extendBodyBehindAppBar: true,
       resizeToAvoidBottomInset: false,
-      // Tidak perlu tombol tambah pesanan di designer
+      // Tidak perlu tombol tambah pesanan di carver
       body: Stack(
         children: [
           // Background image

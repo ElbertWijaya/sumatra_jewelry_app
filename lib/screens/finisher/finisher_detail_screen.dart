@@ -27,6 +27,23 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
     super.initState();
     _order = widget.order;
     _finisherChecklist = List<String>.from(_order.ordersFinishingWorkChecklist);
+    // Fetch latest data dari database ketika screen dibuka
+    _refreshOrderData();
+  }
+
+  Future<void> _refreshOrderData() async {
+    try {
+      final refreshedOrder = await OrderService().getOrderById(_order.ordersId);
+      setState(() {
+        _order = refreshedOrder;
+        _finisherChecklist = List<String>.from(
+          refreshedOrder.ordersFinishingWorkChecklist,
+        );
+      });
+    } catch (e) {
+      // Jika gagal fetch, tetap gunakan data yang ada
+      print('Failed to refresh order data: $e');
+    }
   }
 
   Future<void> _startFinishing() async {
