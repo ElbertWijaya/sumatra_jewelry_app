@@ -744,7 +744,14 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                   ),
                   const SizedBox(height: 12),
                   if (_carverChecklist.length == carverTasks.length &&
-                      _carverChecklist.toSet().containsAll(carverTasks.toSet()))
+                      _carverChecklist.toSet().containsAll(
+                        carverTasks.toSet(),
+                      ) &&
+                      _order.ordersCarvingWorkChecklist.length ==
+                          carverTasks.length &&
+                      _order.ordersCarvingWorkChecklist.toSet().containsAll(
+                        carverTasks.toSet(),
+                      ))
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(

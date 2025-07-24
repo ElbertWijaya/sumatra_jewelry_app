@@ -81,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
       case 'carver':
         nextScreen = const CarverDashboardScreen();
         break;
-      case 'diamond_setter':
+      case 'diamondsetter':
         nextScreen = const DiamondSetterDashboardScreen();
         break;
       case 'inventory':

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
+import '../../services/auth_service.dart';
 import 'diamond_setter_detail_screen.dart';
 
 class DiamondSetterDashboardScreen extends StatefulWidget {
@@ -20,7 +21,7 @@ class _DiamondSetterDashboardScreenState
   bool _isLoading = true;
   String _errorMessage = '';
   String _searchQuery = '';
-  String _selectedTab = 'waiting'; // default tab designer
+  String _selectedTab = 'waiting'; // default tab diamond setter
 
   // Filter state
   List<String> selectedJewelryTypes = [];
@@ -185,7 +186,12 @@ class _DiamondSetterDashboardScreenState
             )
             .toList();
 
-    // Tab logic mirip designer
+    // Get current user ID untuk filtering
+    final currentUserId = AuthService().currentUserId;
+    final currentUserIdInt =
+        currentUserId != null ? int.tryParse(currentUserId) : null;
+
+    // Tab logic khusus diamond setter
     if (_selectedTab == 'waiting') {
       filtered =
           filtered
@@ -194,18 +200,23 @@ class _DiamondSetterDashboardScreenState
               )
               .toList();
     } else if (_selectedTab == 'working') {
-      filtered =
-          filtered
-              .where(
-                (order) => workingStatuses.contains(order.ordersWorkflowStatus),
-              )
-              .toList();
-    } else if (_selectedTab == 'onprogress') {
+      // Filter berdasarkan diamond setter yang sedang login dan status stoneSetting
       filtered =
           filtered
               .where(
                 (order) =>
-                    onProgressStatuses.contains(order.ordersWorkflowStatus),
+                    workingStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersDiamondSettingAccountId == currentUserIdInt,
+              )
+              .toList();
+    } else if (_selectedTab == 'onprogress') {
+      // Filter berdasarkan diamond setter yang sedang login dan status after stoneSetting
+      filtered =
+          filtered
+              .where(
+                (order) =>
+                    onProgressStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersDiamondSettingAccountId == currentUserIdInt,
               )
               .toList();
     }
@@ -584,6 +595,10 @@ class _DiamondSetterDashboardScreenState
   Widget _buildTabButton(String label, String value, Color color) {
     final bool selected = _selectedTab == value;
     int count = 0;
+    final currentUserId = AuthService().currentUserId;
+    final currentUserIdInt =
+        currentUserId != null ? int.tryParse(currentUserId) : null;
+
     if (value == 'waiting') {
       count =
           _orders
@@ -592,18 +607,23 @@ class _DiamondSetterDashboardScreenState
               )
               .length;
     } else if (value == 'working') {
-      count =
-          _orders
-              .where(
-                (order) => workingStatuses.contains(order.ordersWorkflowStatus),
-              )
-              .length;
-    } else if (value == 'onprogress') {
+      // Filter berdasarkan diamond setter yang sedang login dan status stoneSetting
       count =
           _orders
               .where(
                 (order) =>
-                    onProgressStatuses.contains(order.ordersWorkflowStatus),
+                    workingStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersDiamondSettingAccountId == currentUserIdInt,
+              )
+              .length;
+    } else if (value == 'onprogress') {
+      // Filter berdasarkan diamond setter yang sedang login dan status after stoneSetting
+      count =
+          _orders
+              .where(
+                (order) =>
+                    onProgressStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersDiamondSettingAccountId == currentUserIdInt,
               )
               .length;
     }
@@ -694,7 +714,7 @@ class _DiamondSetterDashboardScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sales Dashboard'),
+        title: const Text('Diamond Setter Dashboard'),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
