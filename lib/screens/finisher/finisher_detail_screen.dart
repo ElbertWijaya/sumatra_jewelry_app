@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/account_service.dart';
+import '../../models/accounts.dart';
 
 class FinisherDetailScreen extends StatefulWidget {
   final Order order;
@@ -18,6 +21,22 @@ class FinisherDetailScreen extends StatefulWidget {
 }
 
 class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
+  String formatRupiah(num? value) {
+    if (value == null || value == 0) return '-';
+    return 'Rp ${value.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}';
+  }
+
+  // Definisi task untuk semua role
+  final List<String> designerTasks = ['Desain', 'CAD', 'Render', 'Approval'];
+  final List<String> corTasks = ['Cetak Wax', 'Cor', 'Cleaning'];
+  final List<String> carverTasks = ['Carving', 'Filing', 'Sanding'];
+  final List<String> diamondSetterTasks = [
+    'Setting Batu',
+    'Prong',
+    'Polish Stone',
+  ];
+  final List<String> finisherTasks = ['Poles', 'Cuci', 'Quality Control'];
+
   late Order _order;
   List<String> _finisherChecklist = [];
   bool _isProcessing = false;
@@ -49,17 +68,43 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
   Future<void> _startFinishing() async {
     setState(() => _isProcessing = true);
     try {
+      // Set user ID
+      final currentUserId = AuthService().currentUserId;
+      final currentUserIdInt =
+          currentUserId != null ? int.tryParse(currentUserId) : null;
+
+      print('DEBUG: Starting finishing with user ID = $currentUserIdInt');
+
       final updatedOrder = _order.copyWith(
         ordersWorkflowStatus: OrderWorkflowStatus.finishing,
+        ordersFinishingAccountId: currentUserIdInt,
       );
-      await OrderService().updateOrder(updatedOrder);
-      setState(() {
-        _order = updatedOrder;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pesanan masuk tahap Finishing')),
+
+      print(
+        'DEBUG: updatedOrder.ordersFinishingAccountId = ${updatedOrder.ordersFinishingAccountId}',
       );
-      Navigator.of(context).pop(true);
+
+      final result = await OrderService().updateOrder(updatedOrder);
+      if (result == true) {
+        setState(() {
+          _order = updatedOrder;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pesanan masuk tahap Finishing')),
+        );
+        // Refresh layar
+        Navigator.of(context).pop(true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal update status pesanan!'),
+          ), // tampilkan pesan default
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       setState(() => _isProcessing = false);
     }
@@ -105,62 +150,99 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
     }
   }
 
-  Widget _buildChecklist(
+  Widget _buildChecklistWithAccount(
+    BuildContext context,
     String title,
     List<String> defaultTasks,
     List<String>? checkedTasks,
     IconData icon,
     Color color,
+    int? accountId,
   ) {
     final checked = checkedTasks ?? [];
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return FutureBuilder<Account?>(
+      future:
+          accountId != null
+              ? AccountService.getAccountById(accountId)
+              : Future.value(null),
+      builder: (ctx, snapshot) {
+        String? userName;
+        if (accountId != null && snapshot.hasData && snapshot.data != null) {
+          userName = snapshot.data!.accountsName;
+        }
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(icon, color: color, size: 22),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: color,
-                  ),
+                Row(
+                  children: [
+                    Icon(icon, color: color, size: 22),
+                    const SizedBox(width: 8),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: color,
+                      ),
+                    ),
+                    if (userName != null) ...[
+                      const SizedBox(width: 8),
+                      Chip(
+                        label: Text(
+                          userName,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        backgroundColor: color.withOpacity(0.2),
+                      ),
+                    ],
+                  ],
                 ),
+                const SizedBox(height: 8),
+                ...defaultTasks.map((task) {
+                  final isChecked = checked.contains(task);
+                  return Row(
+                    children: [
+                      Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: isChecked ? color : Colors.grey[300],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child:
+                            isChecked
+                                ? const Icon(
+                                  Icons.check,
+                                  size: 16,
+                                  color: Colors.white,
+                                )
+                                : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          task,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isChecked ? color : Colors.grey[600],
+                            decoration:
+                                isChecked ? TextDecoration.lineThrough : null,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
               ],
             ),
-            const SizedBox(height: 8),
-            ...defaultTasks.map((task) {
-              final isChecked = checked.contains(task);
-              return Row(
-                children: [
-                  Container(
-                    width: 22,
-                    height: 22,
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isChecked ? color : Colors.grey[300],
-                      border: Border.all(color: color, width: 2),
-                    ),
-                    child:
-                        isChecked
-                            ? Icon(Icons.check, color: Colors.white, size: 16)
-                            : null,
-                  ),
-                  Text(task, style: TextStyle(fontSize: 15)),
-                ],
-              );
-            }),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -356,19 +438,15 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
             ListTile(
               leading: Icon(Icons.attach_money, color: Colors.amber),
               title: Text(
-                'Harga Perkiraan: Rp ${_order.ordersFinalPrice != null ? _order.ordersFinalPrice!.toStringAsFixed(0) : '-'}',
+                'Harga Perkiraan: ${formatRupiah(_order.ordersFinalPrice)}',
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text('Harga Akhir: ${formatRupiah(_order.ordersFinalPrice)}'),
+                  Text('DP: ${formatRupiah(_order.ordersDp)}'),
                   Text(
-                    'Harga Akhir: Rp ${_order.ordersFinalPrice != null ? _order.ordersFinalPrice!.toStringAsFixed(0) : '-'}',
-                  ),
-                  Text(
-                    'DP: Rp ${_order.ordersDp != null ? _order.ordersDp!.toStringAsFixed(0) : '-'}',
-                  ),
-                  Text(
-                    'Sisa Lunas: Rp ${_order.ordersFinalPrice != null && _order.ordersDp != null ? (_order.ordersFinalPrice! - _order.ordersDp!).toStringAsFixed(0) : '-'}',
+                    'Sisa Lunas: ${_order.ordersFinalPrice != null && _order.ordersDp != null ? formatRupiah(_order.ordersFinalPrice! - _order.ordersDp!) : '-'}',
                   ),
                 ],
               ),
@@ -401,13 +479,65 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildChecklist(
-                    'Finisher',
-                    widget.finisherTasks,
-                    _order.ordersFinishingWorkChecklist,
-                    Icons.cleaning_services,
-                    Colors.blue,
-                  ),
+                  // Jika tab onprogress, tampilkan semua checklist untuk tracking
+                  if (widget.fromTab == 'onprogress') ...[
+                    _buildChecklistWithAccount(
+                      context,
+                      'Designer',
+                      designerTasks,
+                      _order.ordersDesignerWorkChecklist,
+                      Icons.design_services,
+                      Colors.blue,
+                      _order.ordersDesignerAccountId,
+                    ),
+                    _buildChecklistWithAccount(
+                      context,
+                      'Cor',
+                      corTasks,
+                      _order.ordersCastingWorkChecklist,
+                      Icons.local_fire_department,
+                      Colors.orange,
+                      _order.ordersCastingAccountId,
+                    ),
+                    _buildChecklistWithAccount(
+                      context,
+                      'Carver',
+                      carverTasks,
+                      _order.ordersCarvingWorkChecklist,
+                      Icons.handyman,
+                      Colors.brown,
+                      _order.ordersCarvingAccountId,
+                    ),
+                    _buildChecklistWithAccount(
+                      context,
+                      'Diamond Setter',
+                      diamondSetterTasks,
+                      _order.ordersDiamondSettingWorkChecklist,
+                      Icons.diamond,
+                      Colors.purple,
+                      _order.ordersDiamondSettingAccountId,
+                    ),
+                    _buildChecklistWithAccount(
+                      context,
+                      'Finisher',
+                      finisherTasks,
+                      _order.ordersFinishingWorkChecklist,
+                      Icons.check_circle,
+                      Colors.green,
+                      _order.ordersFinishingAccountId,
+                    ),
+                  ] else ...[
+                    // Untuk tab lain, tampilkan hanya checklist finisher
+                    _buildChecklistWithAccount(
+                      context,
+                      'Finisher',
+                      finisherTasks,
+                      _order.ordersFinishingWorkChecklist,
+                      Icons.check_circle,
+                      Colors.green,
+                      _order.ordersFinishingAccountId,
+                    ),
+                  ],
                 ],
               ),
             ),

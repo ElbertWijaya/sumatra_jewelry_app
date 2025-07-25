@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
 import '../../services/order_service.dart';
+import '../../services/auth_service.dart';
 import 'finisher_detail_screen.dart';
 
 class FinisherDashboardScreen extends StatefulWidget {
@@ -19,7 +20,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   String _searchQuery = '';
-  String _selectedTab = 'waiting'; // default tab designer
+  String _selectedTab = 'waiting'; // default tab finisher
 
   // Filter state
   List<String> selectedJewelryTypes = [];
@@ -178,7 +179,12 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
             )
             .toList();
 
-    // Tab logic mirip designer
+    // Get current user ID untuk filtering
+    final currentUserId = AuthService().currentUserId;
+    final currentUserIdInt =
+        currentUserId != null ? int.tryParse(currentUserId) : null;
+
+    // Tab logic khusus finisher
     if (_selectedTab == 'waiting') {
       filtered =
           filtered
@@ -187,18 +193,23 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
               )
               .toList();
     } else if (_selectedTab == 'working') {
-      filtered =
-          filtered
-              .where(
-                (order) => workingStatuses.contains(order.ordersWorkflowStatus),
-              )
-              .toList();
-    } else if (_selectedTab == 'onprogress') {
+      // Filter berdasarkan finisher yang sedang login dan status finishing
       filtered =
           filtered
               .where(
                 (order) =>
-                    onProgressStatuses.contains(order.ordersWorkflowStatus),
+                    workingStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersFinishingAccountId == currentUserIdInt,
+              )
+              .toList();
+    } else if (_selectedTab == 'onprogress') {
+      // Filter berdasarkan finisher yang sedang login dan status after finishing
+      filtered =
+          filtered
+              .where(
+                (order) =>
+                    onProgressStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersFinishingAccountId == currentUserIdInt,
               )
               .toList();
     }
@@ -577,6 +588,10 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
   Widget _buildTabButton(String label, String value, Color color) {
     final bool selected = _selectedTab == value;
     int count = 0;
+    final currentUserId = AuthService().currentUserId;
+    final currentUserIdInt =
+        currentUserId != null ? int.tryParse(currentUserId) : null;
+
     if (value == 'waiting') {
       count =
           _orders
@@ -585,18 +600,23 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
               )
               .length;
     } else if (value == 'working') {
-      count =
-          _orders
-              .where(
-                (order) => workingStatuses.contains(order.ordersWorkflowStatus),
-              )
-              .length;
-    } else if (value == 'onprogress') {
+      // Filter berdasarkan finisher yang sedang login dan status finishing
       count =
           _orders
               .where(
                 (order) =>
-                    onProgressStatuses.contains(order.ordersWorkflowStatus),
+                    workingStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersFinishingAccountId == currentUserIdInt,
+              )
+              .length;
+    } else if (value == 'onprogress') {
+      // Filter berdasarkan finisher yang sedang login dan status after finishing
+      count =
+          _orders
+              .where(
+                (order) =>
+                    onProgressStatuses.contains(order.ordersWorkflowStatus) &&
+                    order.ordersFinishingAccountId == currentUserIdInt,
               )
               .length;
     }
@@ -687,7 +707,7 @@ class _FinisherDashboardScreenState extends State<FinisherDashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sales Dashboard'),
+        title: const Text('Finisher Dashboard'),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
