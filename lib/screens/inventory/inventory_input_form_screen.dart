@@ -126,21 +126,46 @@ class _InventoryInputFormScreenState extends State<InventoryInputFormScreen> {
 
   Future<List<String>> _uploadImages(List<XFile> images) async {
     List<String> urls = [];
-    for (final image in images) {
+    print('DEBUG: Starting image upload, total images: ${images.length}');
+
+    for (int i = 0; i < images.length; i++) {
+      final image = images[i];
+      print('DEBUG: Uploading image ${i + 1}: ${image.path}');
+
       final request = http.MultipartRequest(
         'POST',
         Uri.parse('http://192.168.7.25/sumatra_api/upload_inventory_image.php'),
       );
       request.files.add(await http.MultipartFile.fromPath('image', image.path));
+
       final response = await request.send();
+      print('DEBUG: Upload response status: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final respStr = await response.stream.bytesToString();
-        final jsonResp = jsonDecode(respStr);
-        if (jsonResp['success'] == true && jsonResp['url'] != null) {
-          urls.add(jsonResp['url']);
+        print('DEBUG: Upload response: $respStr');
+
+        try {
+          final jsonResp = jsonDecode(respStr);
+          print('DEBUG: Parsed JSON response: $jsonResp');
+
+          if (jsonResp['success'] == true && jsonResp['url'] != null) {
+            urls.add(jsonResp['url']);
+            print('DEBUG: Added URL: ${jsonResp['url']}');
+          } else {
+            print(
+              'DEBUG: Upload failed - success: ${jsonResp['success']}, url: ${jsonResp['url']}',
+            );
+          }
+        } catch (e) {
+          print('DEBUG: Failed to parse JSON response: $e');
         }
+      } else {
+        print('DEBUG: Upload failed with status: ${response.statusCode}');
       }
     }
+
+    print('DEBUG: Total URLs collected: ${urls.length}, URLs: $urls');
     return urls;
   }
 
@@ -154,8 +179,12 @@ class _InventoryInputFormScreenState extends State<InventoryInputFormScreen> {
     }
 
     // Upload images ke server dan dapatkan URL
+    print('DEBUG: Starting image upload process...');
     List<String> imageUrls = await _uploadImages(_images);
+    print('DEBUG: Image upload completed. URLs received: $imageUrls');
+
     if (imageUrls.isEmpty) {
+      print('DEBUG: No image URLs received, showing error');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Gagal upload gambar!')));
@@ -163,6 +192,9 @@ class _InventoryInputFormScreenState extends State<InventoryInputFormScreen> {
     }
 
     // Kumpulkan data
+    String encodedImagePaths = jsonEncode(imageUrls);
+    print('DEBUG: Encoded image paths: $encodedImagePaths');
+
     final Map<String, dynamic> inventoryData = {
       'inventory_id': widget.order?.ordersId,
       'inventory_product_id': _productIdController.text,
@@ -176,7 +208,7 @@ class _InventoryInputFormScreenState extends State<InventoryInputFormScreen> {
               ? _ringSizeController.text
               : '',
       'inventory_items_price': _rawPrice,
-      'inventory_imagePaths': jsonEncode(imageUrls),
+      'inventory_imagePaths': encodedImagePaths,
       'inventory_stone_used': jsonEncode(
         _stones
             .where((s) => s.isFilled)
@@ -191,12 +223,29 @@ class _InventoryInputFormScreenState extends State<InventoryInputFormScreen> {
       ),
     };
 
+    print('DEBUG: Inventory data to send:');
+    print('DEBUG: inventory_id: ${inventoryData['inventory_id']}');
+    print(
+      'DEBUG: inventory_product_id: ${inventoryData['inventory_product_id']}',
+    );
+    print(
+      'DEBUG: inventory_imagePaths: ${inventoryData['inventory_imagePaths']}',
+    );
+    print('DEBUG: Full data: $inventoryData');
+
     try {
+      print('DEBUG: Sending inventory data to server...');
       final response = await http.post(
         Uri.parse('http://192.168.7.25/sumatra_api/update_inventory.php'),
         body: inventoryData,
       );
+
+      print('DEBUG: Server response status: ${response.statusCode}');
+      print('DEBUG: Server response body: ${response.body}');
+
       final result = jsonDecode(response.body);
+      print('DEBUG: Parsed server response: $result');
+
       if (result['success'] == true) {
         // Update workflow_status order ke waitingSalesCompletion
         final updatedOrder = widget.order!.copyWith(

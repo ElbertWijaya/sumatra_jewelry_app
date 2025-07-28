@@ -2,10 +2,13 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/order.dart';
+import '../../models/inventory.dart';
 import '../../services/order_service.dart';
+import '../../services/inventory_service.dart';
 import '../../services/auth_service.dart';
 import 'inventory_detail_screen.dart';
 import 'inventory_input_form_screen.dart';
+import 'inventory_data_detail_screen.dart';
 
 class InventoryDashboardScreen extends StatefulWidget {
   const InventoryDashboardScreen({super.key});
@@ -17,7 +20,9 @@ class InventoryDashboardScreen extends StatefulWidget {
 
 class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   final OrderService _orderService = OrderService();
+  final InventoryService _inventoryService = InventoryService();
   List<Order> _orders = [];
+  List<Inventory> _inventories = [];
   bool _isLoading = true;
   String _errorMessage = '';
   String _searchQuery = '';
@@ -81,6 +86,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
   void initState() {
     super.initState();
     _fetchOrders();
+    // Fetch inventory data juga saat init
+    _fetchInventories();
   }
 
   void _generateRandomCategoryFilters() {
@@ -119,6 +126,12 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
       setState(() {
         _orders = fetchedOrders;
       });
+
+      // Fetch inventory data untuk tab datainventory
+      if (_selectedTab == 'datainventory') {
+        await _fetchInventories();
+      }
+
       _generateRandomCategoryFilters();
     } catch (e) {
       print('ERROR: $e');
@@ -130,6 +143,19 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _fetchInventories() async {
+    try {
+      print('DEBUG: Fetching inventories...');
+      final fetchedInventories = await _inventoryService.getInventoryList();
+      print('DEBUG: Fetched ${fetchedInventories.length} inventories');
+      setState(() {
+        _inventories = fetchedInventories;
+      });
+    } catch (e) {
+      print('ERROR fetching inventories: $e');
     }
   }
 
@@ -301,6 +327,336 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
     }
 
     return filtered;
+  }
+
+  String inventoryFullText(Inventory inventory) {
+    return [
+      inventory.InventoryProductId,
+      inventory.InventoryJewelryType ?? '',
+      inventory.InventoryGoldType ?? '',
+      inventory.InventoryGoldColor ?? '',
+      inventory.InventoryRingSize ?? '',
+      inventory.InventoryItemsPrice ?? '',
+      inventory.InventoryStoneUsed.map(
+        (stone) => stone['shape'] ?? '',
+      ).join(', '),
+    ].join(' ').toLowerCase();
+  }
+
+  List<Inventory> get _filteredInventories {
+    List<Inventory> filtered = List.from(_inventories);
+    print('DEBUG: Starting filter with ${filtered.length} inventories');
+    print(
+      'DEBUG: Selected filters - jewelryTypes: $selectedJewelryTypes, goldColors: $selectedGoldColors, goldTypes: $selectedGoldTypes',
+    );
+
+    // Filter berdasarkan search query
+    if (_searchQuery.isNotEmpty) {
+      filtered =
+          filtered
+              .where(
+                (inventory) => inventoryFullText(
+                  inventory,
+                ).contains(_searchQuery.toLowerCase()),
+              )
+              .toList();
+    }
+
+    // Filter berdasarkan jewelry types
+    if (selectedJewelryTypes.isNotEmpty) {
+      filtered =
+          filtered
+              .where(
+                (inventory) => selectedJewelryTypes.any(
+                  (type) => (inventory.InventoryJewelryType ?? '')
+                      .toLowerCase()
+                      .contains(type.toLowerCase()),
+                ),
+              )
+              .toList();
+    }
+
+    // Filter berdasarkan gold colors
+    if (selectedGoldColors.isNotEmpty) {
+      filtered =
+          filtered
+              .where(
+                (inventory) => selectedGoldColors.any(
+                  (color) => (inventory.InventoryGoldColor ?? '')
+                      .toLowerCase()
+                      .contains(color.toLowerCase()),
+                ),
+              )
+              .toList();
+    }
+
+    // Filter berdasarkan gold types
+    if (selectedGoldTypes.isNotEmpty) {
+      filtered =
+          filtered
+              .where(
+                (inventory) => selectedGoldTypes.any(
+                  (type) => (inventory.InventoryGoldType ?? '')
+                      .toLowerCase()
+                      .contains(type.toLowerCase()),
+                ),
+              )
+              .toList();
+    }
+
+    // Filter berdasarkan stone types
+    if (selectedStoneTypes.isNotEmpty) {
+      filtered =
+          filtered
+              .where(
+                (inventory) => selectedStoneTypes.any(
+                  (stoneType) => inventory.InventoryStoneUsed.any(
+                    (stone) => (stone['shape'] ?? '').toLowerCase().contains(
+                      stoneType.toLowerCase(),
+                    ),
+                  ),
+                ),
+              )
+              .toList();
+    }
+
+    // Filter berdasarkan ring size
+    if (ringSize != null && ringSize!.isNotEmpty) {
+      filtered =
+          filtered
+              .where(
+                (inventory) => (inventory.InventoryRingSize ?? '')
+                    .toLowerCase()
+                    .contains(ringSize!.toLowerCase()),
+              )
+              .toList();
+    }
+
+    // Filter berdasarkan price range
+    if (priceMin != null) {
+      filtered =
+          filtered.where((inventory) {
+            final price =
+                double.tryParse(inventory.InventoryItemsPrice ?? '0') ?? 0;
+            return price >= priceMin!;
+          }).toList();
+    }
+    if (priceMax != null) {
+      filtered =
+          filtered.where((inventory) {
+            final price =
+                double.tryParse(inventory.InventoryItemsPrice ?? '0') ?? 0;
+            return price <= priceMax!;
+          }).toList();
+    }
+
+    print('DEBUG: Final filtered result: ${filtered.length} inventories');
+    return filtered;
+  }
+
+  Widget _buildInventoryCard(Inventory inventory) {
+    String? imageUrl;
+    if (inventory.InventoryImagePaths.isNotEmpty) {
+      final imagePath = inventory.InventoryImagePaths.first;
+      if (imagePath.startsWith('http')) {
+        imageUrl = imagePath;
+      } else {
+        imageUrl = 'http://192.168.7.25/sumatra_api/inventory_photo/$imagePath';
+      }
+    }
+
+    String formatRupiah(String? value) {
+      if (value == null || value.isEmpty || value == '0') return '-';
+      final numValue = double.tryParse(value) ?? 0;
+      return 'Rp ${numValue.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+    }
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 12.0),
+      elevation: 5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      color: const Color(0xFFFDF6E3),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // Row pertama: gambar dan info utama
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Gambar 1:1
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child:
+                      imageUrl != null
+                          ? Image.network(
+                            imageUrl,
+                            width: 90,
+                            height: 90,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: 90,
+                                height: 90,
+                                color: Colors.brown[100],
+                                child: const Icon(
+                                  Icons.image,
+                                  size: 40,
+                                  color: Colors.brown,
+                                ),
+                              );
+                            },
+                          )
+                          : Container(
+                            width: 90,
+                            height: 90,
+                            color: Colors.brown[100],
+                            child: const Icon(
+                              Icons.image,
+                              size: 40,
+                              color: Colors.brown,
+                            ),
+                          ),
+                ),
+                const SizedBox(width: 16),
+                // Info utama
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        inventory.InventoryJewelryType ?? 'Jenis Perhiasan',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Color(0xFF6B4423),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'ID: ${inventory.InventoryId}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.star, size: 16, color: Colors.yellow[700]),
+                          const SizedBox(width: 4),
+                          Text(
+                            inventory.InventoryGoldType ?? '-',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.palette,
+                            size: 16,
+                            color: Colors.orange[600],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            inventory.InventoryGoldColor ?? '-',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      if (inventory.InventoryRingSize != null &&
+                          inventory.InventoryRingSize!.isNotEmpty) ...[
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.straighten,
+                              size: 16,
+                              color: Colors.purple[600],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Size: ${inventory.InventoryRingSize}',
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Row kedua: info batu dan harga
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (inventory.InventoryStoneUsed.isNotEmpty) ...[
+                        Text(
+                          'Batu: ${inventory.InventoryStoneUsed.map((stone) => stone['shape'] ?? '').join(', ')}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.amber[800],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                      ],
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.attach_money,
+                            size: 16,
+                            color: Colors.green[600],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            formatRupiah(inventory.InventoryItemsPrice),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD4AF37),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                  ),
+                  icon: const Icon(Icons.visibility, size: 16),
+                  label: const Text('Detail', style: TextStyle(fontSize: 13)),
+                  onPressed: () async {
+                    final result = await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder:
+                            (context) =>
+                                InventoryDataDetailScreen(inventory: inventory),
+                      ),
+                    );
+                    if (result != null) {
+                      await _fetchInventories();
+                    }
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _openFilterSheet() {
@@ -602,17 +958,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
               )
               .length;
     } else if (value == 'datainventory') {
-      // Filter berdasarkan inventory yang sudah selesai
-      count =
-          _orders
-              .where(
-                (order) =>
-                    dataInventoryStatuses.contains(
-                      order.ordersWorkflowStatus,
-                    ) &&
-                    order.ordersInventoryAccountId == currentUserIdInt,
-              )
-              .length;
+      // Count berdasarkan data inventory yang tersedia
+      count = _inventories.length;
     }
     return Expanded(
       child: Padding(
@@ -622,6 +969,10 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
             setState(() {
               _selectedTab = value;
             });
+            // Fetch inventories jika tab datainventory dipilih
+            if (value == 'datainventory') {
+              _fetchInventories();
+            }
           },
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
@@ -706,7 +1057,13 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              _fetchOrders();
+              _fetchInventories();
+            },
+          ),
           IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
         ],
       ),
@@ -920,7 +1277,10 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                 const SizedBox(height: 10.0),
                 Expanded(
                   child: RefreshIndicator(
-                    onRefresh: _fetchOrders,
+                    onRefresh: () async {
+                      await _fetchOrders();
+                      await _fetchInventories();
+                    },
                     child:
                         _isLoading
                             ? const Center(
@@ -938,6 +1298,50 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
                                 ),
                               ),
                             )
+                            : _selectedTab == 'datainventory'
+                            ? (_filteredInventories.isEmpty
+                                ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        _searchQuery.isNotEmpty
+                                            ? 'Tidak ada data inventory cocok dengan pencarian Anda.'
+                                            : 'Tidak ada data inventory.',
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Total inventory: ${_inventories.length}',
+                                        style: const TextStyle(
+                                          color: Colors.white54,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Filtered inventory: ${_filteredInventories.length}',
+                                        style: const TextStyle(
+                                          color: Colors.white54,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                                : ListView.builder(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0,
+                                    vertical: 8.0,
+                                  ),
+                                  itemCount: _filteredInventories.length,
+                                  itemBuilder: (context, index) {
+                                    final inventory =
+                                        _filteredInventories[index];
+                                    return _buildInventoryCard(inventory);
+                                  },
+                                ))
                             : _filteredOrders.isEmpty
                             ? Center(
                               child: Text(

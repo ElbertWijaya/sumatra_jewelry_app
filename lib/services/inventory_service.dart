@@ -7,15 +7,51 @@ import 'database_helper.dart';
 class InventoryService {
   // API: Get inventory list from remote server
   Future<List<Inventory>> getInventoryList() async {
-    final response = await http.get(
-      Uri.parse('http://192.168.7.25/sumatra_api/get_inventory_list.php'),
-    );
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((e) => Inventory.fromJson(e)).toList();
-    } else {
-      throw Exception('Failed to load inventory');
+    try {
+      print('DEBUG: Calling get_inventory.php...');
+      final response = await http.get(
+        Uri.parse('http://192.168.7.25/sumatra_api/get_inventory.php'),
+      );
+      print('DEBUG: Response status: ${response.statusCode}');
+      print('DEBUG: Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        print('DEBUG: Parsed ${data.length} inventory items');
+        return data.map((e) => Inventory.fromJson(e)).toList();
+      } else {
+        throw Exception(
+          'Failed to load inventory - Status: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      print('DEBUG: Exception in getInventoryList: $e');
+      rethrow;
     }
+  }
+
+  // API: Update inventory data
+  Future<bool> updateInventoryAPI(Inventory inventory) async {
+    final response = await http.post(
+      Uri.parse('http://192.168.7.25/sumatra_api/update_inventory.php'),
+      body: {
+        'inventory_id': inventory.InventoryId,
+        'inventory_product_id': inventory.InventoryProductId,
+        'inventory_jewelry_type': inventory.InventoryJewelryType ?? '',
+        'inventory_gold_type': inventory.InventoryGoldType ?? '',
+        'inventory_gold_color': inventory.InventoryGoldColor ?? '',
+        'inventory_ring_size': inventory.InventoryRingSize ?? '',
+        'inventory_items_price': inventory.InventoryItemsPrice ?? '0',
+        'inventory_imagePaths': jsonEncode(inventory.InventoryImagePaths),
+        'inventory_stone_used': jsonEncode(inventory.InventoryStoneUsed),
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final result = jsonDecode(response.body);
+      return result['success'] == true;
+    }
+    return false;
   }
 
   // SQLite: Insert inventory

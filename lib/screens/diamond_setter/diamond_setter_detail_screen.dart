@@ -242,6 +242,30 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                     ),
                   ),
                 ],
+                // Tambahkan status inventory di dalam card Inventory
+                if (title == 'Inventory' && accountId != null) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        color: Colors.green[700],
+                        size: 22,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Pesanan ini sudah memiliki data inventory lengkap dan siap untuk tahap sales completion.',
+                          style: TextStyle(
+                            color: Colors.green[900],
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 8),
                 ...defaultTasks.map((task) {
                   final isChecked = checked.contains(task);
@@ -628,6 +652,15 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                       Icons.check_circle,
                       const Color.fromARGB(255, 167, 228, 25),
                       _order.ordersFinishingAccountId,
+                    ),
+                    _buildChecklistWithAccount(
+                      context,
+                      'Inventory',
+                      [], // Tidak ada checklist inventory, hanya status
+                      null,
+                      Icons.inventory,
+                      Colors.teal,
+                      _order.ordersInventoryAccountId,
                     ),
                   ] else ...[
                     // Untuk tab lain, tampilkan hanya checklist diamond setter
