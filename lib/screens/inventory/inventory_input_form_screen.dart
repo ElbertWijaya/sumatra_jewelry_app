@@ -8,8 +8,8 @@ import '../../models/order.dart';
 import '../../services/order_service.dart';
 
 class InventoryInputFormScreen extends StatefulWidget {
-  final Order order;
-  const InventoryInputFormScreen({super.key, required this.order});
+  final Order? order;
+  const InventoryInputFormScreen({super.key, this.order});
 
   @override
   State<InventoryInputFormScreen> createState() =>
@@ -129,9 +129,7 @@ class _InventoryInputFormScreenState extends State<InventoryInputFormScreen> {
     for (final image in images) {
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse(
-          'http://192.168.110.147/sumatra_api/upload_inventory_image.php',
-        ),
+        Uri.parse('http://192.168.7.25/sumatra_api/upload_inventory_image.php'),
       );
       request.files.add(await http.MultipartFile.fromPath('image', image.path));
       final response = await request.send();
@@ -166,7 +164,7 @@ class _InventoryInputFormScreenState extends State<InventoryInputFormScreen> {
 
     // Kumpulkan data
     final Map<String, dynamic> inventoryData = {
-      'inventory_id': widget.order.ordersId,
+      'inventory_id': widget.order?.ordersId,
       'inventory_product_id': _productIdController.text,
       'inventory_jewelry_type': _selectedJewelryType,
       'inventory_gold_type': _selectedGoldType,
@@ -195,13 +193,13 @@ class _InventoryInputFormScreenState extends State<InventoryInputFormScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.110.147/sumatra_api/update_inventory.php'),
+        Uri.parse('http://192.168.7.25/sumatra_api/update_inventory.php'),
         body: inventoryData,
       );
       final result = jsonDecode(response.body);
       if (result['success'] == true) {
         // Update workflow_status order ke waitingSalesCompletion
-        final updatedOrder = widget.order.copyWith(
+        final updatedOrder = widget.order!.copyWith(
           ordersWorkflowStatus: OrderWorkflowStatus.waitingSalesCompletion,
         );
         await OrderService().updateOrder(updatedOrder);

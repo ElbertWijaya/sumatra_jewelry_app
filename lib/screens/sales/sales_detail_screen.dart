@@ -82,6 +82,30 @@ class SalesDetailScreen extends StatelessWidget {
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
+                // Tambahkan status inventory di dalam card Inventory
+                if (title == 'Inventory' && accountId != null) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        color: Colors.green[700],
+                        size: 22,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Pesanan ini sudah memiliki data inventory lengkap dan siap untuk diberikan kepada customer.',
+                          style: TextStyle(
+                            color: Colors.green[900],
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 8),
                 ...defaultTasks.map((task) {
                   final isChecked = checked.contains(task);
@@ -275,7 +299,7 @@ class SalesDetailScreen extends StatelessWidget {
               final String imageUrl =
                   img.startsWith('http')
                       ? img
-                      : 'http://192.168.110.147/sumatra_api/orders_photo/$img';
+                      : 'http://192.168.7.25/sumatra_api/orders_photo/$img';
               return GestureDetector(
                 onTap: () {
                   showDialog(
@@ -417,7 +441,7 @@ class SalesDetailScreen extends StatelessWidget {
                                   // Panggil fungsi hapus pesanan dari backend
                                   final response = await http.post(
                                     Uri.parse(
-                                      'http://192.168.110.147/sumatra_api/delete_orders.php',
+                                      'http://192.168.7.25/sumatra_api/delete_orders.php',
                                     ),
                                     body: {
                                       'orders_id': order.ordersId.toString(),
@@ -745,7 +769,7 @@ class SalesDetailScreen extends StatelessWidget {
                     finisherTasks,
                     order.ordersFinishingWorkChecklist,
                     Icons.check,
-                    Colors.green,
+                    const Color.fromARGB(255, 167, 228, 25),
                     order.ordersFinishingAccountId,
                   ),
                   _buildChecklistWithAccount(
@@ -797,7 +821,7 @@ class SalesDetailScreen extends StatelessWidget {
                       try {
                         final response = await http.post(
                           Uri.parse(
-                            'http://192.168.110.147/sumatra_api/update_orders.php',
+                            'http://192.168.7.25/sumatra_api/update_orders.php',
                           ),
                           body: {
                             'orders_id': order.ordersId.toString(),

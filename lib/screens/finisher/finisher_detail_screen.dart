@@ -23,19 +23,24 @@ class FinisherDetailScreen extends StatefulWidget {
 class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
   String formatRupiah(num? value) {
     if (value == null || value == 0) return '-';
-    return 'Rp ${value.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}';
+    return 'Rp ${value.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
   }
 
-  // Definisi task untuk semua role
-  final List<String> designerTasks = ['Desain', 'CAD', 'Render', 'Approval'];
-  final List<String> corTasks = ['Cetak Wax', 'Cor', 'Cleaning'];
-  final List<String> carverTasks = ['Carving', 'Filing', 'Sanding'];
-  final List<String> diamondSetterTasks = [
-    'Setting Batu',
-    'Prong',
-    'Polish Stone',
+  // Definisi task untuk semua role - konsisten dengan file lainnya
+  final List<String> designerTasks = ['Designing', '3D Printing', 'Pengecekan'];
+  final List<String> corTasks = ['Lilin', 'Cor', 'Kasih ke Admin'];
+  final List<String> carverTasks = [
+    'Cap',
+    'Bom',
+    'Pengecekan',
+    'Kasih ke Admin',
   ];
-  final List<String> finisherTasks = ['Poles', 'Cuci', 'Quality Control'];
+  final List<String> diamondSetterTasks = [
+    'Pilih batu',
+    'Pasang Batu',
+    'Pengecekan',
+  ];
+  final List<String> finisherTasks = ['Chrome', 'Kasih ke Admin'];
 
   late Order _order;
   List<String> _finisherChecklist = [];
@@ -68,18 +73,45 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
   Future<void> _startFinishing() async {
     setState(() => _isProcessing = true);
     try {
-      // Set user ID
-      final currentUserId = AuthService().currentUserId;
-      final currentUserIdInt =
-          currentUserId != null ? int.tryParse(currentUserId) : null;
+      // Ambil ID user yang sedang login
+      final String? currentUserIdStr = AuthService().currentUserId;
+      final int? currentUserId =
+          currentUserIdStr != null ? int.tryParse(currentUserIdStr) : null;
 
-      print('DEBUG: Starting finishing with user ID = $currentUserIdInt');
+      // Debug: print untuk memastikan currentUserId ada
+      print('DEBUG: currentUserIdStr = $currentUserIdStr');
+      print('DEBUG: currentUserId = $currentUserId');
 
+      // Buat map untuk field yang akan diupdate
+      final Map<String, dynamic> updateFields = {
+        'ordersWorkflowStatus': OrderWorkflowStatus.finishing,
+        'ordersFinishingAccountId': currentUserId,
+      };
+
+      // Debug: print updateFields
+      print('DEBUG: updateFields = $updateFields');
+
+      // Hanya kirim field angka jika tidak null
+      if (_order.ordersGoldPricePerGram != null) {
+        updateFields['ordersGoldPricePerGram'] =
+            _order.ordersGoldPricePerGram.toString();
+      }
+      if (_order.ordersFinalPrice != null) {
+        updateFields['ordersFinalPrice'] = _order.ordersFinalPrice.toString();
+      }
+      if (_order.ordersDp != null) {
+        updateFields['ordersDp'] = _order.ordersDp.toString();
+      }
+      // Copy order dengan field yang diupdate
       final updatedOrder = _order.copyWith(
-        ordersWorkflowStatus: OrderWorkflowStatus.finishing,
-        ordersFinishingAccountId: currentUserIdInt,
+        ordersWorkflowStatus: updateFields['ordersWorkflowStatus'],
+        ordersFinishingAccountId: updateFields['ordersFinishingAccountId'],
+        ordersGoldPricePerGram: _order.ordersGoldPricePerGram,
+        ordersFinalPrice: _order.ordersFinalPrice,
+        ordersDp: _order.ordersDp,
       );
 
+      // Debug: print updatedOrder
       print(
         'DEBUG: updatedOrder.ordersFinishingAccountId = ${updatedOrder.ordersFinishingAccountId}',
       );
@@ -124,7 +156,11 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
         );
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Checklist berhasil diupdate')),
+        const SnackBar(
+          content: Text('Checklist berhasil diupdate!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
       );
     } finally {
       setState(() => _isProcessing = false);
@@ -190,18 +226,15 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
                         color: color,
                       ),
                     ),
-                    if (userName != null) ...[
-                      const SizedBox(width: 8),
-                      Chip(
-                        label: Text(
-                          userName,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        backgroundColor: color.withOpacity(0.2),
-                      ),
-                    ],
                   ],
                 ),
+                if (userName != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Dikerjakan oleh $userName',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 ...defaultTasks.map((task) {
                   final isChecked = checked.contains(task);
@@ -210,31 +243,22 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
                       Container(
                         width: 22,
                         height: 22,
+                        margin: const EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
+                          shape: BoxShape.circle,
                           color: isChecked ? color : Colors.grey[300],
-                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: color, width: 2),
                         ),
                         child:
                             isChecked
-                                ? const Icon(
+                                ? Icon(
                                   Icons.check,
-                                  size: 16,
                                   color: Colors.white,
+                                  size: 16,
                                 )
                                 : null,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          task,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isChecked ? color : Colors.grey[600],
-                            decoration:
-                                isChecked ? TextDecoration.lineThrough : null,
-                          ),
-                        ),
-                      ),
+                      Text(task, style: TextStyle(fontSize: 15)),
                     ],
                   );
                 }),
@@ -249,41 +273,135 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
   Widget _buildStoneInfo() {
     final stoneList = _order.ordersStoneUsed;
     if (stoneList.isEmpty) {
-      return Card(
-        color: const Color(0xFFFFF8E1),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text('Tidak ada informasi batu'),
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF8E1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.amber.withOpacity(0.3)),
+        ),
+        child: Text(
+          'Tidak ada informasi batu',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+            fontStyle: FontStyle.italic,
+          ),
+          textAlign: TextAlign.center,
         ),
       );
     }
-    return SizedBox(
-      height: 120,
-      child: ListView(
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minHeight: 120,
+        maxHeight: 150, // Batasan maksimal yang fleksibel
+      ),
+      child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        children:
-            stoneList.map((stone) {
-              return Card(
-                margin: const EdgeInsets.only(right: 10),
-                color: const Color(0xFFFFF8E1),
-                child: Container(
-                  width: 110,
-                  padding: const EdgeInsets.all(8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Bentuk: ${stone['shape'] ?? '-'}',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text('Jumlah: ${stone['count'] ?? '-'} pcs'),
-                      Text('Ukuran: ${stone['carat'] ?? '-'} ct'),
-                    ],
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        itemCount: stoneList.length,
+        itemBuilder: (context, index) {
+          final stone = stoneList[index];
+          return Container(
+            margin: const EdgeInsets.only(right: 12),
+            child: Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              color: const Color(0xFFFFF8E1),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                constraints: const BoxConstraints(
+                  minWidth: 120, // Lebar minimum untuk readability
+                  maxWidth:
+                      200, // Lebar maksimal untuk mencegah card terlalu lebar
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.diamond, color: Colors.amber[700], size: 18),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'Batu ${index + 1}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.amber[800],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildStoneDetailRow(
+                      'Bentuk',
+                      stone['shape'] ?? '-',
+                      Icons.category,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildStoneDetailRow(
+                      'Jumlah',
+                      '${stone['count'] ?? '-'} pcs',
+                      Icons.confirmation_number,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildStoneDetailRow(
+                      'Ukuran',
+                      '${stone['carat'] ?? '-'} ct',
+                      Icons.straighten,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStoneDetailRow(String label, String value, IconData icon) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: Colors.amber[600]),
+        const SizedBox(width: 6),
+        Expanded(
+          child: RichText(
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2, // Izinkan maksimal 2 baris untuk teks yang panjang
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: '$label: ',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
                   ),
                 ),
-              );
-            }).toList(),
-      ),
+                TextSpan(
+                  text: value,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -310,17 +428,56 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
               final String imageUrl =
                   img.startsWith('http')
                       ? img
-                      : 'http://192.168.110.147/sumatra_api/orders_photo/$img';
-              return Container(
-                margin: const EdgeInsets.only(right: 10),
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.amber),
-                  image: DecorationImage(
-                    image: NetworkImage(imageUrl),
-                    fit: BoxFit.cover,
+                      : 'http://192.168.7.25/sumatra_api/orders_photo/$img';
+              return GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder:
+                        (ctx) => Dialog(
+                          backgroundColor: Colors.black,
+                          insetPadding: const EdgeInsets.all(0),
+                          child: Stack(
+                            children: [
+                              InteractiveViewer(
+                                panEnabled: true,
+                                minScale: 1,
+                                maxScale: 5,
+                                child: Center(
+                                  child: Image.network(
+                                    imageUrl,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 24,
+                                right: 24,
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 32,
+                                  ),
+                                  onPressed: () => Navigator.of(ctx).pop(),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 10),
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.amber),
+                    image: DecorationImage(
+                      image: NetworkImage(imageUrl),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               );
@@ -342,7 +499,6 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ...existing info widgets...
             // Informasi Pelanggan
             Text(
               'Informasi Pelanggan',
@@ -410,19 +566,19 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
             ListTile(
               leading: Icon(Icons.date_range, color: Colors.amber),
               title: Text(
-                'Tanggal Siap: ${_order.ordersReadyDate != null ? "${_order.ordersReadyDate!.day.toString().padLeft(2, '0')}/${_order.ordersReadyDate!.month.toString().padLeft(2, '0')}/${_order.ordersReadyDate!.year} ${_order.ordersReadyDate!.hour.toString().padLeft(2, '0')}:${_order.ordersReadyDate!.minute.toString().padLeft(2, '0')}:${_order.ordersReadyDate!.second.toString().padLeft(2, '0')}" : "-"}',
+                'Tanggal Siap: ${_order.ordersReadyDate != null ? "${_order.ordersReadyDate!.day.toString().padLeft(2, '0')}/${_order.ordersReadyDate!.month.toString().padLeft(2, '0')}/${_order.ordersReadyDate!.year}" : "-"}',
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Tanggal Pickup: ${_order.ordersPickupDate != null ? "${_order.ordersPickupDate!.day.toString().padLeft(2, '0')}/${_order.ordersPickupDate!.month.toString().padLeft(2, '0')}/${_order.ordersPickupDate!.year} ${_order.ordersPickupDate!.hour.toString().padLeft(2, '0')}:${_order.ordersPickupDate!.minute.toString().padLeft(2, '0')}:${_order.ordersPickupDate!.second.toString().padLeft(2, '0')}" : "-"}',
+                    'Tanggal Pickup: ${_order.ordersPickupDate != null ? "${_order.ordersPickupDate!.day.toString().padLeft(2, '0')}/${_order.ordersPickupDate!.month.toString().padLeft(2, '0')}/${_order.ordersPickupDate!.year}" : "-"}',
                   ),
                   Text(
-                    'Tanggal Dibuat: ${_order.ordersCreatedAt.day.toString().padLeft(2, '0')}/${_order.ordersCreatedAt.month.toString().padLeft(2, '0')}/${_order.ordersCreatedAt.year} ${_order.ordersCreatedAt.hour.toString().padLeft(2, '0')}:${_order.ordersCreatedAt.minute.toString().padLeft(2, '0')}:${_order.ordersCreatedAt.second.toString().padLeft(2, '0')}',
+                    'Tanggal Dibuat: ${_order.ordersCreatedAt.day.toString().padLeft(2, '0')}/${_order.ordersCreatedAt.month.toString().padLeft(2, '0')}/${_order.ordersCreatedAt.year}',
                   ),
                   Text(
-                    'Terakhir Update: ${_order.ordersUpdatedAt != null ? "${_order.ordersUpdatedAt!.day.toString().padLeft(2, '0')}/${_order.ordersUpdatedAt!.month.toString().padLeft(2, '0')}/${_order.ordersUpdatedAt!.year} ${_order.ordersUpdatedAt!.hour.toString().padLeft(2, '0')}:${_order.ordersUpdatedAt!.minute.toString().padLeft(2, '0')}:${_order.ordersUpdatedAt!.second.toString().padLeft(2, '0')}" : "-"}',
+                    'Terakhir Update: ${_order.ordersUpdatedAt != null ? "${_order.ordersUpdatedAt!.day.toString().padLeft(2, '0')}/${_order.ordersUpdatedAt!.month.toString().padLeft(2, '0')}/${_order.ordersUpdatedAt!.year}" : "-"}',
                   ),
                 ],
               ),
@@ -523,7 +679,7 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
                       finisherTasks,
                       _order.ordersFinishingWorkChecklist,
                       Icons.check_circle,
-                      Colors.green,
+                      const Color.fromARGB(255, 167, 228, 25),
                       _order.ordersFinishingAccountId,
                     ),
                   ] else ...[
@@ -534,7 +690,7 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
                       finisherTasks,
                       _order.ordersFinishingWorkChecklist,
                       Icons.check_circle,
-                      Colors.green,
+                      const Color.fromARGB(255, 167, 228, 25),
                       _order.ordersFinishingAccountId,
                     ),
                   ],
@@ -550,7 +706,7 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[700],
+                      backgroundColor: Colors.green[700],
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -569,7 +725,7 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
             if (widget.fromTab == 'working')
               Column(
                 children: [
-                  ...widget.finisherTasks.map(
+                  ...finisherTasks.map(
                     (task) => CheckboxListTile(
                       value: _finisherChecklist.contains(task),
                       title: Text(task),
@@ -593,21 +749,25 @@ class _FinisherDetailScreenState extends State<FinisherDetailScreen> {
                             : const Text('Update Progress'),
                   ),
                   const SizedBox(height: 12),
-                  if (_finisherChecklist.length ==
-                          widget.finisherTasks.length &&
+                  if (_finisherChecklist.length == finisherTasks.length &&
                       _finisherChecklist.toSet().containsAll(
-                        widget.finisherTasks.toSet(),
+                        finisherTasks.toSet(),
                       ) &&
                       _order.ordersFinishingWorkChecklist.length ==
-                          widget.finisherTasks.length &&
+                          finisherTasks.length &&
                       _order.ordersFinishingWorkChecklist.toSet().containsAll(
-                        widget.finisherTasks.toSet(),
+                        finisherTasks.toSet(),
                       ))
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green[700],
+                          backgroundColor: const Color.fromARGB(
+                            255,
+                            167,
+                            228,
+                            25,
+                          ),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),

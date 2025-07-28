@@ -159,7 +159,11 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
         );
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Checklist berhasil diupdate')),
+        const SnackBar(
+          content: Text('Checklist berhasil diupdate!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
       );
     } finally {
       setState(() => _isProcessing = false);
@@ -404,7 +408,7 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
               final String imageUrl =
                   img.startsWith('http')
                       ? img
-                      : 'http://192.168.110.147/sumatra_api/orders_photo/$img';
+                      : 'http://192.168.7.25/sumatra_api/orders_photo/$img';
               return GestureDetector(
                 onTap: () {
                   // Bisa ditambahkan preview gambar full screen di sini
@@ -622,7 +626,7 @@ class _DiamondSetterDetailScreenState extends State<DiamondSetterDetailScreen> {
                       finisherTasks,
                       _order.ordersFinishingWorkChecklist,
                       Icons.check_circle,
-                      Colors.green,
+                      const Color.fromARGB(255, 167, 228, 25),
                       _order.ordersFinishingAccountId,
                     ),
                   ] else ...[

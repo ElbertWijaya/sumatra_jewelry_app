@@ -153,7 +153,11 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
         );
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Checklist berhasil diupdate')),
+        const SnackBar(
+          content: Text('Checklist berhasil diupdate!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
       );
     } finally {
       setState(() => _isProcessing = false);
@@ -421,7 +425,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
               final String imageUrl =
                   img.startsWith('http')
                       ? img
-                      : 'http://192.168.110.147/sumatra_api/orders_photo/$img';
+                      : 'http://192.168.7.25/sumatra_api/orders_photo/$img';
               return GestureDetector(
                 onTap: () {
                   showDialog(
@@ -673,7 +677,7 @@ class _CarverDetailScreenState extends State<CarverDetailScreen> {
                       finisherTasks,
                       _order.ordersFinishingWorkChecklist,
                       Icons.check_circle,
-                      Colors.green,
+                      const Color.fromARGB(255, 167, 228, 25),
                       _order.ordersFinishingAccountId,
                     ),
                   ] else ...[

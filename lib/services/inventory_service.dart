@@ -8,7 +8,7 @@ class InventoryService {
   // API: Get inventory list from remote server
   Future<List<Inventory>> getInventoryList() async {
     final response = await http.get(
-      Uri.parse('http://192.168.110.147/sumatra_api/get_inventory_list.php'),
+      Uri.parse('http://192.168.7.25/sumatra_api/get_inventory_list.php'),
     );
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);

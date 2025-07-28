@@ -153,7 +153,11 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
         );
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Checklist berhasil diupdate')),
+        const SnackBar(
+          content: Text('Checklist berhasil diupdate!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
       );
     } finally {
       setState(() => _isProcessing = false);
@@ -226,6 +230,30 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
                   Text(
                     'Dikerjakan oleh $userName',
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+                // Tambahkan status inventory di dalam card Inventory
+                if (title == 'Inventory' && accountId != null) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        color: Colors.green[700],
+                        size: 22,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Pesanan ini sudah memiliki data inventory lengkap dan siap untuk tahap sales completion.',
+                          style: TextStyle(
+                            color: Colors.green[900],
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
                 const SizedBox(height: 8),
@@ -421,7 +449,7 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
               final String imageUrl =
                   img.startsWith('http')
                       ? img
-                      : 'http://192.168.110.147/sumatra_api/orders_photo/$img';
+                      : 'http://192.168.7.25/sumatra_api/orders_photo/$img';
               return GestureDetector(
                 onTap: () {
                   showDialog(
@@ -673,8 +701,17 @@ class _CorDetailScreenState extends State<CorDetailScreen> {
                       finisherTasks,
                       _order.ordersFinishingWorkChecklist,
                       Icons.check_circle,
-                      Colors.green,
+                      const Color.fromARGB(255, 167, 228, 25),
                       _order.ordersFinishingAccountId,
+                    ),
+                    _buildChecklistWithAccount(
+                      context,
+                      'Inventory',
+                      [], // Tidak ada checklist inventory, hanya status
+                      null,
+                      Icons.inventory,
+                      Colors.teal,
+                      _order.ordersInventoryAccountId,
                     ),
                   ] else ...[
                     // Untuk tab lain, tampilkan hanya checklist cor
