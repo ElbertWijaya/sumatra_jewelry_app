@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import '../../models/inventory.dart';
 import '../../services/inventory_service.dart';
 
@@ -21,16 +22,46 @@ class _InventoryDataEditScreenState extends State<InventoryDataEditScreen> {
   final InventoryService _inventoryService = InventoryService();
 
   // Form controllers
-  late TextEditingController _jewelryTypeController;
-  late TextEditingController _goldTypeController;
-  late TextEditingController _goldColorController;
   late TextEditingController _ringSizeController;
   late TextEditingController _itemsPriceController;
+
+  // Dropdown values
+  String? _selectedJewelryType;
+  String? _selectedGoldType;
+  String? _selectedGoldColor;
 
   List<Map<String, dynamic>> _stoneUsed = [];
   List<String> _imagePaths = [];
   final List<File> _newImages = [];
   bool _isLoading = false;
+
+  // Dropdown options
+  static const List<String> jewelryTypes = [
+    'Ring',
+    'Bangle',
+    'Earring',
+    'Pendant',
+    'Hairpin',
+    'Pin',
+    'Men Ring',
+    'Women Ring',
+    'Wedding Ring',
+  ];
+
+  static const List<String> goldTypes = ['19K', '18K', '14K', '9K'];
+
+  static const List<String> goldColors = [
+    'White Gold',
+    'Rose Gold',
+    'Yellow Gold',
+  ];
+
+  final NumberFormat _currencyFormat = NumberFormat.currency(
+    locale: 'id',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
+  String _rawPrice = '';
 
   @override
   void initState() {
@@ -39,21 +70,27 @@ class _InventoryDataEditScreenState extends State<InventoryDataEditScreen> {
   }
 
   void _initializeData() {
-    _jewelryTypeController = TextEditingController(
-      text: widget.inventory.InventoryJewelryType ?? '',
-    );
-    _goldTypeController = TextEditingController(
-      text: widget.inventory.InventoryGoldType ?? '',
-    );
-    _goldColorController = TextEditingController(
-      text: widget.inventory.InventoryGoldColor ?? '',
-    );
+    _selectedJewelryType = widget.inventory.InventoryJewelryType;
+    _selectedGoldType = widget.inventory.InventoryGoldType;
+    _selectedGoldColor = widget.inventory.InventoryGoldColor;
+
     _ringSizeController = TextEditingController(
       text: widget.inventory.InventoryRingSize ?? '',
     );
-    _itemsPriceController = TextEditingController(
-      text: widget.inventory.InventoryItemsPrice ?? '',
-    );
+    _itemsPriceController = TextEditingController();
+
+    // Format price untuk display
+    if (widget.inventory.InventoryItemsPrice != null &&
+        widget.inventory.InventoryItemsPrice!.isNotEmpty) {
+      _rawPrice = widget.inventory.InventoryItemsPrice!.replaceAll(
+        RegExp(r'[^0-9]'),
+        '',
+      );
+      if (_rawPrice.isNotEmpty) {
+        String formatted = _currencyFormat.format(int.parse(_rawPrice));
+        _itemsPriceController.text = formatted;
+      }
+    }
 
     _stoneUsed = List<Map<String, dynamic>>.from(
       widget.inventory.InventoryStoneUsed,
@@ -63,9 +100,6 @@ class _InventoryDataEditScreenState extends State<InventoryDataEditScreen> {
 
   @override
   void dispose() {
-    _jewelryTypeController.dispose();
-    _goldTypeController.dispose();
-    _goldColorController.dispose();
     _ringSizeController.dispose();
     _itemsPriceController.dispose();
     super.dispose();
@@ -152,11 +186,11 @@ class _InventoryDataEditScreenState extends State<InventoryDataEditScreen> {
 
       // Create updated inventory
       final updatedInventory = widget.inventory.copyWith(
-        InventoryJewelryType: _jewelryTypeController.text,
-        InventoryGoldType: _goldTypeController.text,
-        InventoryGoldColor: _goldColorController.text,
+        InventoryJewelryType: _selectedJewelryType,
+        InventoryGoldType: _selectedGoldType,
+        InventoryGoldColor: _selectedGoldColor,
         InventoryRingSize: _ringSizeController.text,
-        InventoryItemsPrice: _itemsPriceController.text,
+        InventoryItemsPrice: _rawPrice,
         InventoryStoneUsed: _stoneUsed,
         InventoryImagePaths: allImagePaths,
         InventoryUpdatedAt: DateTime.now(),
@@ -236,8 +270,20 @@ class _InventoryDataEditScreenState extends State<InventoryDataEditScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
               const SizedBox(height: 10),
-              TextFormField(
-                controller: _jewelryTypeController,
+              DropdownButtonFormField<String>(
+                value: _selectedJewelryType,
+                items:
+                    jewelryTypes
+                        .map(
+                          (type) =>
+                              DropdownMenuItem(value: type, child: Text(type)),
+                        )
+                        .toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _selectedJewelryType = val;
+                  });
+                },
                 decoration: const InputDecoration(
                   labelText: 'Jenis Perhiasan',
                   border: OutlineInputBorder(),
@@ -257,29 +303,65 @@ class _InventoryDataEditScreenState extends State<InventoryDataEditScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
               const SizedBox(height: 10),
-              TextFormField(
-                controller: _goldTypeController,
+              DropdownButtonFormField<String>(
+                value: _selectedGoldType,
+                items:
+                    goldTypes
+                        .map(
+                          (type) =>
+                              DropdownMenuItem(value: type, child: Text(type)),
+                        )
+                        .toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _selectedGoldType = val;
+                  });
+                },
                 decoration: const InputDecoration(
                   labelText: 'Jenis Emas',
                   border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _goldColorController,
+              DropdownButtonFormField<String>(
+                value: _selectedGoldColor,
+                items:
+                    goldColors
+                        .map(
+                          (color) => DropdownMenuItem(
+                            value: color,
+                            child: Text(color),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _selectedGoldColor = val;
+                  });
+                },
                 decoration: const InputDecoration(
                   labelText: 'Warna Emas',
                   border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _ringSizeController,
-                decoration: const InputDecoration(
-                  labelText: 'Ukuran Ring',
-                  border: OutlineInputBorder(),
+              // Ring Size (hanya tampil untuk jenis ring tertentu)
+              if (_selectedJewelryType == 'Ring' ||
+                  _selectedJewelryType == 'Men Ring' ||
+                  _selectedJewelryType == 'Women Ring' ||
+                  _selectedJewelryType == 'Wedding Ring')
+                Column(
+                  children: [
+                    TextFormField(
+                      controller: _ringSizeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Ukuran Ring',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                 ),
-              ),
               const SizedBox(height: 16),
 
               // Price Information
@@ -293,9 +375,28 @@ class _InventoryDataEditScreenState extends State<InventoryDataEditScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Harga Item',
                   border: OutlineInputBorder(),
-                  prefixText: 'Rp ',
                 ),
                 keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  // Hanya angka
+                  String raw = value.replaceAll(RegExp(r'[^0-9]'), '');
+                  if (raw.isEmpty) {
+                    _itemsPriceController.text = '';
+                    _rawPrice = '';
+                    _itemsPriceController.selection = TextSelection.collapsed(
+                      offset: 0,
+                    );
+                    return;
+                  }
+                  _rawPrice = raw;
+                  String formatted = _currencyFormat.format(int.parse(raw));
+                  _itemsPriceController.value = TextEditingValue(
+                    text: formatted,
+                    selection: TextSelection.collapsed(
+                      offset: formatted.length,
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 16),
 
