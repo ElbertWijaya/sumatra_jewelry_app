@@ -1,5 +1,7 @@
 import '../../services/account_service.dart';
+import '../../services/order_service.dart';
 import '../../models/accounts.dart';
+import '../history/order_history_screen.dart';
 import 'package:flutter/material.dart';
 import '../../models/order.dart';
 import 'package:intl/intl.dart';
@@ -381,6 +383,29 @@ class SalesDetailScreen extends StatelessWidget {
                     padding: const EdgeInsets.only(right: 8),
                     child: Row(
                       children: [
+                        CircleAvatar(
+                          backgroundColor: const Color(0xFFD4AF37),
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.history,
+                              color: Colors.white,
+                            ),
+                            tooltip: 'History',
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => OrderHistoryScreen(
+                                        ordersId: order.ordersId,
+                                        customerName: order.ordersCustomerName,
+                                      ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         CircleAvatar(
                           backgroundColor: const Color(0xFFD4AF37),
                           child: IconButton(
@@ -794,79 +819,296 @@ class SalesDetailScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[700],
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    icon: const Icon(Icons.send),
-                    label: const Text(
-                      'Submit ke Designer',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    onPressed: () async {
-                      // Submit ke Designer: update workflow pesanan ke waitingDesigner
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder:
-                            (ctx) => const Center(
-                              child: CircularProgressIndicator(),
+                  child:
+                      order.ordersWorkflowStatus ==
+                              OrderWorkflowStatus.waitingSalesCompletion
+                          ? ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green[700],
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                             ),
-                      );
-                      try {
-                        final response = await http.post(
-                          Uri.parse(
-                            'http://10.173.96.56/sumatra_api/update_orders.php',
+                            icon: const Icon(Icons.check_circle),
+                            label: const Text(
+                              'Selesaikan Pesanan',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            onPressed: () async {
+                              // Konfirmasi sebelum menyelesaikan pesanan
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder:
+                                    (ctx) => AlertDialog(
+                                      title: const Text('Konfirmasi'),
+                                      content: const Text(
+                                        'Apakah Anda yakin ingin menyelesaikan pesanan ini? Pesanan akan ditandai sebagai selesai dan tidak dapat diubah lagi.',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          child: const Text('Batal'),
+                                          onPressed:
+                                              () => Navigator.pop(ctx, false),
+                                        ),
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.green,
+                                          ),
+                                          child: const Text('Ya, Selesaikan'),
+                                          onPressed:
+                                              () => Navigator.pop(ctx, true),
+                                        ),
+                                      ],
+                                    ),
+                              );
+
+                              if (confirm == true) {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder:
+                                      (ctx) => const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                );
+                                try {
+                                  final orderService = OrderService();
+
+                                  // Buat copy order dengan status done
+                                  final completedOrder = Order(
+                                    ordersId: order.ordersId,
+                                    ordersCustomerName:
+                                        order.ordersCustomerName,
+                                    ordersCustomerContact:
+                                        order.ordersCustomerContact,
+                                    ordersAddress: order.ordersAddress,
+                                    ordersJewelryType: order.ordersJewelryType,
+                                    ordersGoldType: order.ordersGoldType,
+                                    ordersGoldColor: order.ordersGoldColor,
+                                    ordersNote: order.ordersNote,
+                                    ordersRingSize: order.ordersRingSize,
+                                    ordersImagePaths: order.ordersImagePaths,
+                                    ordersWorkflowStatus:
+                                        OrderWorkflowStatus.done,
+                                    ordersDesignerWorkChecklist:
+                                        order.ordersDesignerWorkChecklist,
+                                    ordersCastingWorkChecklist:
+                                        order.ordersCastingWorkChecklist,
+                                    ordersCarvingWorkChecklist:
+                                        order.ordersCarvingWorkChecklist,
+                                    ordersDiamondSettingWorkChecklist:
+                                        order.ordersDiamondSettingWorkChecklist,
+                                    ordersFinishingWorkChecklist:
+                                        order.ordersFinishingWorkChecklist,
+                                    ordersPickupDate: order.ordersPickupDate,
+                                    ordersReadyDate: order.ordersReadyDate,
+                                    ordersGoldPricePerGram:
+                                        order.ordersGoldPricePerGram,
+                                    ordersFinalPrice: order.ordersFinalPrice,
+                                    ordersDp: order.ordersDp,
+                                    ordersSisaLunas: order.ordersSisaLunas,
+                                    ordersSalesAccountId:
+                                        order.ordersSalesAccountId,
+                                    ordersDesignerAccountId:
+                                        order.ordersDesignerAccountId,
+                                    ordersCastingAccountId:
+                                        order.ordersCastingAccountId,
+                                    ordersCarvingAccountId:
+                                        order.ordersCarvingAccountId,
+                                    ordersDiamondSettingAccountId:
+                                        order.ordersDiamondSettingAccountId,
+                                    ordersFinishingAccountId:
+                                        order.ordersFinishingAccountId,
+                                    ordersInventoryAccountId:
+                                        order.ordersInventoryAccountId,
+                                    ordersCreatedAt: order.ordersCreatedAt,
+                                    ordersUpdatedAt: DateTime.now(),
+                                  );
+
+                                  // Update menggunakan service baru yang otomatis log history
+                                  final success = await orderService
+                                      .updateOrder(completedOrder);
+
+                                  Navigator.pop(context); // tutup loading
+
+                                  if (success) {
+                                    // Log custom history untuk penyelesaian pesanan
+                                    await orderService.logCustomHistory(
+                                      ordersId: order.ordersId,
+                                      action: 'ORDER_COMPLETED',
+                                      description:
+                                          'Pesanan diselesaikan oleh sales',
+                                      additionalData: {
+                                        'previous_status':
+                                            order.ordersWorkflowStatus.name,
+                                        'new_status': 'done',
+                                        'completion_date':
+                                            DateTime.now().toIso8601String(),
+                                      },
+                                    );
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Pesanan berhasil diselesaikan!',
+                                        ),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                    Navigator.pop(
+                                      context,
+                                      true,
+                                    ); // kembali ke dashboard sales dan refresh
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Gagal menyelesaikan pesanan',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  Navigator.pop(context); // tutup loading
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Gagal menyelesaikan pesanan: $e',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                          )
+                          : ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue[700],
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            icon: const Icon(Icons.send),
+                            label: const Text(
+                              'Submit ke Designer',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            onPressed: () async {
+                              // Submit ke Designer: update workflow pesanan ke waitingDesigner
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder:
+                                    (ctx) => const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                              );
+                              try {
+                                final orderService = OrderService();
+
+                                // Buat copy order dengan status baru
+                                final updatedOrder = Order(
+                                  ordersId: order.ordersId,
+                                  ordersCustomerName: order.ordersCustomerName,
+                                  ordersCustomerContact:
+                                      order.ordersCustomerContact,
+                                  ordersAddress: order.ordersAddress,
+                                  ordersJewelryType: order.ordersJewelryType,
+                                  ordersGoldType: order.ordersGoldType,
+                                  ordersGoldColor: order.ordersGoldColor,
+                                  ordersNote: order.ordersNote,
+                                  ordersRingSize: order.ordersRingSize,
+                                  ordersImagePaths: order.ordersImagePaths,
+                                  ordersWorkflowStatus:
+                                      OrderWorkflowStatus.waitingDesigner,
+                                  ordersDesignerWorkChecklist:
+                                      order.ordersDesignerWorkChecklist,
+                                  ordersCastingWorkChecklist:
+                                      order.ordersCastingWorkChecklist,
+                                  ordersCarvingWorkChecklist:
+                                      order.ordersCarvingWorkChecklist,
+                                  ordersDiamondSettingWorkChecklist:
+                                      order.ordersDiamondSettingWorkChecklist,
+                                  ordersFinishingWorkChecklist:
+                                      order.ordersFinishingWorkChecklist,
+                                  ordersPickupDate: order.ordersPickupDate,
+                                  ordersReadyDate: order.ordersReadyDate,
+                                  ordersGoldPricePerGram:
+                                      order.ordersGoldPricePerGram,
+                                  ordersFinalPrice: order.ordersFinalPrice,
+                                  ordersDp: order.ordersDp,
+                                  ordersSisaLunas: order.ordersSisaLunas,
+                                  ordersSalesAccountId:
+                                      order.ordersSalesAccountId,
+                                  ordersDesignerAccountId:
+                                      order.ordersDesignerAccountId,
+                                  ordersCastingAccountId:
+                                      order.ordersCastingAccountId,
+                                  ordersCarvingAccountId:
+                                      order.ordersCarvingAccountId,
+                                  ordersDiamondSettingAccountId:
+                                      order.ordersDiamondSettingAccountId,
+                                  ordersFinishingAccountId:
+                                      order.ordersFinishingAccountId,
+                                  ordersInventoryAccountId:
+                                      order.ordersInventoryAccountId,
+                                  ordersCreatedAt: order.ordersCreatedAt,
+                                  ordersUpdatedAt: DateTime.now(),
+                                );
+
+                                // Update menggunakan service baru yang otomatis log history
+                                final success = await orderService.updateOrder(
+                                  updatedOrder,
+                                );
+
+                                Navigator.pop(context); // tutup loading
+
+                                if (success) {
+                                  // Log custom history untuk aksi submit
+                                  await orderService.logCustomHistory(
+                                    ordersId: order.ordersId,
+                                    action: 'SUBMIT_TO_DESIGNER',
+                                    description:
+                                        'Pesanan disubmit ke designer oleh sales',
+                                    additionalData: {
+                                      'previous_status':
+                                          'waitingSalesCompletion',
+                                      'new_status': 'waitingDesigner',
+                                    },
+                                  );
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Pesanan dikirim ke Designer!',
+                                      ),
+                                    ),
+                                  );
+                                  Navigator.pop(
+                                    context,
+                                    true,
+                                  ); // kembali ke dashboard sales dan refresh
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Gagal submit pesanan ke designer',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                Navigator.pop(context); // tutup loading
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Gagal submit: $e')),
+                                );
+                              }
+                            },
                           ),
-                          body: {
-                            'orders_id': order.ordersId.toString(),
-                            'orders_workflowStatus': 'waitingDesigner',
-                            'orders_updated_at':
-                                DateTime.now().toIso8601String(),
-                          },
-                        );
-                        Navigator.pop(context); // tutup loading
-                        if (response.statusCode == 200) {
-                          final resp = jsonDecode(response.body);
-                          if (resp['success'] == true) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Pesanan dikirim ke Designer!'),
-                              ),
-                            );
-                            Navigator.pop(
-                              context,
-                              true,
-                            ); // kembali ke dashboard sales dan refresh
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Gagal submit: ${resp['error'] ?? 'Unknown error'}',
-                                ),
-                              ),
-                            );
-                          }
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Gagal submit: ${response.body}'),
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        Navigator.pop(context); // tutup loading
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Gagal submit: $e')),
-                        );
-                      }
-                    },
-                  ),
                 ),
               )
               : null,

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import '../models/order.dart';
+import 'auth_service.dart';
 
 class OrderService {
   static const String baseUrl =
@@ -83,6 +84,10 @@ class OrderService {
   }
 
   Future<bool> updateOrder(Order order) async {
+    // Dapatkan user ID untuk history tracking
+    final authService = AuthService();
+    final currentUserId = authService.currentUserId;
+
     final Map<String, String> body = {
       'orders_id': order.ordersId,
       'orders_customer_name': order.ordersCustomerName,
@@ -110,6 +115,8 @@ class OrderService {
       'orders_finishingWorkChecklist': jsonEncode(
         order.ordersFinishingWorkChecklist,
       ),
+      // Tambahkan user ID untuk history tracking
+      'updated_by': currentUserId ?? '0',
     };
     // Tanggal hanya dikirim jika tidak null
     if (order.ordersPickupDate != null) {
@@ -164,7 +171,9 @@ class OrderService {
     }
 
     final response = await http.post(
-      Uri.parse('http://10.173.96.56/sumatra_api/update_orders.php'),
+      Uri.parse(
+        'http://10.173.96.56/sumatra_api/update_orders_with_history.php',
+      ),
       body: body,
     );
     if (response.statusCode != 200) return false;
@@ -202,5 +211,135 @@ class OrderService {
     } else {
       throw Exception('Gagal memuat pesanan: ${response.statusCode}');
     }
+  }
+
+  // History methods
+  Future<List<Map<String, dynamic>>> getOrderHistory(String ordersId) async {
+    final response = await http.get(
+      Uri.parse(
+        'http://10.173.96.56/sumatra_api/get_history.php?type=order&order_id=$ordersId',
+      ),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        return List<Map<String, dynamic>>.from(data['data']);
+      }
+    }
+    throw Exception('Gagal memuat history pesanan: ${response.statusCode}');
+  }
+
+  Future<List<Map<String, dynamic>>> getOrderTimeline(String ordersId) async {
+    final response = await http.get(
+      Uri.parse(
+        'http://10.173.96.56/sumatra_api/get_history.php?type=timeline&order_id=$ordersId',
+      ),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        return List<Map<String, dynamic>>.from(data['data']);
+      }
+    }
+    throw Exception('Gagal memuat timeline pesanan: ${response.statusCode}');
+  }
+
+  Future<List<Map<String, dynamic>>> getWorkflowTransitions(
+    String ordersId,
+  ) async {
+    final response = await http.get(
+      Uri.parse(
+        'http://10.173.96.56/sumatra_api/get_history.php?type=workflow&order_id=$ordersId',
+      ),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        return List<Map<String, dynamic>>.from(data['data']);
+      }
+    }
+    throw Exception(
+      'Gagal memuat workflow transitions: ${response.statusCode}',
+    );
+  }
+
+  Future<Map<String, dynamic>> getOrderSnapshot(
+    String ordersId,
+    DateTime? date,
+  ) async {
+    String url =
+        'http://10.173.96.56/sumatra_api/get_history.php?type=snapshot&order_id=$ordersId';
+    if (date != null) {
+      url += '&date=${date.toIso8601String()}';
+    }
+
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        return data['data'];
+      }
+    }
+    throw Exception('Gagal memuat snapshot pesanan: ${response.statusCode}');
+  }
+
+  Future<Map<String, dynamic>> getDashboardStats() async {
+    final response = await http.get(
+      Uri.parse('http://10.173.96.56/sumatra_api/history_dashboard.php'),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        return data['data'];
+      }
+    }
+    throw Exception('Gagal memuat dashboard stats: ${response.statusCode}');
+  }
+
+  Future<List<Map<String, dynamic>>> getRecentActivity({int limit = 10}) async {
+    final response = await http.get(
+      Uri.parse(
+        'http://10.173.96.56/sumatra_api/get_history.php?type=recent&limit=$limit',
+      ),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        return List<Map<String, dynamic>>.from(data['data']);
+      }
+    }
+    throw Exception('Gagal memuat recent activity: ${response.statusCode}');
+  }
+
+  Future<bool> logCustomHistory({
+    required String ordersId,
+    required String action,
+    required String description,
+    Map<String, dynamic>? additionalData,
+  }) async {
+    final authService = AuthService();
+    final currentUserId = authService.currentUserId;
+
+    final Map<String, String> body = {
+      'order_id': ordersId,
+      'action': action,
+      'description': description,
+      'changed_by': currentUserId ?? '0',
+    };
+
+    if (additionalData != null) {
+      body['additional_data'] = jsonEncode(additionalData);
+    }
+
+    final response = await http.post(
+      Uri.parse('http://10.173.96.56/sumatra_api/history_logger.php'),
+      body: body,
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['success'] == true;
+    }
+    return false;
   }
 }

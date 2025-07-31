@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/inventory.dart';
 import 'package:sqflite/sqflite.dart';
 import 'database_helper.dart';
+import 'auth_service.dart';
 
 class InventoryService {
   // API: Get inventory list from remote server
@@ -32,8 +33,14 @@ class InventoryService {
 
   // API: Update inventory data
   Future<bool> updateInventoryAPI(Inventory inventory) async {
+    // Dapatkan user ID untuk history tracking
+    final authService = AuthService();
+    final currentUserId = authService.currentUserId;
+
     final response = await http.post(
-      Uri.parse('http://10.173.96.56/sumatra_api/update_inventory.php'),
+      Uri.parse(
+        'http://10.173.96.56/sumatra_api/update_inventory_with_history.php',
+      ),
       body: {
         'inventory_id': inventory.InventoryId,
         'inventory_product_id': inventory.InventoryProductId,
@@ -44,6 +51,8 @@ class InventoryService {
         'inventory_items_price': inventory.InventoryItemsPrice ?? '0',
         'inventory_imagePaths': jsonEncode(inventory.InventoryImagePaths),
         'inventory_stone_used': jsonEncode(inventory.InventoryStoneUsed),
+        // Tambahkan user ID untuk history tracking
+        'updated_by': currentUserId ?? '0',
       },
     );
 
@@ -103,5 +112,96 @@ class InventoryService {
       where: 'inventory_product_id = ?',
       whereArgs: [id],
     );
+  }
+
+  // Inventory History methods
+  Future<List<Map<String, dynamic>>> getInventoryHistory(
+    String inventoryId,
+  ) async {
+    final response = await http.get(
+      Uri.parse(
+        'http://10.173.96.56/sumatra_api/get_history.php?type=inventory&inventory_id=$inventoryId',
+      ),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        return List<Map<String, dynamic>>.from(data['data']);
+      }
+    }
+    throw Exception('Gagal memuat history inventory: ${response.statusCode}');
+  }
+
+  Future<List<Map<String, dynamic>>> getInventoryTimeline(
+    String inventoryId,
+  ) async {
+    final response = await http.get(
+      Uri.parse(
+        'http://10.173.96.56/sumatra_api/get_history.php?type=inventory_timeline&inventory_id=$inventoryId',
+      ),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        return List<Map<String, dynamic>>.from(data['data']);
+      }
+    }
+    throw Exception('Gagal memuat timeline inventory: ${response.statusCode}');
+  }
+
+  Future<Map<String, dynamic>> getInventorySnapshot(
+    String inventoryId,
+    DateTime? date,
+  ) async {
+    String url =
+        'http://10.173.96.56/sumatra_api/get_history.php?type=inventory_snapshot&inventory_id=$inventoryId';
+    if (date != null) {
+      url += '&date=${date.toIso8601String()}';
+    }
+
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        return data['data'];
+      }
+    }
+    throw Exception('Gagal memuat snapshot inventory: ${response.statusCode}');
+  }
+
+  Future<bool> logInventoryHistory({
+    required String inventoryId,
+    required String action,
+    required String description,
+    Map<String, dynamic>? oldData,
+    Map<String, dynamic>? newData,
+  }) async {
+    final authService = AuthService();
+    final currentUserId = authService.currentUserId;
+
+    final Map<String, String> body = {
+      'inventory_id': inventoryId,
+      'action': action,
+      'description': description,
+      'changed_by': currentUserId ?? '0',
+    };
+
+    if (oldData != null) {
+      body['old_data'] = jsonEncode(oldData);
+    }
+    if (newData != null) {
+      body['new_data'] = jsonEncode(newData);
+    }
+
+    final response = await http.post(
+      Uri.parse('http://10.173.96.56/sumatra_api/history_logger.php'),
+      body: body,
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['success'] == true;
+    }
+    return false;
   }
 }

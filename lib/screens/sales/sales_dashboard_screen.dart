@@ -5,6 +5,7 @@ import '../../models/order.dart';
 import '../../services/order_service.dart';
 import '../../services/auth_service.dart';
 import 'sales_detail_screen.dart';
+import '../history/history_dashboard_screen.dart';
 
 class SalesDashboardScreen extends StatefulWidget {
   const SalesDashboardScreen({super.key});
@@ -187,13 +188,16 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
       final currentUserIdInt =
           currentUserId != null ? int.tryParse(currentUserId) : null;
       filtered =
-          filtered
-              .where(
-                (order) =>
-                    waitingStatuses.contains(order.ordersWorkflowStatus) &&
-                    order.ordersSalesAccountId == currentUserIdInt,
-              )
-              .toList();
+          filtered.where((order) {
+            // Jika order dalam status waitingSalesCompletion, tampilkan ke semua sales
+            if (order.ordersWorkflowStatus ==
+                OrderWorkflowStatus.waitingSalesCompletion) {
+              return true;
+            }
+            // Untuk status lainnya, filter berdasarkan sales yang sedang login
+            return waitingStatuses.contains(order.ordersWorkflowStatus) &&
+                order.ordersSalesAccountId == currentUserIdInt;
+          }).toList();
     } else if (_selectedTab == 'onprogress') {
       // Filter berdasarkan sales yang sedang login dan status on progress
       final currentUserId = AuthService().currentUserId;
@@ -592,13 +596,16 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
     if (value == 'waiting') {
       // Filter berdasarkan sales yang sedang login dan status waiting
       count =
-          _orders
-              .where(
-                (order) =>
-                    waitingStatuses.contains(order.ordersWorkflowStatus) &&
-                    order.ordersSalesAccountId == currentUserIdInt,
-              )
-              .length;
+          _orders.where((order) {
+            // Jika order dalam status waitingSalesCompletion, tampilkan ke semua sales
+            if (order.ordersWorkflowStatus ==
+                OrderWorkflowStatus.waitingSalesCompletion) {
+              return true;
+            }
+            // Untuk status lainnya, filter berdasarkan sales yang sedang login
+            return waitingStatuses.contains(order.ordersWorkflowStatus) &&
+                order.ordersSalesAccountId == currentUserIdInt;
+          }).length;
     } else if (value == 'onprogress') {
       // Filter berdasarkan sales yang sedang login dan status on progress
       count =
@@ -711,6 +718,18 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.analytics),
+            tooltip: 'Analytics Dashboard',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const HistoryDashboardScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
           IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
         ],
