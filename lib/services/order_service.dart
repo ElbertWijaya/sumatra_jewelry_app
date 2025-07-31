@@ -5,7 +5,7 @@ import '../models/order.dart';
 
 class OrderService {
   static const String baseUrl =
-      'http://192.168.7.25/sumatra_api/get_orders.php';
+      'http://10.173.96.56/sumatra_api/get_orders.php';
 
   Future<List<Order>> getOrders() async {
     final response = await http.get(Uri.parse(baseUrl));
@@ -28,7 +28,7 @@ class OrderService {
   Future<void> addOrders(Order order) async {
     print('ImagePaths yang dikirim: ${jsonEncode(order.ordersImagePaths)}');
     final response = await http.post(
-      Uri.parse('http://192.168.7.25/sumatra_api/add_orders.php'),
+      Uri.parse('http://10.173.96.56/sumatra_api/add_orders.php'),
       body: {
         'orders_id': order.ordersId,
         'orders_customer_name': order.ordersCustomerName,
@@ -164,7 +164,7 @@ class OrderService {
     }
 
     final response = await http.post(
-      Uri.parse('http://192.168.7.25/sumatra_api/update_orders.php'),
+      Uri.parse('http://10.173.96.56/sumatra_api/update_orders.php'),
       body: body,
     );
     if (response.statusCode != 200) return false;
@@ -175,7 +175,7 @@ class OrderService {
   Future<void> deleteOrders(String ordersId) async {
     final response = await http.delete(
       Uri.parse(
-        'http://192.168.7.25/sumatra_api/delete_orders.php?orders_id=$ordersId',
+        'http://10.173.96.56/sumatra_api/delete_orders.php?orders_id=$ordersId',
       ),
     );
     if (response.statusCode != 200) {
@@ -190,7 +190,7 @@ class OrderService {
   Future<Order> getOrderById(String ordersId) async {
     final response = await http.get(
       Uri.parse(
-        'http://192.168.7.25/sumatra_api/get_order_by_id.php?orders_id=$ordersId',
+        'http://10.173.96.56/sumatra_api/get_order_by_id.php?orders_id=$ordersId',
       ),
     );
     print('API Response: ${response.body}'); // DEBUG: print response API

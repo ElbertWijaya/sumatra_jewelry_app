@@ -5,7 +5,7 @@ import '../models/accounts.dart';
 class AccountService {
   static Future<String?> getAccountNameById(int accountsId) async {
     final url = Uri.parse(
-      'http://192.168.7.25/sumatra_api/get_accounts_by_id.php?accounts_id=${accountsId.toString()}',
+      'http://10.173.96.56/sumatra_api/get_accounts_by_id.php?accounts_id=${accountsId.toString()}',
     );
     final response = await http.get(url);
     if (response.statusCode == 200) {
@@ -21,7 +21,7 @@ class AccountService {
 
   static Future<Account?> getAccountById(int accountsId) async {
     final url = Uri.parse(
-      'http://192.168.7.25/sumatra_api/get_accounts_by_id.php?accounts_id=${accountsId.toString()}',
+      'http://10.173.96.56/sumatra_api/get_accounts_by_id.php?accounts_id=${accountsId.toString()}',
     );
     final response = await http.get(url);
     if (response.statusCode == 200) {

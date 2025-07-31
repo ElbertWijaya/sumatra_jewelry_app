@@ -254,7 +254,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.7.25/sumatra_api/upload_image.php'),
+        Uri.parse('http://10.173.96.56/sumatra_api/upload_image.php'),
       );
       request.files.add(
         await http.MultipartFile.fromPath('image', imageFile.path),
@@ -333,7 +333,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
     final updatedAt = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.7.25/sumatra_api/update_orders.php'),
+        Uri.parse('http://10.173.96.56/sumatra_api/update_orders.php'),
         body: {
           'orders_id': widget.orderData['orders_id'],
           'orders_customer_name': _customerNameController.text,
@@ -406,7 +406,7 @@ class _SalesEditScreenState extends State<SalesEditScreen> {
     setState(() => _isLoading = true);
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.7.25/sumatra_api/delete_orders.php'),
+        Uri.parse('http://10.173.96.56/sumatra_api/delete_orders.php'),
         body: {'orders_id': widget.orderData['orders_id']},
       );
       setState(() => _isLoading = false);

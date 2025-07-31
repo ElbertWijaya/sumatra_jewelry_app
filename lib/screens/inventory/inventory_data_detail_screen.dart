@@ -160,7 +160,7 @@ class _InventoryDataDetailScreenState extends State<InventoryDataDetailScreen> {
               final String imageUrl =
                   img.startsWith('http')
                       ? img
-                      : 'http://192.168.7.25/sumatra_api/inventory_photo/$img';
+                      : 'http://10.173.96.56/sumatra_api/inventory_photo/$img';
               return GestureDetector(
                 onTap: () {
                   // Bisa ditambahkan preview gambar full screen di sini

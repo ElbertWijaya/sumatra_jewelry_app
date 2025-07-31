@@ -434,7 +434,7 @@ class _DesignerDetailScreenState extends State<DesignerDetailScreen> {
               final String imageUrl =
                   img.startsWith('http')
                       ? img
-                      : 'http://192.168.7.25/sumatra_api/orders_photo/$img';
+                      : 'http://10.173.96.56/sumatra_api/orders_photo/$img';
               return GestureDetector(
                 onTap: () {
                   showDialog(

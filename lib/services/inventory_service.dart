@@ -10,7 +10,7 @@ class InventoryService {
     try {
       print('DEBUG: Calling get_inventory.php...');
       final response = await http.get(
-        Uri.parse('http://192.168.7.25/sumatra_api/get_inventory.php'),
+        Uri.parse('http://10.173.96.56/sumatra_api/get_inventory.php'),
       );
       print('DEBUG: Response status: ${response.statusCode}');
       print('DEBUG: Response body: ${response.body}');
@@ -33,7 +33,7 @@ class InventoryService {
   // API: Update inventory data
   Future<bool> updateInventoryAPI(Inventory inventory) async {
     final response = await http.post(
-      Uri.parse('http://192.168.7.25/sumatra_api/update_inventory.php'),
+      Uri.parse('http://10.173.96.56/sumatra_api/update_inventory.php'),
       body: {
         'inventory_id': inventory.InventoryId,
         'inventory_product_id': inventory.InventoryProductId,
