@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import '../../services/order_service.dart';
 
 class HistoryDashboardScreen extends StatefulWidget {
-  const HistoryDashboardScreen({Key? key}) : super(key: key);
+  const HistoryDashboardScreen({super.key});
 
   @override
   State<HistoryDashboardScreen> createState() => _HistoryDashboardScreenState();

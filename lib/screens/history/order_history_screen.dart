@@ -7,10 +7,10 @@ class OrderHistoryScreen extends StatefulWidget {
   final String customerName;
 
   const OrderHistoryScreen({
-    Key? key,
+    super.key,
     required this.ordersId,
     required this.customerName,
-  }) : super(key: key);
+  });
 
   @override
   State<OrderHistoryScreen> createState() => _OrderHistoryScreenState();
