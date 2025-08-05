@@ -176,7 +176,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://10.173.96.56/sumatra_api/upload_image.php'),
+        Uri.parse('http://192.168.110.147/sumatra_api/upload_image.php'),
       );
       request.files.add(
         await http.MultipartFile.fromPath('image', imageFile.path),
@@ -271,7 +271,7 @@ class _SalesCreateScreenState extends State<SalesCreateScreen> {
       // Ambil id user sales dari AuthService
       final salesAccountId = AuthService().currentUserId;
       final response = await http.post(
-        Uri.parse('http://10.173.96.56/sumatra_api/add_orders.php'),
+        Uri.parse('http://192.168.110.147/sumatra_api/add_orders.php'),
         body: {
           'orders_id': ordersId,
           'orders_customer_name': _customerNameController.text,

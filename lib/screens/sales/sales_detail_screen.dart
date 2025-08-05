@@ -301,7 +301,7 @@ class SalesDetailScreen extends StatelessWidget {
               final String imageUrl =
                   img.startsWith('http')
                       ? img
-                      : 'http://10.173.96.56/sumatra_api/orders_photo/$img';
+                      : 'http://192.168.110.147/sumatra_api/orders_photo/$img';
               return GestureDetector(
                 onTap: () {
                   showDialog(
@@ -466,7 +466,7 @@ class SalesDetailScreen extends StatelessWidget {
                                   // Panggil fungsi hapus pesanan dari backend
                                   final response = await http.post(
                                     Uri.parse(
-                                      'http://10.173.96.56/sumatra_api/delete_orders.php',
+                                      'http://192.168.110.147/sumatra_api/delete_orders.php',
                                     ),
                                     body: {
                                       'orders_id': order.ordersId.toString(),

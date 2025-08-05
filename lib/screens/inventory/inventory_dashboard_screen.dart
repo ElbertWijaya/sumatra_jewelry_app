@@ -461,7 +461,8 @@ class _InventoryDashboardScreenState extends State<InventoryDashboardScreen> {
       if (imagePath.startsWith('http')) {
         imageUrl = imagePath;
       } else {
-        imageUrl = 'http://10.173.96.56/sumatra_api/inventory_photo/$imagePath';
+        imageUrl =
+            'http://192.168.110.147/sumatra_api/inventory_photo/$imagePath';
       }
     }
 

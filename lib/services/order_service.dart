@@ -6,7 +6,7 @@ import 'auth_service.dart';
 
 class OrderService {
   static const String baseUrl =
-      'http://10.173.96.56/sumatra_api/get_orders.php';
+      'http://192.168.110.147/sumatra_api/get_orders.php';
 
   Future<List<Order>> getOrders() async {
     final response = await http.get(Uri.parse(baseUrl));
@@ -29,7 +29,7 @@ class OrderService {
   Future<void> addOrders(Order order) async {
     print('ImagePaths yang dikirim: ${jsonEncode(order.ordersImagePaths)}');
     final response = await http.post(
-      Uri.parse('http://10.173.96.56/sumatra_api/add_orders.php'),
+      Uri.parse('http://192.168.110.147/sumatra_api/add_orders.php'),
       body: {
         'orders_id': order.ordersId,
         'orders_customer_name': order.ordersCustomerName,
@@ -172,7 +172,7 @@ class OrderService {
 
     final response = await http.post(
       Uri.parse(
-        'http://10.173.96.56/sumatra_api/update_orders_with_history.php',
+        'http://192.168.110.147/sumatra_api/update_orders_with_history.php',
       ),
       body: body,
     );
@@ -184,7 +184,7 @@ class OrderService {
   Future<void> deleteOrders(String ordersId) async {
     final response = await http.delete(
       Uri.parse(
-        'http://10.173.96.56/sumatra_api/delete_orders.php?orders_id=$ordersId',
+        'http://192.168.110.147/sumatra_api/delete_orders.php?orders_id=$ordersId',
       ),
     );
     if (response.statusCode != 200) {
@@ -199,7 +199,7 @@ class OrderService {
   Future<Order> getOrderById(String ordersId) async {
     final response = await http.get(
       Uri.parse(
-        'http://10.173.96.56/sumatra_api/get_order_by_id.php?orders_id=$ordersId',
+        'http://192.168.110.147/sumatra_api/get_order_by_id.php?orders_id=$ordersId',
       ),
     );
     print('API Response: ${response.body}'); // DEBUG: print response API
@@ -217,7 +217,7 @@ class OrderService {
   Future<List<Map<String, dynamic>>> getOrderHistory(String ordersId) async {
     final response = await http.get(
       Uri.parse(
-        'http://10.173.96.56/sumatra_api/get_history.php?type=order&order_id=$ordersId',
+        'http://192.168.110.147/sumatra_api/get_history.php?type=order&order_id=$ordersId',
       ),
     );
     if (response.statusCode == 200) {
@@ -232,7 +232,7 @@ class OrderService {
   Future<List<Map<String, dynamic>>> getOrderTimeline(String ordersId) async {
     final response = await http.get(
       Uri.parse(
-        'http://10.173.96.56/sumatra_api/get_history.php?type=timeline&order_id=$ordersId',
+        'http://192.168.110.147/sumatra_api/get_history.php?type=timeline&order_id=$ordersId',
       ),
     );
     if (response.statusCode == 200) {
@@ -249,7 +249,7 @@ class OrderService {
   ) async {
     final response = await http.get(
       Uri.parse(
-        'http://10.173.96.56/sumatra_api/get_history.php?type=workflow&order_id=$ordersId',
+        'http://192.168.110.147/sumatra_api/get_history.php?type=workflow&order_id=$ordersId',
       ),
     );
     if (response.statusCode == 200) {
@@ -268,7 +268,7 @@ class OrderService {
     DateTime? date,
   ) async {
     String url =
-        'http://10.173.96.56/sumatra_api/get_history.php?type=snapshot&order_id=$ordersId';
+        'http://192.168.110.147/sumatra_api/get_history.php?type=snapshot&order_id=$ordersId';
     if (date != null) {
       url += '&date=${date.toIso8601String()}';
     }
@@ -285,7 +285,7 @@ class OrderService {
 
   Future<Map<String, dynamic>> getDashboardStats() async {
     final response = await http.get(
-      Uri.parse('http://10.173.96.56/sumatra_api/history_dashboard.php'),
+      Uri.parse('http://192.168.110.147/sumatra_api/history_dashboard.php'),
     );
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -299,7 +299,7 @@ class OrderService {
   Future<List<Map<String, dynamic>>> getRecentActivity({int limit = 10}) async {
     final response = await http.get(
       Uri.parse(
-        'http://10.173.96.56/sumatra_api/get_history.php?type=recent&limit=$limit',
+        'http://192.168.110.147/sumatra_api/get_history.php?type=recent&limit=$limit',
       ),
     );
     if (response.statusCode == 200) {
@@ -332,7 +332,7 @@ class OrderService {
     }
 
     final response = await http.post(
-      Uri.parse('http://10.173.96.56/sumatra_api/history_logger.php'),
+      Uri.parse('http://192.168.110.147/sumatra_api/history_logger.php'),
       body: body,
     );
 

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class HistoryService {
-  static const String baseUrl = 'http://10.173.96.56/sumatra_api';
+  static const String baseUrl = 'http://192.168.110.147/sumatra_api';
 
   // Get order history timeline
   static Future<List<Map<String, dynamic>>> getOrderTimeline(

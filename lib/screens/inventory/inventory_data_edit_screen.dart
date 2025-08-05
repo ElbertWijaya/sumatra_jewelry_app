@@ -120,7 +120,9 @@ class _InventoryDataEditScreenState extends State<InventoryDataEditScreen> {
     try {
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://10.173.96.56/sumatra_api/upload_inventory_image.php'),
+        Uri.parse(
+          'http://192.168.110.147/sumatra_api/upload_inventory_image.php',
+        ),
       );
 
       request.files.add(
@@ -533,7 +535,7 @@ class _InventoryDataEditScreenState extends State<InventoryDataEditScreen> {
                       final imageUrl =
                           _imagePaths[index].startsWith('http')
                               ? _imagePaths[index]
-                              : 'http://10.173.96.56/sumatra_api/inventory_photo/${_imagePaths[index]}';
+                              : 'http://192.168.110.147/sumatra_api/inventory_photo/${_imagePaths[index]}';
                       return Container(
                         margin: const EdgeInsets.only(right: 8),
                         child: Stack(

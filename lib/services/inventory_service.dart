@@ -11,7 +11,7 @@ class InventoryService {
     try {
       print('DEBUG: Calling get_inventory.php...');
       final response = await http.get(
-        Uri.parse('http://10.173.96.56/sumatra_api/get_inventory.php'),
+        Uri.parse('http://192.168.110.147/sumatra_api/get_inventory.php'),
       );
       print('DEBUG: Response status: ${response.statusCode}');
       print('DEBUG: Response body: ${response.body}');
@@ -39,7 +39,7 @@ class InventoryService {
 
     final response = await http.post(
       Uri.parse(
-        'http://10.173.96.56/sumatra_api/update_inventory_with_history.php',
+        'http://192.168.110.147/sumatra_api/update_inventory_with_history.php',
       ),
       body: {
         'inventory_id': inventory.InventoryId,
@@ -120,7 +120,7 @@ class InventoryService {
   ) async {
     final response = await http.get(
       Uri.parse(
-        'http://10.173.96.56/sumatra_api/get_history.php?type=inventory&inventory_id=$inventoryId',
+        'http://192.168.110.147/sumatra_api/get_history.php?type=inventory&inventory_id=$inventoryId',
       ),
     );
     if (response.statusCode == 200) {
@@ -137,7 +137,7 @@ class InventoryService {
   ) async {
     final response = await http.get(
       Uri.parse(
-        'http://10.173.96.56/sumatra_api/get_history.php?type=inventory_timeline&inventory_id=$inventoryId',
+        'http://192.168.110.147/sumatra_api/get_history.php?type=inventory_timeline&inventory_id=$inventoryId',
       ),
     );
     if (response.statusCode == 200) {
@@ -154,7 +154,7 @@ class InventoryService {
     DateTime? date,
   ) async {
     String url =
-        'http://10.173.96.56/sumatra_api/get_history.php?type=inventory_snapshot&inventory_id=$inventoryId';
+        'http://192.168.110.147/sumatra_api/get_history.php?type=inventory_snapshot&inventory_id=$inventoryId';
     if (date != null) {
       url += '&date=${date.toIso8601String()}';
     }
@@ -194,7 +194,7 @@ class InventoryService {
     }
 
     final response = await http.post(
-      Uri.parse('http://10.173.96.56/sumatra_api/history_logger.php'),
+      Uri.parse('http://192.168.110.147/sumatra_api/history_logger.php'),
       body: body,
     );
 
