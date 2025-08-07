@@ -718,18 +718,6 @@ class _SalesDashboardScreenState extends State<SalesDashboardScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.analytics),
-            tooltip: 'Analytics Dashboard',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const HistoryDashboardScreen(),
-                ),
-              );
-            },
-          ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrders),
           IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
         ],

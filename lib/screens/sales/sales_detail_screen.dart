@@ -379,149 +379,108 @@ class SalesDetailScreen extends StatelessWidget {
         actions:
             isWaitingTab
                 ? [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: const Color(0xFFD4AF37),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.history,
-                              color: Colors.white,
-                            ),
-                            tooltip: 'History',
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) => OrderHistoryScreen(
-                                        ordersId: order.ordersId,
-                                        customerName: order.ordersCustomerName,
-                                      ),
+                  // Hapus tombol history, hanya sisakan edit & hapus jika perlu
+                  CircleAvatar(
+                    backgroundColor: const Color(0xFFD4AF37),
+                    child: IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.white),
+                      tooltip: 'Edit',
+                      onPressed: () async {
+                        final result = await Navigator.pushNamed(
+                          context,
+                          '/sales/edit',
+                          arguments: order,
+                        );
+                        if (result == true) Navigator.pop(context, true);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  CircleAvatar(
+                    backgroundColor: Colors.red[700],
+                    child: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.white),
+                      tooltip: 'Hapus',
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder:
+                              (ctx) => AlertDialog(
+                                title: const Text('Konfirmasi Hapus'),
+                                content: const Text(
+                                  'Yakin ingin menghapus pesanan ini?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    child: const Text('Batal'),
+                                    onPressed: () => Navigator.pop(ctx, false),
+                                  ),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                    ),
+                                    child: const Text('Hapus'),
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                  ),
+                                ],
+                              ),
+                        );
+                        if (confirm == true) {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder:
+                                (ctx) => const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                          );
+                          try {
+                            // Panggil fungsi hapus pesanan dari backend
+                            final response = await http.post(
+                              Uri.parse(
+                                'http://192.168.110.147/sumatra_api/delete_orders.php',
+                              ),
+                              body: {'orders_id': order.ordersId.toString()},
+                            );
+                            Navigator.pop(context); // tutup loading
+                            if (response.statusCode == 200) {
+                              final resp = jsonDecode(response.body);
+                              if (resp['success'] == true) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Pesanan berhasil dihapus!'),
+                                  ),
+                                );
+                                Navigator.pop(
+                                  context,
+                                  true,
+                                ); // kembali ke list/dashboard
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Gagal menghapus: ${resp['error'] ?? 'Unknown error'}',
+                                    ),
+                                  ),
+                                );
+                              }
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Gagal menghapus: ${response.body}',
+                                  ),
                                 ),
                               );
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        CircleAvatar(
-                          backgroundColor: const Color(0xFFD4AF37),
-                          child: IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.white),
-                            tooltip: 'Edit',
-                            onPressed: () async {
-                              final result = await Navigator.pushNamed(
-                                context,
-                                '/sales/edit',
-                                arguments: order,
-                              );
-                              if (result == true) Navigator.pop(context, true);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        CircleAvatar(
-                          backgroundColor: Colors.red[700],
-                          child: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.white),
-                            tooltip: 'Hapus',
-                            onPressed: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder:
-                                    (ctx) => AlertDialog(
-                                      title: const Text('Konfirmasi Hapus'),
-                                      content: const Text(
-                                        'Yakin ingin menghapus pesanan ini?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          child: const Text('Batal'),
-                                          onPressed:
-                                              () => Navigator.pop(ctx, false),
-                                        ),
-                                        ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.red,
-                                          ),
-                                          child: const Text('Hapus'),
-                                          onPressed:
-                                              () => Navigator.pop(ctx, true),
-                                        ),
-                                      ],
-                                    ),
-                              );
-                              if (confirm == true) {
-                                showDialog(
-                                  context: context,
-                                  barrierDismissible: false,
-                                  builder:
-                                      (ctx) => const Center(
-                                        child: CircularProgressIndicator(),
-                                      ),
-                                );
-                                try {
-                                  // Panggil fungsi hapus pesanan dari backend
-                                  final response = await http.post(
-                                    Uri.parse(
-                                      'http://192.168.110.147/sumatra_api/delete_orders.php',
-                                    ),
-                                    body: {
-                                      'orders_id': order.ordersId.toString(),
-                                    },
-                                  );
-                                  Navigator.pop(context); // tutup loading
-                                  if (response.statusCode == 200) {
-                                    final resp = jsonDecode(response.body);
-                                    if (resp['success'] == true) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Pesanan berhasil dihapus!',
-                                          ),
-                                        ),
-                                      );
-                                      Navigator.pop(
-                                        context,
-                                        true,
-                                      ); // kembali ke list/dashboard
-                                    } else {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Gagal menghapus: ${resp['error'] ?? 'Unknown error'}',
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Gagal menghapus: ${response.body}',
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                } catch (e) {
-                                  Navigator.pop(context); // tutup loading
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Gagal menghapus: $e'),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                          ),
-                        ),
-                      ],
+                            }
+                          } catch (e) {
+                            Navigator.pop(context); // tutup loading
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Gagal menghapus: $e')),
+                            );
+                          }
+                        }
+                      },
                     ),
                   ),
                 ]
